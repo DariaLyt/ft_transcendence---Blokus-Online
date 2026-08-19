@@ -2,7 +2,7 @@ import { PIECES } from '../data/pieces';
 
 export default function PiecesTray() {
 	return (
-		<div className="bg-white border border-slate-200 shadow-md p-4 rounded-2xl w-full lg:w-[450px] flex-shrink-0">
+		<div className="bg-white border border-slate-200 shadow-md p-4 rounded-2xl w-full flex-shrink-0">
 			<div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
 				{/* Left Side: circle + name */}
 				<div className="flex items-center gap-2">
