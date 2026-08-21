@@ -1,9 +1,26 @@
 export default function RegisterPage() {
     return (
         <div className="min-h-screen flex items-center justify-center bg-slate-100">
-            <div className="bg-white p-8 rounded-xl shadow-md text-center">
-                <h1 className="text-2xl font-bold text-slate-800 mb-2">Register Page</h1>
-                <p className="text-slate-500">Placeholder for the register page</p>
+            <div className="bg-white p-8 rounded-xl shadow-md">
+                <h1 className="text-2xl font-bold text-slate-800 mb-2">Create an account</h1>
+                <p className="text-slate-500 mb-6">Enter your details to register</p>
+				<div className="mb-4">
+					<label className="block text-sm font-medium text-slate-700 mb-1">Username</label>
+					<input type="text" className="w-full border border-slate-300 rounded-lg px-3 py-2"/>
+				</div>
+
+                <div className="mb-4">
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                    <input type="email" className="w-full border border-slate-300 rounded-lg px-3 py-2"/>
+                </div>
+
+				<div className="mb-4">
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
+                    <input type="password" className="w-full border border-slate-300 rounded-lg px-3 py-2"/>
+                </div>
+
+                <button type="button" className="w-full bg-blue-700 text-white rounded-lg px-3 py-2 font-medium">Register</button>
+                <p className="text-sm text-slate-500 text-center mt-4">Already have an account? Log in</p>
             </div>
         </div>
     );
