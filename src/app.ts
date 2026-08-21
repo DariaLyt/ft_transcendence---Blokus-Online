@@ -3,7 +3,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import authRoutes from './routes/authRoutes';
-import healthRoutes from './routes/healthRoutes'
+import healthRoutes from './routes/healthRoutes';
+import userRoutes from './routes/userRoutes';
 
 const app = express();
 
@@ -14,5 +15,6 @@ app.use(cookieParser());
 
 app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
 
 export default app;

@@ -4,18 +4,7 @@ import jwt from 'jsonwebtoken';
 import { registerSchema, loginSchema } from '../schemas/authSchemas';
 import { createUser, findUserByEmail, findUserByUsername, findUserByEmailOrUsername } from '../db/userQueries';
 import { ZodError } from 'zod';
-
-function getJwtSecret(): string {
-	const secret = process.env.JWT_SECRET;
-
-	if (!secret) {
-    	throw new Error('JWT_SECRET is not configured');
-  	}
-
-  	return secret;
-}
-
-const JWT_SECRET = getJwtSecret();
+import { getJwtSecret } from '../config/env';
 
 export async function register(req: Request, res: Response) {
   	try {
@@ -27,11 +16,11 @@ export async function register(req: Request, res: Response) {
 		]);
 
 		if (existingEmail) {
-			return res.status(400).json({ error: 'Email already in use.' });
+			return res.status(400).json({ error: 'Email already in use' });
 		}
 
 		if (existingUsername) {
-			return res.status(400).json({ error: 'Username already in use.' });
+			return res.status(400).json({ error: 'Username already in use' });
 		}
 
 		const passwordHash = await bcrypt.hash(validated.password, 10);
@@ -52,19 +41,19 @@ export async function login(req: Request, res: Response) {
 
 		const user = await findUserByEmailOrUsername(validated.identifier);
 		if (!user) {
-			return res.status(401).json({ error: 'Invalid credentials.' });
+			return res.status(401).json({ error: 'Invalid credentials' });
 		}
 
 		const validPassword = await bcrypt.compare(validated.password, user.password_hash);
 		if (!validPassword) {
-			return res.status(401).json({ error: 'Invalid credentials.' });
+			return res.status(401).json({ error: 'Invalid credentials' });
 		}
 
-		const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '24h' });
+		const token = jwt.sign({ userId: user.id }, getJwtSecret(), { expiresIn: '24h' });
 
 		res.cookie('auth_token', token, {
 		httpOnly: true,
-		secure: process.env.NODE_ENV === 'production',
+		secure: true,
 		sameSite: 'lax',
 		maxAge: 24 * 60 * 60 * 1000, // 24 hours
 		});
