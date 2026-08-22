@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
   username VARCHAR(50) UNIQUE NOT NULL,
   email VARCHAR(255) UNIQUE NOT NULL,
-  password VARCHAR(255) NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 EOF
@@ -23,31 +23,17 @@ docker stop my-local-postgres
 
 docker start my-local-postgres
 
-curl http://localhost:3000/api/health
-
-curl -X POST http://localhost:3000/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"username":"testuser","email":"test@example.com","password":"password123"}'
-
-curl -X POST http://localhost:3000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"identifier":"testuser","password":"password123"}' -i
-
-curl -X POST http://localhost:3000/api/auth/logout \
-  -H "Content-Type: application/json" \
-  -i
-
-curl -k -i https://localhost:3000/api/auth/me
-
 curl -k -i -X POST https://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"identifier":"test@example.com", "password":"password123"}' \
   -c cookies.txt
-
-curl -k -i -b cookies.txt https://localhost:3000/api/auth/me
 
 curl -k -i -X POST https://localhost:3000/api/auth/logout -b cookies.txt
 
 curl -k -i https://localhost:3000/api/users/me
 
 curl -k -i -b cookies.txt https://localhost:3000/api/users/me
+
+curl -k -i -X POST https://localhost:3000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"testuser","email":"test@example.com","password_hash":"password123"}'
