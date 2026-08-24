@@ -3,6 +3,8 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { parseCookie } from 'cookie';
 import jwt from 'jsonwebtoken';
 import { getJwtSecret } from '../config/env';
+import { setupHeartbeat } from './heartbeat';
+import { addConnection, removeConnection } from './connectionManager';
 
 export interface AuthenticatedSocket extends WebSocket {
 	userId?: number;
@@ -11,6 +13,8 @@ export interface AuthenticatedSocket extends WebSocket {
 
 export function initWebSocketServer(server: HttpsServer) {
 	const wss = new WebSocketServer({ noServer: true });
+
+	setupHeartbeat(wss);
 
 	server.on('upgrade', (request, socket, head) => {
 		const cookies = parseCookie(request.headers.cookie || '');
@@ -38,14 +42,24 @@ export function initWebSocketServer(server: HttpsServer) {
 	});
 
 	wss.on('connection', (ws: AuthenticatedSocket) => {
+		if (!ws.userId) return ws.terminate();
+
+		addConnection(ws.userId, ws);
 		console.log(`Client connected via WSS (User ID: ${ws.userId})`);
+
+		ws.on('pong', () => {
+			ws.isAlive = true;
+		});
 
 		ws.on('message', (data) => {
 			console.log(`Received from user ${ws.userId}:`, data.toString());
 		});
 
 		ws.on('close', () => {
-			console.log(`Client disconnected (User ID: ${ws.userId})`);
+			if (ws.userId) {
+        		removeConnection(ws.userId);
+				console.log(`Client disconnected (User ID: ${ws.userId})`);
+			}
 		});
 	});
 
