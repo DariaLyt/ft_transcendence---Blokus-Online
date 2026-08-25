@@ -1,11 +1,13 @@
 import { useState } from "react"; // React hook that lets a component store and update state, we use it to keep track of what the user types
 import { useNavigate } from "react-router-dom"; // React hook that lets my code change the page/route programmatically, without having to click
+import { useLocation } from "react-router-dom"; // Gives information about the current URL/route and the navigation state  attached to it
 
 export default function LoginPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const navigate = useNavigate();
+    const location = useLocation();
 
     const handleLogin = async () => {
         const response = await fetch(
@@ -35,6 +37,13 @@ export default function LoginPage() {
             <div className="bg-white p-8 rounded-xl shadow-md">
                 <h1 className="text-2xl font-bold text-slate-800 mb-2 text-center">Log in</h1>
                 <p className="text-slate-500 mb-6">Enter your details to continue</p>
+
+                {location.state?.message && ( // message of success will come only if coming from registration page
+                    <p className="text-green-600 text-sm mb-4">
+                        {location.state.message}
+                    </p>
+                )}
+
                 <div className="mb-4">
                     <label className="block text-sm font-medium text-slate-700 mb-1">Email or username</label>
                     <input type="email"
