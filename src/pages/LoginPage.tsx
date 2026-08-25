@@ -1,6 +1,7 @@
 import { useState } from "react"; // React hook that lets a component store and update state, we use it to keep track of what the user types
 import { useNavigate } from "react-router-dom"; // React hook that lets my code change the page/route programmatically, without having to click
 import { useLocation } from "react-router-dom"; // Gives information about the current URL/route and the navigation state  attached to it
+import { Link } from "react-router-dom";
 
 export default function LoginPage() {
     const [email, setEmail] = useState("");
@@ -75,7 +76,10 @@ export default function LoginPage() {
                 <button type="button"
                     onClick={handleLogin}
                     className="w-full bg-blue-700 text-white rounded-lg px-3 py-2 font-medium">Log in</button>
-                <p className="text-sm text-slate-500 text-center mt-4">Don't have an account? Register here</p>
+                <p className="text-sm text-slate-500 text-center mt-4">Don't have an account? {" "}
+                    <Link to="/register" className="text-blue-600 hover:underline">Register here
+                    </Link>
+                </p>
             </div>
         </div>
     );

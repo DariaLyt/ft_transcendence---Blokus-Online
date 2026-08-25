@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom"; // redirection when user clicks a link
 
 export default function RegisterPage() {
     const [username, setUsername] = useState("");
@@ -84,7 +85,10 @@ export default function RegisterPage() {
                 <button type="button"
                     onClick={handleRegister}
                     className="w-full bg-blue-700 text-white rounded-lg px-3 py-2 font-medium">Register</button>
-                <p className="text-sm text-slate-500 text-center mt-4">Already have an account? Log in</p>
+                <p className="text-sm text-slate-500 text-center mt-4">Already have an account?{" "} 
+                    <Link to="/" className="text-blue-600 hover:underline">Log in
+                    </Link>
+                </p>
             </div>
         </div>
     );
