@@ -1,5 +1,5 @@
-import { pool } from './index';
-import { User } from '../types/user'
+import { pool } from './conn.js';
+import type { User } from '../types/userTypes.js'
 
 export async function findUserById(id: number): Promise<Omit<User, 'password_hash'> | null> {
 	const result = await pool.query(

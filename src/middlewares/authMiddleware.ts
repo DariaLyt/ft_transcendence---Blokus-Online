@@ -1,6 +1,6 @@
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { getJwtSecret } from '../config/env';
+import { getJwtSecret } from '../config/env.js';
 
 export function authenticateToken(req: Request, res: Response, next: NextFunction) {
   	const token = req.cookies?.auth_token;

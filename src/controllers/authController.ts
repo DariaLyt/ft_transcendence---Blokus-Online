@@ -1,8 +1,8 @@
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { createUser, findUserByEmail, findUserByUsername, findUserByEmailOrUsername } from '../db/userQueries';
-import { getJwtSecret } from '../config/env';
+import { createUser, findUserByEmail, findUserByUsername, findUserByEmailOrUsername } from '../db/userQueries.js';
+import { getJwtSecret } from '../config/env.js';
 
 export async function register(req: Request, res: Response) {
 	const validated = req.body;

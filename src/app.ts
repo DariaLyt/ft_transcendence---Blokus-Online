@@ -3,10 +3,10 @@ import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 
-import authRoutes from './routes/authRoutes';
-import healthRoutes from './routes/healthRoutes';
-import userRoutes from './routes/userRoutes';
-import { errorHandler } from './middlewares/errorMiddleware';
+import authRoutes from './routes/authRoutes.js';
+import healthRoutes from './routes/healthRoutes.js';
+import userRoutes from './routes/userRoutes.js';
+import { errorHandler } from './middlewares/errorMiddleware.js';
 
 const app = express();
 

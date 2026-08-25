@@ -1,6 +1,6 @@
 import { WebSocketServer } from 'ws';
-import { AuthenticatedSocket } from './socketServer';
-import { removeConnection } from './connectionManager';
+import type { AuthenticatedSocket } from './socketServer.js';
+import { removeConnection } from './connectionManager.js';
 
 export function setupHeartbeat(wss: WebSocketServer) {
 	const interval = setInterval(() => {

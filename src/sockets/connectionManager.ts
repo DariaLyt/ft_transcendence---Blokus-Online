@@ -1,4 +1,4 @@
-import { AuthenticatedSocket } from './socketServer';
+import type { AuthenticatedSocket } from './socketServer.js';
 
 const activeConnections = new Map<number, AuthenticatedSocket>();
 

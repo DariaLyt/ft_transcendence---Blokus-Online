@@ -1,9 +1,9 @@
 import 'dotenv/config';
-import app from './app';
+import app from './app.js';
 import https from 'https';
 import fs from 'fs';
 import path from 'path';
-import { initWebSocketServer } from './sockets/socketServer';
+import { initWebSocketServer } from './sockets/socketServer.js';
 
 const PORT = process.env.PORT || 3000;
 

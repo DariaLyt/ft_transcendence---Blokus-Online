@@ -2,9 +2,9 @@ import { Server as HttpsServer } from 'https';
 import { WebSocketServer, WebSocket } from 'ws';
 import { parseCookie } from 'cookie';
 import jwt from 'jsonwebtoken';
-import { getJwtSecret } from '../config/env';
-import { setupHeartbeat } from './heartbeat';
-import { addConnection, removeConnection } from './connectionManager';
+import { getJwtSecret } from '../config/env.js';
+import { setupHeartbeat } from './heartbeat.js';
+import { addConnection, removeConnection } from './connectionManager.js';
 
 export interface AuthenticatedSocket extends WebSocket {
 	userId?: number;

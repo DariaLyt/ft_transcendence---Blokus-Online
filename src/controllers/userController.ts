@@ -1,5 +1,5 @@
-import { Request, Response } from 'express';
-import { findUserById, getUserPasswordHash, updateUserPassword } from '../db/userQueries';
+import type { Request, Response } from 'express';
+import { findUserById, getUserPasswordHash, updateUserPassword } from '../db/userQueries.js';
 import bcrypt from 'bcrypt';
 
 export async function getProfile(req: Request, res: Response) {
