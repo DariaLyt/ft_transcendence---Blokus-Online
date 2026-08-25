@@ -3,10 +3,28 @@ import { useState } from "react"; // React hook that lets a component store and 
 export default function LoginPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [error, setError] = useState("");
 
-    const handleLogin = () => {
-        console.log(email);
-        console.log(password);
+    const handleLogin = async () => {
+        const response = await fetch(
+            "http://localhost:3000/api/auth/login", // send a request and wait for the server's response
+            {
+                method: "POST", // we're sending data to backend
+                headers: {
+                    "Content-Type": "application/json", // in JSON format, that's what backend expects
+                },
+                body: JSON.stringify({ // convert the values to JSON
+                    email: email,
+                    password: password,
+                }),
+            }
+        );
+        const data = await response.json(); // take JSON body from backend and convert to JS object
+        if (response.ok) { // property that JS fetch() creates based on HTTP status
+             console.log("Success");
+        } else {
+            setError(data.error);
+        }
     };
 
     return (
@@ -29,6 +47,12 @@ export default function LoginPage() {
                         onChange={(e) => setPassword(e.target.value)}
                         className="w-full border border-slate-300 rounded-lg px-3 py-2"/>
                 </div>
+
+                {error && ( // shows if error has a value
+                    <p className="text-red-600 text-sm mb-4">
+                        {error}
+                    </p>
+                )}
 
                 <button type="button"
                     onClick={handleLogin}
