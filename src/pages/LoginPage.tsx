@@ -1,9 +1,11 @@
 import { useState } from "react"; // React hook that lets a component store and update state, we use it to keep track of what the user types
+import { useNavigate } from "react-router-dom"; // React hook that lets my code change the page/route programmatically, without having to click
 
 export default function LoginPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
+    const navigate = useNavigate();
 
     const handleLogin = async () => {
         const response = await fetch(
@@ -21,7 +23,7 @@ export default function LoginPage() {
         );
         const data = await response.json(); // take JSON body from backend and convert to JS object
         if (response.ok) { // property that JS fetch() creates based on HTTP status
-             console.log("Success");
+             navigate("/lobby");
         } else {
             setError(data.error);
         }
