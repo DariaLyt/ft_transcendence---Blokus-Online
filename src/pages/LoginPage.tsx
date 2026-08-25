@@ -15,6 +15,7 @@ export default function LoginPage() {
                 headers: {
                     "Content-Type": "application/json", // in JSON format, that's what backend expects
                 },
+                credentials: "include", // include cookies with request and accept cookies from response
                 body: JSON.stringify({ // convert the values to JSON
                     email: email,
                     password: password,
@@ -35,7 +36,7 @@ export default function LoginPage() {
                 <h1 className="text-2xl font-bold text-slate-800 mb-2 text-center">Log in</h1>
                 <p className="text-slate-500 mb-6">Enter your details to continue</p>
                 <div className="mb-4">
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Email or username</label>
                     <input type="email"
                         value={email} //connects input to React state
                         onChange={(e) => {
