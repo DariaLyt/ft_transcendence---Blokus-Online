@@ -36,7 +36,10 @@ export default function LoginPage() {
                     <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
                     <input type="email"
                         value={email} //connects input to React state
-                        onChange={(e) => setEmail(e.target.value)} // event handler that runs when input changes
+                        onChange={(e) => {
+                            setEmail(e.target.value); // event handler that runs when input changes
+                            setError(""); //error message disappears when user retries if input was invalid
+                        }}
                         className="w-full border border-slate-300 rounded-lg px-3 py-2"/>
                 </div>
 
@@ -44,7 +47,10 @@ export default function LoginPage() {
                     <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
                     <input type="password"
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        onChange={(e) => {
+                            setPassword(e.target.value);
+                            setError("");
+                        }}
                         className="w-full border border-slate-300 rounded-lg px-3 py-2"/>
                 </div>
 
