@@ -6,6 +6,7 @@ import ProfilePage from './pages/ProfilePage';
 import LobbyPage from './pages/LobbyPage';
 import RegisterPage from './pages/RegisterPage';
 import Menu from './pages/Menu';
+import Matchmaking from './pages/Matchmaking';
 
 export default function App() {
     return (
@@ -15,6 +16,7 @@ export default function App() {
                 <Route path="/" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/menu" element={<Menu />} />
+                <Route path="/matchmaking" element={<Matchmaking />} />
                 <Route path="/lobby" element={<LobbyPage />} />
                 <Route path="/game" element={<GamePage />} />
                 <Route path="/profile" element={<ProfilePage />} />

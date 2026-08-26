@@ -1,7 +1,7 @@
-//import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 export default function Menu() {
-   // const navigate = useNavigate();
+   const navigate = useNavigate();
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-slate-100">
@@ -19,7 +19,7 @@ export default function Menu() {
                 <div className="flex flex-col gap-6 flex-1">
 					<button
     					type="button"
-    					//onClick={() => navigate("/game-finder")} // TODO: build the game browser page
+    					onClick={() => navigate("/matchmaking")}
     					className="w-full flex-1 p-8 rounded-xl bg-slate-100 border border-slate-200 text-left hover:bg-slate-200 flex flex-col">
     				<h2 className="text-3xl font-bold text-slate-800 mb-6">
         				Play
@@ -42,6 +42,20 @@ export default function Menu() {
         				Compete against other players in a tournament.
     				</p>
 					</button>
+
+					<button
+    					type="button"
+    					//onClick={() => navigate("/spectate")} // TODO: add a spectator page
+    					className="w-full flex-1 p-8 rounded-xl bg-slate-100 border border-slate-200 text-left hover:bg-slate-200 flex flex-col">
+    				<h2 className="text-3xl font-bold text-slate-800 mb-6">
+        				Spectate
+    				</h2>
+
+    				<p className="text-slate-500 text-lg">
+        				Watch an ongoing game. 
+    				</p>
+					</button>
+					
                 </div>
             </div>
         </div>
