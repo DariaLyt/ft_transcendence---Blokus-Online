@@ -1,0 +1,17 @@
+services:
+  backend:
+    build: . //location of our dockerfile
+    ports:
+      - '9000:9000'
+  database:
+    image: postgres: latest 
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: mydb
+  volumes:
+    - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
+
