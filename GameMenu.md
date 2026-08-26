@@ -5,6 +5,7 @@ Notes:
 - Player reputation
 - Player rating
 - Disallow user from creating/joining more than one game
+- Friends system for manual lobby
 
 ```mermaid
 flowchart TD
