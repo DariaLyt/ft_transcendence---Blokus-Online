@@ -21,8 +21,8 @@ export default function Menu() {
     					type="button"
     					//onClick={() => navigate("/game-finder")} // TODO: build the game browser page
     					className="w-full flex-1 p-8 rounded-xl bg-slate-100 border border-slate-200 text-left hover:bg-slate-200 flex flex-col">
-    				<h2 className="text-3xl font-bold text-blue-800 mb-6">
-        				PLAY
+    				<h2 className="text-3xl font-bold text-slate-800 mb-6">
+        				Play
     				</h2>
 
     				<p className="text-slate-500 text-lg">
@@ -35,7 +35,7 @@ export default function Menu() {
 						//onClick={() => navigate("/tournament")}// TODO: add a tournament page
     					className="w-full flex-1 p-8 rounded-xl bg-slate-50 border border-slate-200 text-left hover:bg-slate-100 flex flex-col">
     				<h2 className="text-3xl font-bold text-blue-800 mb-6">
-        				TOURNAMENT
+        				Tournament
     				</h2>
 
     				<p className="text-slate-500 text-lg">
