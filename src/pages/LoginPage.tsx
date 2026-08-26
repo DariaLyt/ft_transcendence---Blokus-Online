@@ -27,7 +27,7 @@ export default function LoginPage() {
         );
         const data = await response.json(); // take JSON body from backend and convert to JS object
         if (response.ok) { // property that JS fetch() creates based on HTTP status
-             navigate("/lobby");
+             navigate("/menu");
         } else {
             setError(data.error);
         }
