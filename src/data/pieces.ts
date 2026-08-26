@@ -7,7 +7,7 @@ export interface Piece {
 
 export const PIECES: Piece[] = [
 {
-  id: 'L-3',
+  id: 'V3',
   name: 'Corner 3',
   shape: [
     [1, 0],
@@ -15,14 +15,14 @@ export const PIECES: Piece[] = [
   ]
 },
 {
-  id: 'I-5',
+  id: 'I5',
   name: 'Long boy',
   shape: [
     [1, 1, 1, 1, 1]
   ]
 },
 {
-  id: 'L-5',
+  id: 'L5',
   name: 'Big L',
   shape: [
     [1, 0],
@@ -32,7 +32,7 @@ export const PIECES: Piece[] = [
   ]
 },
 {
-  id: 'C-5',
+  id: 'U',
   name: 'Bridge',
   shape: [
     [1, 1, 1],
@@ -40,7 +40,7 @@ export const PIECES: Piece[] = [
   ]
 },
 {
-  id: 'V-5',
+  id: 'V5',
   name: 'V shape',
   shape: [
     [1, 0, 0],
@@ -49,7 +49,7 @@ export const PIECES: Piece[] = [
   ]
 },
 {
-  id: 'X-5',
+  id: 'X',
   name: 'Cross',
   shape: [
     [0, 1, 0],
@@ -58,14 +58,14 @@ export const PIECES: Piece[] = [
   ]
 },
 {
-  id: 'I-1',
+  id: '1',
   name: 'Small boy',
   shape: [
     [1]
   ]
 },
 {
-  id: 'SQ-4',
+  id: 'O4',
   name: 'Square',
   shape: [
     [1, 1],
@@ -73,14 +73,14 @@ export const PIECES: Piece[] = [
   ]
 },
 {
-  id: 'I-4',
+  id: 'I4',
   name: 'Long 4',
   shape: [
     [1, 1, 1, 1]
   ]
 },
 {
-  id: 'W-5',
+  id: 'W',
   name: 'Stairs',
   shape: [
 	  [1, 0, 0],
@@ -89,7 +89,7 @@ export const PIECES: Piece[] = [
   ]
 },
 {
-  id: 'L-4',
+  id: 'L4',
   name: 'Small L',
   shape: [
     [1, 0],
@@ -98,7 +98,7 @@ export const PIECES: Piece[] = [
   ]
 },
 {
-  id: 'Y-5',
+  id: 'Y',
   name: 'Tree with branch',
   shape: [
     [1, 0],
@@ -108,7 +108,7 @@ export const PIECES: Piece[] = [
   ]
 },
 {
-  id: 'Z-5',
+  id: 'Z',
   name: 'Z shape',
   shape: [
     [1, 1, 0],
@@ -117,7 +117,7 @@ export const PIECES: Piece[] = [
   ]
 },
 {
-  id: 'P-5',
+  id: 'P',
   name: 'P shape',
   shape: [
     [1, 1],
@@ -126,7 +126,7 @@ export const PIECES: Piece[] = [
   ]
 },
 {
-  id: 'T-5',
+  id: 'T5',
   name: 'Big T',
   shape: [
     [1, 1, 1],
@@ -135,7 +135,7 @@ export const PIECES: Piece[] = [
   ]
 },
 {
-  id: 'F-5',
+  id: 'F',
   name: 'F shape',
   shape: [
     [1, 1, 0],
@@ -144,21 +144,21 @@ export const PIECES: Piece[] = [
   ]
 },
 {
-  id: 'I-2',
+  id: '2',
   name: 'Two piece',
   shape: [
     [1, 1]
   ]
 },
 {
-  id: 'I-3',
+  id: 'I3',
   name: 'Three piece',
   shape: [
     [1, 1, 1]
   ]
 },
 {
-  id: 'Z-4',
+  id: 'S4',
   name: 'Small zig zag',
   shape: [
     [0, 1, 1],
@@ -166,7 +166,7 @@ export const PIECES: Piece[] = [
   ]
 },
 {
-  id: 'T-4',
+  id: 'T4',
   name: 'Small T',
   shape: [
     [1, 1, 1],
@@ -174,12 +174,12 @@ export const PIECES: Piece[] = [
   ]
 },
 {
-  id: 'N-5',
+  id: 'N',
   name: 'Big zig zag',
   shape: [
 	[0, 1],
+	[0, 1],
 	[1, 1],
-	[1, 0],
 	[1, 0]
   ]
 }
