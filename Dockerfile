@@ -17,7 +17,7 @@ COPY . .
 ENV PORT=9000
 
 # Expose the port so our computer can access it
-EXPOSE PORT=9000
+EXPOSE 9000
 
 # Run the app
 CMD ["npm", "start"]
