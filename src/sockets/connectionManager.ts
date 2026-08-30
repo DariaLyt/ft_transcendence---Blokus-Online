@@ -15,3 +15,15 @@ export function removeConnection(userId: number) {
 export function getSocketByUserId(userId: number): AuthenticatedSocket | undefined {
 	return activeConnections.get(userId);
 }
+
+export function isUserOnline(userId: number): boolean {
+  	return activeConnections.has(userId);
+}
+
+export function getAllActiveUserIds(): number[] {
+  	return Array.from(activeConnections.keys());
+}
+
+export function forEachConnection(callback: (socket: AuthenticatedSocket, userId: number) => void) {
+  	activeConnections.forEach((socket, userId) => callback(socket, userId));
+}

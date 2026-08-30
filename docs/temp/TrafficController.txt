@@ -1,0 +1,74 @@
+* When lobby is created
+
+
+FRONTEND                                  BACKEND
+
+new WebSocket("wss://...")
+        │
+        │  WebSocket handshake
+        │ ──────────────────────────────>
+        │
+        │                         wss.on('connection', ws)
+        │                                  │
+        │                                  ├─ check ws.userId
+        │                                  │
+        │                                  ├─ addConnection(ws.userId, ws)
+        │                                  │
+        │                                  └─ setup message/close/pong
+        │
+        │ <──── connection established ────
+        │
+   ws.onopen()
+
+
+                    Frontend
+                       │
+                       │ WebSocket message
+                       ▼
+          ws.on('message', data)
+                       │
+                       ▼
+     handleIncomingSocketMessage()
+                       │
+                       ▼
+                 JSON.parse()
+                       │
+                       ▼
+              Validate with Zod
+                       │
+                 ┌─────┴─────┐
+                 │           │
+              invalid       valid
+                 │           │
+                 ▼           ▼
+              ERROR       frame
+                             │
+                       check category
+                             │
+             ┌───────────────┼───────────────┐
+             │               │               │
+           LOBBY            GAME           RESYNC
+             │               │               │
+             ▼               ▼               ▼
+     handleLobbyAction  handleGameAction  getGameState
+             │               │               │
+             ▼               ▼               ▼
+        Lobby logic      Game logic      Send state
+
+
+Frontend
+   │
+   │ WebSocket
+   ▼
+Node
+   │
+   │ handleLobbyAction()
+   ▼
+gameModules
+   │
+   │ gRPC
+   ▼
+Go
+   │
+   ▼
+Create actual lobby

@@ -4,13 +4,14 @@ import {
     joinLobbySchema,
     toggleReadySchema,
     leaveLobbySchema,
-} from '../schemas/lobbySchemas.js';
+} from './gatewayTypes.js';
 
 export interface Player {
 	userId: number;
 	username: string;
 	isReady: boolean;
 	isHost: boolean;
+	connectionState?: 'CONNECTED' | 'DISCONNECTED';
 }
 
 export interface Lobby {

@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import type { Lobby, Player } from '../types/lobbyTypes.js';
+import type { Lobby, Player } from '../types/lobbyTypes_toBeDeleted.js';
 
 const lobbies = new Map<string, Lobby>();
 
