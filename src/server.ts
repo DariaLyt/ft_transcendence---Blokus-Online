@@ -5,6 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import { initWebSocketServer } from './sockets/socketServer.js';
 import { fileURLToPath } from 'url';
+import { runMigrations } from './db/migrate.js';
 
 const PORT = process.env.PORT || 3000;
 
@@ -15,10 +16,28 @@ const sslOptions = {
   cert: fs.readFileSync(path.join(__dirname, '../certs/cert.pem')),
 };
 
-const server = https.createServer(sslOptions, app);
+// const server = https.createServer(sslOptions, app);
 
-initWebSocketServer(server);
+// initWebSocketServer(server);
 
-server.listen(PORT, () => {
-  console.log(`Server running on https://localhost:${PORT}`);
-});
+// server.listen(PORT, () => {
+//   console.log(`Server running on https://localhost:${PORT}`);
+// });
+
+async function startServer() {
+	try {
+		await runMigrations();
+
+		const server = https.createServer(sslOptions, app);
+		initWebSocketServer(server);
+
+		server.listen(PORT, () => {
+			console.log(`Server running on https://localhost:${PORT}`);
+		});
+	} catch (error) {
+		console.error('Failed to start server:', error);
+		process.exit(1);
+	}
+}
+
+startServer();

@@ -1,3 +1,21 @@
+Frontend
+   │
+   │ HTTP/WebSocket
+   ▼
+Node
+   │
+   │ handleLobbyAction()
+   ▼
+gameModules
+   │
+   │ gRPC
+   ▼
+Go
+   │
+   ▼
+Create actual lobby
+
+
 * When lobby is created
 
 
@@ -56,19 +74,3 @@ new WebSocket("wss://...")
         Lobby logic      Game logic      Send state
 
 
-Frontend
-   │
-   │ WebSocket
-   ▼
-Node
-   │
-   │ handleLobbyAction()
-   ▼
-gameModules
-   │
-   │ gRPC
-   ▼
-Go
-   │
-   ▼
-Create actual lobby
