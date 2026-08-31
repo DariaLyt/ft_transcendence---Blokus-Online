@@ -14,10 +14,10 @@ RUN npm ci
 COPY . .
 
 # Set port environment variable
-ENV PORT=9000
+ENV PORT=3000
 
 # Expose the port so our computer can access it
-EXPOSE 9000
+EXPOSE 3000
 
 # Run the app
 CMD ["npm", "start"]

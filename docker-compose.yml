@@ -27,9 +27,9 @@ services:
     env_file:
       - .env
     ports:
-      - "${PORT:-9000}:${PORT:-9000}"
+      - "${PORT}:${PORT}"
     environment:
-      PORT: ${PORT:-9000}
+      PORT: ${PORT}
       DB_HOST: db
       DB_PORT: 5432
       DB_USER: ${DB_USER}
@@ -42,6 +42,22 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_URL=http://localhost:${PORT}
+    depends_on:
+      - backend
     restart: unless-stopped
 
 volumes:
