@@ -4,7 +4,8 @@ Notes:
 - Game speed
 - Player reputation
 - Player rating
-- Player can quit while waiting 
+- Disallow user from creating/joining more than one game
+- Friends system for manual lobby
 
 ```mermaid
 flowchart TD
@@ -26,8 +27,9 @@ flowchart TD
     F --> I[JOIN / CREATE LOBBY]
     H --> I
 
-    I --> J[GAME READY CHECK]
-    J --> K[15 sec timer]
+    I --> J1[GAME READY CHECK]
+    I --> J2[QUIT GAME]
+    J1 --> K[15 sec timer]
 
     K --> L{Everyone accepts?}
 
