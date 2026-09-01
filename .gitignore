@@ -1,7 +1,6 @@
 backend/node_modules/
 backend/dist/
 backend/certs/
-backend/docs/queries/
 backend/docs/test/
 backend/cookies.txt
 

@@ -36,8 +36,8 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
     volumes:
-      - ./backend:/app                       
-      - /app/node_modules                   
+      - ./backend:/app           
+      - /app/node_modules  
     command: npm run dev
     depends_on:
       db:

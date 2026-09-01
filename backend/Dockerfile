@@ -1,5 +1,5 @@
 # Uses node version 22 as our base image
-FROM node:22
+FROM node:22-slim
 
 # Goes to the app directory
 WORKDIR /app
