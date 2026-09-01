@@ -298,6 +298,14 @@ func orientationCovers(local []Cell, originX, originY int, target Cell) bool {
 }
 
 func NewActiveGame(id string, mode GameMode, seats []Seat) *GameState {
+	return newGame(id, mode, seats, StatusActive)
+}
+
+func NewLobbyGame(id string, mode GameMode, seats []Seat) *GameState {
+	return newGame(id, mode, seats, StatusLobby)
+}
+
+func newGame(id string, mode GameMode, seats []Seat, status GameStatus) *GameState {
 	return &GameState{
 		ID:           id,
 		Mode:         mode,
@@ -306,6 +314,6 @@ func NewActiveGame(id string, mode GameMode, seats []Seat) *GameState {
 		Remaining:    NewFullRemaining(),
 		CurrentColor: ColorBlue,
 		Passed:       NewEmptyPassed(),
-		Status:       StatusActive,
+		Status:       status,
 	}
 }
