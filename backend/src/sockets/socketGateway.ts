@@ -2,6 +2,7 @@ import type { AuthenticatedSocket } from './socketServer.js';
 import { IncomingFrameSchema, type GameModules } from '../types/gatewayTypes.js';
 import { sendToUser } from './broadcaster.js';
 import { z } from 'zod';
+import { sendMoveToGoEngine } from '../grpc/gameClient.js';
 
 //temp
 const gameModules: GameModules = {
@@ -45,7 +46,32 @@ export function handleIncomingSocketMessage(
 			}
 
 			case 'GAME': {
-				modules.handleGameAction(ws.userId, frame.action, frame.payload);
+				if (frame.action === 'MAKE_MOVE') {
+					const userId = ws.userId;
+					if (!userId) {
+						console.error('[WS Error]: User ID is missing.');
+						break;
+					}
+
+					sendMoveToGoEngine({
+						userId: userId,
+						pieceId: frame.payload.pieceId,
+						originX: frame.payload.originX,
+						originY: frame.payload.originY,
+						rotation: frame.payload.rotation || 0,
+						flip: frame.payload.flip || false,
+					})
+					.then((goResponse) => {
+						console.log('[gRPC Success from Go]:', goResponse);
+						sendToUser(userId, 'MOVE_RESULT', goResponse);
+					})
+					.catch((err) => {
+						console.error('[gRPC Error from Go]:', err.message);
+						sendToUser(userId, 'ERROR', {
+							message: 'Game engine communication failed',
+						});
+					});
+				}
 				break;
 			}
 

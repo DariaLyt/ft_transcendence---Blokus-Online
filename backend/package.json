@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-	"predev": "node -e \"import('fs').then(fs => { if (!fs.existsSync('./certs/cert.pem')) import('child_process').then(cp => cp.execSync('mkdir -p certs && openssl req -x509 -newkey rsa:2048 -keyout certs/key.pem -out certs/cert.pem -days 365 -nodes -subj \\\"/CN=localhost\\\"')); })\"",
+    "predev": "node -e \"import('fs').then(fs => { if (!fs.existsSync('./certs/cert.pem')) import('child_process').then(cp => cp.execSync('mkdir -p certs && openssl req -x509 -newkey rsa:2048 -keyout certs/key.pem -out certs/cert.pem -days 365 -nodes -subj \\\"/CN=localhost\\\"')); })\"",
     "dev": "tsx watch src/server.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -13,6 +13,8 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@grpc/grpc-js": "^1.14.4",
+    "@grpc/proto-loader": "^0.8.1",
     "bcrypt": "^6.0.0",
     "cookie": "^2.0.1",
     "cookie-parser": "^1.4.7",
