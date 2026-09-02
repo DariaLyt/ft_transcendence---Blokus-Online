@@ -6,15 +6,39 @@ export default function Lobby() {
     const [showJoin, setShowJoin] = useState(false);
     const [lobbyId, setLobbyId] = useState("");
 
-    const handleCreateLobby = () => {
-        // PLACEHOLDER: later send CREATE_LOBBY to the backend.
-        // The backend will create the lobby and make us the host.
+    const handleCreateLobby = async () => {
+		//PLACEHOLDER: exact endpoint will be confirmed later
+    	/**const response = await fetch(
+        	"https://localhost:3000/api/game/lobby",
+        	{
+            	method: "POST",
+            	credentials: "include",
+        	}
+    	);
+
+    	const data = await response.json(); **/
         navigate("/lobby/waiting");
     };
 
-    const handleJoinLobby = () => {
-        // PLACEHOLDER: later send JOIN_LOBBY with the lobby ID.
-        // For now, joining is not connected to the backend yet.
+    const handleJoinLobby = async () => {
+        // PLACEHOLDER: exact endpoint will be confirmed later
+        /**const response = await fetch(
+		  "https://localhost:3000/api/game/lobby/join",
+			{
+		    	method: "POST",
+            	headers: {
+                	"Content-Type": "application/json",
+            	},
+            	credentials: "include",
+            	body: JSON.stringify({
+                	lobbyId: lobbyId,
+            	}),
+		  	}
+		  );
+		  
+		const data = await response.json(); **/
+        navigate("/lobby/waiting");
+		
     };
 
     return (

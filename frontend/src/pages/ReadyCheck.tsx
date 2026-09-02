@@ -1,64 +1,91 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 
-type PlayerColor = "Blue" | "Yellow" | "Red" | "Green";
 
 type Player = {
-    color: PlayerColor;
-    name: string;
-    ready: boolean;
+    userId: string
+    username: string;
+    accepted: boolean;
+	isHost: boolean;
 };
 
 export default function ReadyCheck() {
     const navigate = useNavigate();
 
-    // PLACEHOLDER: later this information will come from the backend.
+    // PLACEHOLDER: using same structure as backend but with fake data
     const [players, setPlayers] = useState<Player[]>([
-        { color: "Blue", name: "You", ready: false },
-        { color: "Yellow", name: "Player 2", ready: true },
-        { color: "Red", name: "Player 3", ready: true },
-        { color: "Green", name: "Player 4", ready: true },
+		{
+        	userId: "1",
+        	username: "You",
+        	accepted: false,
+        	isHost: true,
+    	},
+    	{
+        	userId: "2",
+        	username: "Player 2",
+        	accepted: false,
+        	isHost: false,
+    	},
     ]);
 
-    // PLACEHOLDER: the backend will control the ready-check timer.
+    // PLACEHOLDER: this will come from the backend as readyDeadline
+	// If readyDeadline is reached, backend will cancel the ready check. 
+	// The lobby returns to "waiting".Players who did not accept are removed.
+	// The remaining players stay in the lobby.
     const [countdown, setCountdown] = useState(15);
-
-    const colorClasses = {
-        Blue: "bg-blue-500",
-        Yellow: "bg-yellow-400",
-        Red: "bg-red-500",
-        Green: "bg-green-500",
-    };
-
-    useEffect(() => {
-        // PLACEHOLDER: simulate the 15 second ready-check locally.
-        // Later the backend will tell us when the ready-check starts
-        // and when it ends.
-        if (countdown <= 0) {
-            return;
-        }
-
-        const timer = setTimeout(() => {
-            setCountdown((current) => current - 1);
-        }, 1000);
-
-        return () => clearTimeout(timer);
-    }, [countdown]);
+	/**
+	 * Frontend will calculate time remaining = readyDeadline - current time
+	 * something like:
+	 * const [readyDeadline, set ReadyDeadline] = useState("");
+	 * useEffect(() => {
+	 *  // calculate the remaining time from readyDeadline
+	 * }, [readyDeadline]);
+	 */
 
     const currentPlayer = players[0];
 
-    const handleReady = () => {
-        // PLACEHOLDER: later send the ready action through WebSocket.
-        setPlayers((currentPlayers) =>
-            currentPlayers.map((player, index) =>
-                index === 0
-                    ? { ...player, ready: true }
-                    : player
-            )
+    
+    // PLACEHOLDER: later send ACCEPT_READY_CHECK + lobbyID to backend
+    const handleAccept = async () => {
+       /** const response = await fetch(
+            "https://localhost:3000/api/game/ready-check/accept",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                credentials: "include",
+                body: JSON.stringify({
+                    lobbyId: "PLACEHOLDER_LOBBY_ID",
+                }),
+            }
         );
+
+        const data = await response.json();   */
+    };
+  
+    // PLACEHOLDER: later send DECLINE_READY_CHECK + lobbyID to backend
+    const handleDecline = async () => {
+       /** const response = await fetch(
+            "https://localhost:3000/api/game/ready-check/decline",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                credentials: "include",
+                body: JSON.stringify({
+                    lobbyId: "PLACEHOLDER_LOBBY_ID",
+                }),
+            }
+        );
+
+        const data = await response.json(); */
     };
 
-    const allReady = players.every((player) => player.ready);
+    // PLACEHOLDER: the backend will tell us when the ready check succeeds and the game starts
+	// When the backend sends GameState with status "active", navigate to the game
+	// If a player leaves during the ready check, backend treats this as a decline and stops the ready check.
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-slate-100">
@@ -75,25 +102,21 @@ export default function ReadyCheck() {
                 <div className="w-full mb-8">
                     {players.map((player) => (
                         <div
-                            key={player.color}
+                            key={player.userId}
                             className="flex justify-between items-center py-3 border-b border-slate-200">
-                            <div className="flex items-center gap-3">
-                                <div className={`w-4 h-4 rounded-full ${colorClasses[player.color]}`}/>
-
-                                <span className="font-medium text-slate-700">
-                                    {player.name}
-                                </span>
-                            </div>
-
+                            <span className="font-medium text-slate-700">
+                                {player.username}
+                            </span>
+         
                             <span
                                 className={
-                                    player.ready
+                                    player.accepted
                                         ? "text-green-600 font-medium"
                                         : "text-slate-400"
                                 }
                             >
-                                {player.ready
-                                    ? "Ready ✓"
+                                {player.accepted
+                                    ? "Accepted ✓"
                                     : "Waiting..."}
                             </span>
                         </div>
@@ -110,33 +133,29 @@ export default function ReadyCheck() {
                     </p>
                 </div>
 
-                <button
-                    type="button"
-                    onClick={handleReady}
-                    disabled={currentPlayer.ready}
-                    className={`px-6 py-3 rounded-lg text-white ${
-                        currentPlayer.ready
-                            ? "bg-green-600 cursor-default"
-                            : "bg-slate-700 hover:bg-slate-800"
-                    }`}
-                >
-                    {currentPlayer.ready
-                        ? "Ready ✓"
-                        : "Ready"}
-                </button>
+				<div className="flex gap-4">
+    				<button
+        				type="button"
+        				// onClick={handleAccept}
+        				disabled={currentPlayer.accepted}
+        				className={`px-6 py-3 rounded-lg text-white ${
+            			currentPlayer.accepted
+                			? "bg-green-600 cursor-default"
+                			: "bg-slate-700 hover:bg-slate-800"
+        				}`}
+    				>
+        				{currentPlayer.accepted
+            				? "Accepted ✓"
+            				: "Accept"}
+    				</button>
 
-                {/* PLACEHOLDER: the backend will decide when everyone
-                    is ready and will tell us when the game starts. */}
-                {allReady && (
-                    <button
-                        type="button"
-                        onClick={() => navigate("/game")}
-                        className="mt-4 px-6 py-3 rounded-lg bg-blue-700 text-white hover:bg-blue-800"
-                    >
-                        Simulate game starting
-                    </button>
-                )}
-
+    				<button
+        				type="button"
+        				// onClick={handleDecline}
+        				className="px-6 py-3 rounded-lg bg-red-600 text-white hover:bg-red-700">
+        					Decline
+    				</button>
+				</div>
             </div>
         </div>
     );

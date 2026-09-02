@@ -1,47 +1,98 @@
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 
-type PlayerColor = "Blue" | "Yellow" | "Red" | "Green";
+type LobbyPlayer = {
+	userId: string;
+	username: string;
+	isReady: boolean;
+	isHost: boolean;
+}
 
-type Player = {
-    color: PlayerColor;
-    name: string;
-    host: boolean;
-};
+type Lobby = {
+	id: string;
+	maxPlayers: number;
+	status: "waiting" | "in_game";
+	players: LobbyPlayer[];
+	createdAt: string;
+}
+
+type User = {
+	id: number;
+	username: string;
+}
 
 export default function LobbyWaiting() {
     const navigate = useNavigate();
+	const [currentUser, setCurrentUser] = useState<User | null>(null);
 
-    // PLACEHOLDER: later the player list will come from the backend.
-    const players: Player[] = [
-        {
-            color: "Blue",
-            name: "You",
-            host: true,
-        },
-    ];
+	useEffect(() => {
+    	fetch("https://localhost:3000/api/auth/me", {
+        credentials: "include",
+    	})
+        	.then((response) => response.json())
+        	.then((data) => {
+            	setCurrentUser(data.user);
+        	});
+	}, []);
 
-    const colors: PlayerColor[] = [
-        "Blue",
-        "Yellow",
-        "Red",
-        "Green",
-    ];
+    // PLACEHOLDER: frontend structure ready for when the real data arrives
+	const lobby: Lobby = {
+    	id: "example-lobby-id",
+    	maxPlayers: 4,
+    	status: "waiting",
+    	players: [
+        	{
+            	userId: "1",
+            	username: "You",
+            	isReady: true,
+            	isHost: true,
+        	},
+    	],
+    	createdAt: "",
+	};
 
-    const colorClasses = {
-        Blue: "bg-blue-500",
-        Yellow: "bg-yellow-400",
-        Red: "bg-red-500",
-        Green: "bg-green-500",
-    };
+	const players = lobby.players;
+	const currentPlayer = players.find(
+		(player) => player.userId === String(currentUser?.id)
+	);
 
-    const handleStartGame = () => {
-        // PLACEHOLDER: later the host will send a start-game
-        // request to the backend.
+    const handleStartGame = async () => {
+        // PLACEHOLDER: exact endpoint will be confirmed later
+		/**const response = await fetch(
+        	"https://localhost:3000/api/game/lobby/start",
+        	{
+			    method: "POST",
+            	headers: {
+                	"Content-Type": "application/json",
+            	},
+            	credentials: "include",
+            	body: JSON.stringify({
+                	lobbyId: lobby.id,
+            	}),
+			}
+		);
+		const data = await response.json();
+		 **/
         navigate("/ready-check");
     };
 
-    const handleLeaveLobby = () => {
-        // PLACEHOLDER: later send LEAVE_LOBBY to the backend.
+    const handleLeaveLobby = async () => {
+    	// PLACEHOLDER: exact endpoint method will be confirmed later
+    	/**const response = await fetch(
+        	"https://localhost:3000/api/game/lobby/leave",
+        	{
+            	method: "POST",
+            	headers: {
+                	"Content-Type": "application/json",
+            	},
+            	credentials: "include",
+            	body: JSON.stringify({
+                	lobbyId: lobby.id,
+            	}),
+        	}
+    	);
+
+    	const data = await response.json(); **/
         navigate("/lobby");
     };
 
@@ -55,7 +106,7 @@ export default function LobbyWaiting() {
                     </h1>
 
                     <p className="text-slate-500">
-                        Players: {players.length} / 4
+                        Players: {players.length} / {lobby.maxPlayers}
                     </p>
 
                     <p className="text-slate-400 text-sm mt-2">
@@ -65,40 +116,38 @@ export default function LobbyWaiting() {
                 </div>
 
                 <div className="w-full mb-8">
-                    {colors.map((color) => {
-                        const player = players.find(
-                            (player) => player.color === color
-                        );
-
-                        return (
-                            <div
-                                key={color}
-                                className="flex items-center justify-between py-4 border-b border-slate-200">
-                                <div className="flex items-center gap-3">
-                                    <div className={`w-4 h-4 rounded-full ${colorClasses[color]}`}/>
-
-                                    <span className="font-medium text-slate-700">
-                                        {player ? player.name : "Empty"}
-                                    </span>
-                                </div>
-
-                                {player?.host && (
-                                    <span className="text-sm text-slate-400">
-                                        Host ✓
-                                    </span>
-                                )}
-                            </div>
-                        );
-                    })}
+                    {players.map((player) => (
+                        <div
+							key={player.userId}
+							className="flex items-center justify-between py-4 border-b border-slate-200">
+							<span className="">
+								{player.username}
+							</span>
+							<div className="flex items-center gap-4">
+								{player.isReady && (
+									<span className="text-sm text-green-600">
+										Ready ✓
+									</span>
+								)}
+								{player.isHost && (
+									<span className="text-sm text-green-400">
+										Host ✓
+									</span>
+								)}
+							</div>
+						</div>
+                    ))}
                 </div>
 
                 <div className="mt-auto flex flex-col gap-3">
+					{currentPlayer?.isHost && (
                     <button
                         type="button"
                         onClick={handleStartGame}
                         className="w-full px-6 py-3 rounded-lg bg-blue-700 text-white hover:bg-blue-800">
                         Start Game
                     </button>
+					)}
 
                     <button
                         type="button"
