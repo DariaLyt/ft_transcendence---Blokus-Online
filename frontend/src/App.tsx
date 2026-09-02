@@ -5,7 +5,9 @@ import LoginPage from './pages/LoginPage';
 import ProfilePage from './pages/ProfilePage';
 import RegisterPage from './pages/RegisterPage';
 import Menu from './pages/Menu';
-import Matchmaking from './pages/Matchmaking';
+import ReadyCheck from './pages/ReadyCheck';
+import Lobby from './pages/Lobby';
+import LobbyWaiting from './pages/LobbyWaiting';
 
 export default function App() {
     return (
@@ -15,7 +17,9 @@ export default function App() {
                 <Route path="/" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/menu" element={<Menu />} />
-                <Route path="/matchmaking" element={<Matchmaking />} />
+                <Route path="/lobby" element={<Lobby />} />
+                <Route path="/lobby/waiting" element={<LobbyWaiting />} />
+                <Route path="/ready-check" element={<ReadyCheck />} />
                 <Route path="/game" element={<GamePage />} />
                 <Route path="/profile" element={<ProfilePage />} />
             </Routes>

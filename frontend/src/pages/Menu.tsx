@@ -19,7 +19,7 @@ export default function Menu() {
                 <div className="flex flex-col gap-6 flex-1">
 					<button
     					type="button"
-    					onClick={() => navigate("/matchmaking")}
+    					onClick={() => navigate("/lobby")}
     					className="w-full flex-1 p-8 rounded-xl bg-slate-100 border border-slate-200 text-left hover:bg-slate-200 flex flex-col">
     				<h2 className="text-3xl font-bold text-slate-800 mb-6">
         				Play
