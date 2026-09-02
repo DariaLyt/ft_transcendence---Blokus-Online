@@ -10,11 +10,12 @@ service GameEngine {
 
 message MoveRequest {
 	int32 user_id = 1;
-	int32 piece_id = 2;
-	int32 origin_x = 3;
-	int32 origin_y = 4;
-	int32 rotation = 5;
-	bool flip = 6;
+	string color = 2;
+	string piece_id = 3;
+	int32 origin_x = 4;
+	int32 origin_y = 5;
+	int32 rotation = 6;
+	bool flip = 7;
 }
 
 message GameStateResponse {

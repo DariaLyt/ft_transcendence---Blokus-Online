@@ -10,10 +10,6 @@ const PROTO_PATH = path.resolve(__dirname, '../proto/game.proto');
 
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
 	keepCase: true,
-	longs: String,
-	enums: String,
-	defaults: true,
-	oneofs: true,
 });
 
 const gameProto = (grpc.loadPackageDefinition(packageDefinition) as any).game;
@@ -27,7 +23,8 @@ export const gameClient = new gameProto.GameEngine(
 
 export function sendMoveToGoEngine(moveData: {
 	userId: number;
-	pieceId: number;
+	color: string;
+	pieceId: string;
 	originX: number;
 	originY: number;
 	rotation: number;
@@ -36,6 +33,7 @@ export function sendMoveToGoEngine(moveData: {
 	return new Promise((resolve, reject) => {
 		const payload = {
 			user_id: moveData.userId,
+			color: moveData.color,
 			piece_id: moveData.pieceId,
 			origin_x: moveData.originX,
 			origin_y: moveData.originY,

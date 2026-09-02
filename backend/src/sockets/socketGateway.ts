@@ -55,6 +55,7 @@ export function handleIncomingSocketMessage(
 
 					sendMoveToGoEngine({
 						userId: userId,
+						color: frame.payload.color,
 						pieceId: frame.payload.pieceId,
 						originX: frame.payload.originX,
 						originY: frame.payload.originY,
