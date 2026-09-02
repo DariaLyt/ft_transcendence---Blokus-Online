@@ -4,6 +4,8 @@ backend/certs/
 backend/docs/test/
 backend/cookies.txt
 
+frontend/node_modules
+
 .env
 
 .DS_Store
