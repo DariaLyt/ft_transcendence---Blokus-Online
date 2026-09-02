@@ -64,7 +64,8 @@ The bot scores legal moves with a heuristic:
 
 ## Requirements
 
-- Go **1.22+**
+- Go **1.25+** (see `go.mod`)
+- `protoc` + Go plugins only if you regenerate `proto/` stubs
 
 ```bash
 go version
@@ -151,15 +152,18 @@ game/
   mode.go
   bot.go
   render.go
+  lobby.go
+  proto/             # gRPC contract (game.proto + generated stubs)
   tests/             # all *_test.go (package game_test)
   cmd/hotseat/       # playable CLI
   go.mod             # module blokus/game
 ```
 
-Import path for other Go services later:
+Import paths:
 
 ```go
 import "blokus/game"
+import gamev1 "blokus/game/proto"
 ```
 
 ---
@@ -229,6 +233,21 @@ Improve the sketch before generating code:
 Optional later: typed RPCs (`CreateLobby`, `MakeMove`) or a **server stream** of events. Do not need them to ship remote play.
 
 **Done when:** `protoc` generates Go stubs; Nest can copy the same `.proto`.
+
+**Frozen here:** `proto/game.proto` (`package blokus.game.v1`). Nest should copy **this file**, not a second sketch. Generated Go: `proto/game.pb.go`, `proto/game_grpc.pb.go` (`package gamev1`).
+
+Regenerate after editing the proto (from `game/`):
+
+```bash
+export PATH="$PATH:$(go env GOPATH)/bin"
+go generate ./proto/
+# or:
+protoc --go_out=. --go_opt=paths=source_relative \
+       --go-grpc_out=. --go-grpc_opt=paths=source_relative \
+       proto/game.proto
+```
+
+`ActionResponse` / `GameStateResponse` fields: `success`, `error_code`, `message`, `state` (JSON). Lobby/game `action` strings are listed in the proto comments.
 
 ### Step 4 — Go gRPC server (unary only)
 

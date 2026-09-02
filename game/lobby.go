@@ -7,11 +7,14 @@ import (
 	"time"
 )
 
+const DefaultReadyCheckDuration = 15 * time.Second
+
 type LobbyStatus string
 
 const (
-	LobbyWaiting LobbyStatus = "waiting"
-	LobbyInGame  LobbyStatus = "in_game"
+	LobbyWaiting     LobbyStatus = "waiting"
+	LobbyReadyCheck  LobbyStatus = "ready_check"
+	LobbyInGame      LobbyStatus = "in_game"
 )
 
 type LobbyPlayer struct {
@@ -19,14 +22,16 @@ type LobbyPlayer struct {
 	Username string `json:"username,omitempty"`
 	Ready    bool   `json:"isReady"`
 	Host     bool   `json:"isHost"`
+	Accepted bool   `json:"accepted"`
 }
 
 type Lobby struct {
-	ID         string        `json:"id"`
-	MaxPlayers int           `json:"maxPlayers"`
-	Status     LobbyStatus   `json:"status"`
-	Players    []LobbyPlayer `json:"players"`
-	CreatedAt  time.Time     `json:"createdAt"`
+	ID            string        `json:"id"`
+	MaxPlayers    int           `json:"maxPlayers"`
+	Status        LobbyStatus   `json:"status"`
+	Players       []LobbyPlayer `json:"players"`
+	CreatedAt     time.Time     `json:"createdAt"`
+	ReadyDeadline *time.Time    `json:"readyDeadline,omitempty"`
 }
 
 type LobbyErrorCode string
@@ -42,6 +47,9 @@ const (
 	ErrLobbyHostToggle        LobbyErrorCode = "HOST_CANNOT_TOGGLE"
 	ErrLobbyNotReady          LobbyErrorCode = "NOT_ALL_READY"
 	ErrLobbyEmpty             LobbyErrorCode = "LOBBY_EMPTY"
+	ErrLobbyReadyCheck        LobbyErrorCode = "READY_CHECK_IN_PROGRESS"
+	ErrLobbyNoReadyCheck      LobbyErrorCode = "NO_READY_CHECK"
+	ErrLobbyNotHost           LobbyErrorCode = "NOT_HOST"
 )
 
 type LobbyError struct {
@@ -56,17 +64,20 @@ func (e *LobbyError) Error() string {
 	return string(e.Code)
 }
 
-// LobbyManager is an in-memory store. One user may be in at most one lobby.
 type LobbyManager struct {
-	mu      sync.Mutex
-	lobbies map[string]*Lobby
-	byUser  map[string]string
+	mu                 sync.Mutex
+	lobbies            map[string]*Lobby
+	byUser             map[string]string
+	timers             map[string]*time.Timer
+	ReadyCheckDuration time.Duration
 }
 
 func NewLobbyManager() *LobbyManager {
 	return &LobbyManager{
-		lobbies: make(map[string]*Lobby),
-		byUser:  make(map[string]string),
+		lobbies:            make(map[string]*Lobby),
+		byUser:             make(map[string]string),
+		timers:             make(map[string]*time.Timer),
+		ReadyCheckDuration: DefaultReadyCheckDuration,
 	}
 }
 
@@ -84,7 +95,7 @@ func (m *LobbyManager) CreateLobby(userID, username string, maxPlayers int) (*Lo
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	m.removeUserLocked(userID)
+	m.removeUserAndAbortCheckLocked(userID)
 
 	id := newLobbyID()
 	lobby := &Lobby{
@@ -119,8 +130,8 @@ func (m *LobbyManager) JoinLobby(userID, username, lobbyID string) (*Lobby, erro
 	if !ok {
 		return nil, &LobbyError{Code: ErrLobbyNotFound, Message: "lobby not found"}
 	}
-	if lobby.Status != LobbyWaiting {
-		return nil, &LobbyError{Code: ErrLobbyInGame, Message: "game already in progress"}
+	if err := joinBlocked(lobby.Status); err != nil {
+		return nil, err
 	}
 	for _, p := range lobby.Players {
 		if p.UserID == userID {
@@ -132,7 +143,7 @@ func (m *LobbyManager) JoinLobby(userID, username, lobbyID string) (*Lobby, erro
 	}
 
 	if cur, ok := m.byUser[userID]; ok && cur != lobbyID {
-		m.removeUserLocked(userID)
+		m.removeUserAndAbortCheckLocked(userID)
 	}
 
 	lobby.Players = append(lobby.Players, LobbyPlayer{
@@ -142,6 +153,12 @@ func (m *LobbyManager) JoinLobby(userID, username, lobbyID string) (*Lobby, erro
 		Host:     false,
 	})
 	m.byUser[userID] = lobbyID
+
+	if len(lobby.Players) >= lobby.MaxPlayers {
+		if _, err := m.beginReadyCheckLocked(lobby); err != nil {
+			return nil, err
+		}
+	}
 	return cloneLobby(lobby), nil
 }
 
@@ -160,8 +177,8 @@ func (m *LobbyManager) ToggleReady(userID, lobbyID string) (*Lobby, error) {
 	if !ok {
 		return nil, &LobbyError{Code: ErrLobbyNotFound, Message: "lobby not found"}
 	}
-	if lobby.Status != LobbyWaiting {
-		return nil, &LobbyError{Code: ErrLobbyInGame, Message: "game already in progress"}
+	if err := joinBlocked(lobby.Status); err != nil {
+		return nil, err
 	}
 
 	for i := range lobby.Players {
@@ -190,19 +207,103 @@ func (m *LobbyManager) LeaveLobby(userID string) (*Lobby, error) {
 		return nil, &LobbyError{Code: ErrLobbyNotFound, Message: "user is not in a lobby"}
 	}
 	lobby := m.lobbies[id]
-	if lobby != nil && lobby.Status != LobbyWaiting {
+	if lobby != nil && lobby.Status == LobbyInGame {
 		return nil, &LobbyError{Code: ErrLobbyInGame, Message: "game already in progress"}
 	}
 
+	wasCheck := lobby != nil && lobby.Status == LobbyReadyCheck
 	m.removeUserLocked(userID)
 	leftover, ok := m.lobbies[id]
 	if !ok {
 		return nil, nil
 	}
+	if wasCheck {
+		m.abortReadyCheckLocked(leftover)
+	}
 	return cloneLobby(leftover), nil
 }
 
-func (m *LobbyManager) StartGame(lobbyID string) (*GameState, error) {
+func (m *LobbyManager) BeginReadyCheck(userID, lobbyID string) (*Lobby, *GameState, error) {
+	if userID == "" {
+		return nil, nil, &LobbyError{Code: ErrLobbyInvalidUser, Message: "user id is required"}
+	}
+	if lobbyID == "" {
+		return nil, nil, &LobbyError{Code: ErrLobbyNotFound, Message: "lobby not found"}
+	}
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	lobby, ok := m.lobbies[lobbyID]
+	if !ok {
+		return nil, nil, &LobbyError{Code: ErrLobbyNotFound, Message: "lobby not found"}
+	}
+	if !hasPlayer(lobby, userID) {
+		return nil, nil, &LobbyError{Code: ErrLobbyNotMember, Message: "not in this lobby"}
+	}
+	if !isHost(lobby, userID) {
+		return nil, nil, &LobbyError{Code: ErrLobbyNotHost, Message: "only the host can start a ready check"}
+	}
+	if lobby.Status == LobbyInGame {
+		return nil, nil, &LobbyError{Code: ErrLobbyInGame, Message: "game already in progress"}
+	}
+	if lobby.Status == LobbyReadyCheck {
+		return nil, nil, &LobbyError{Code: ErrLobbyReadyCheck, Message: "ready check already in progress"}
+	}
+
+	state, err := m.beginReadyCheckLocked(lobby)
+	if err != nil {
+		return nil, nil, err
+	}
+	return cloneLobby(lobby), state, nil
+}
+
+func (m *LobbyManager) AcceptReadyCheck(userID, lobbyID string) (*Lobby, *GameState, error) {
+	if userID == "" {
+		return nil, nil, &LobbyError{Code: ErrLobbyInvalidUser, Message: "user id is required"}
+	}
+	if lobbyID == "" {
+		return nil, nil, &LobbyError{Code: ErrLobbyNotFound, Message: "lobby not found"}
+	}
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	lobby, ok := m.lobbies[lobbyID]
+	if !ok {
+		return nil, nil, &LobbyError{Code: ErrLobbyNotFound, Message: "lobby not found"}
+	}
+	if lobby.Status != LobbyReadyCheck {
+		return nil, nil, &LobbyError{Code: ErrLobbyNoReadyCheck, Message: "no ready check in progress"}
+	}
+
+	found := false
+	for i := range lobby.Players {
+		if lobby.Players[i].UserID != userID {
+			continue
+		}
+		lobby.Players[i].Accepted = true
+		found = true
+		break
+	}
+	if !found {
+		return nil, nil, &LobbyError{Code: ErrLobbyNotMember, Message: "not in this lobby"}
+	}
+
+	if !allAccepted(lobby) {
+		return cloneLobby(lobby), nil, nil
+	}
+	state, err := m.startGameLocked(lobby)
+	if err != nil {
+		return nil, nil, err
+	}
+	return cloneLobby(lobby), state, nil
+}
+
+func (m *LobbyManager) DeclineReadyCheck(userID, lobbyID string) (*Lobby, error) {
+	if userID == "" {
+		return nil, &LobbyError{Code: ErrLobbyInvalidUser, Message: "user id is required"}
+	}
 	if lobbyID == "" {
 		return nil, &LobbyError{Code: ErrLobbyNotFound, Message: "lobby not found"}
 	}
@@ -214,21 +315,60 @@ func (m *LobbyManager) StartGame(lobbyID string) (*GameState, error) {
 	if !ok {
 		return nil, &LobbyError{Code: ErrLobbyNotFound, Message: "lobby not found"}
 	}
-	if lobby.Status != LobbyWaiting {
-		return nil, &LobbyError{Code: ErrLobbyInGame, Message: "game already in progress"}
+	if lobby.Status != LobbyReadyCheck {
+		return nil, &LobbyError{Code: ErrLobbyNoReadyCheck, Message: "no ready check in progress"}
 	}
-	for _, p := range lobby.Players {
-		if !p.Ready {
-			return nil, &LobbyError{Code: ErrLobbyNotReady, Message: "not all players are ready"}
-		}
+	if !hasPlayer(lobby, userID) {
+		return nil, &LobbyError{Code: ErrLobbyNotMember, Message: "not in this lobby"}
 	}
 
-	mode, seats, err := SeatsFromLobby(lobby)
-	if err != nil {
-		return nil, err
+	m.removeUserLocked(userID)
+	leftover, ok := m.lobbies[lobbyID]
+	if !ok {
+		return nil, nil
 	}
-	lobby.Status = LobbyInGame
-	return NewActiveGame(lobby.ID, mode, seats), nil
+	m.abortReadyCheckLocked(leftover)
+	return cloneLobby(leftover), nil
+}
+
+func (m *LobbyManager) ExpireReadyCheck(lobbyID string) (*Lobby, error) {
+	if lobbyID == "" {
+		return nil, &LobbyError{Code: ErrLobbyNotFound, Message: "lobby not found"}
+	}
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	lobby, ok := m.lobbies[lobbyID]
+	if !ok {
+		return nil, &LobbyError{Code: ErrLobbyNotFound, Message: "lobby not found"}
+	}
+	if lobby.Status != LobbyReadyCheck {
+		return cloneLobby(lobby), nil
+	}
+
+	m.stopTimerLocked(lobbyID)
+
+	var drop []string
+	for _, p := range lobby.Players {
+		if !p.Accepted {
+			drop = append(drop, p.UserID)
+		}
+	}
+	for _, uid := range drop {
+		m.removeUserLocked(uid)
+	}
+
+	leftover, ok := m.lobbies[lobbyID]
+	if !ok {
+		return nil, nil
+	}
+	leftover.Status = LobbyWaiting
+	leftover.ReadyDeadline = nil
+	for i := range leftover.Players {
+		leftover.Players[i].Accepted = false
+	}
+	return cloneLobby(leftover), nil
 }
 
 func (m *LobbyManager) GetLobby(id string) (*Lobby, error) {
@@ -256,6 +396,74 @@ func (m *LobbyManager) LobbyForUser(userID string) (*Lobby, error) {
 	return cloneLobby(lobby), nil
 }
 
+func (m *LobbyManager) beginReadyCheckLocked(lobby *Lobby) (*GameState, error) {
+	for i := range lobby.Players {
+		lobby.Players[i].Accepted = lobby.Players[i].Host
+	}
+	if allAccepted(lobby) {
+		return m.startGameLocked(lobby)
+	}
+
+	deadline := time.Now().UTC().Add(m.readyCheckDuration())
+	lobby.Status = LobbyReadyCheck
+	lobby.ReadyDeadline = &deadline
+	id := lobby.ID
+	m.stopTimerLocked(id)
+	m.timers[id] = time.AfterFunc(m.readyCheckDuration(), func() {
+		_, _ = m.ExpireReadyCheck(id)
+	})
+	return nil, nil
+}
+
+func (m *LobbyManager) startGameLocked(lobby *Lobby) (*GameState, error) {
+	mode, seats, err := SeatsFromLobby(lobby)
+	if err != nil {
+		return nil, err
+	}
+	m.stopTimerLocked(lobby.ID)
+	lobby.Status = LobbyInGame
+	lobby.ReadyDeadline = nil
+	return NewActiveGame(lobby.ID, mode, seats), nil
+}
+
+func (m *LobbyManager) abortReadyCheckLocked(lobby *Lobby) {
+	m.stopTimerLocked(lobby.ID)
+	lobby.Status = LobbyWaiting
+	lobby.ReadyDeadline = nil
+	for i := range lobby.Players {
+		lobby.Players[i].Accepted = false
+	}
+}
+
+func (m *LobbyManager) stopTimerLocked(id string) {
+	if t, ok := m.timers[id]; ok {
+		t.Stop()
+		delete(m.timers, id)
+	}
+}
+
+func (m *LobbyManager) readyCheckDuration() time.Duration {
+	if m.ReadyCheckDuration <= 0 {
+		return DefaultReadyCheckDuration
+	}
+	return m.ReadyCheckDuration
+}
+
+func (m *LobbyManager) removeUserAndAbortCheckLocked(userID string) {
+	id, ok := m.byUser[userID]
+	if !ok {
+		return
+	}
+	wasCheck := false
+	if lobby, exists := m.lobbies[id]; exists && lobby.Status == LobbyReadyCheck {
+		wasCheck = true
+	}
+	m.removeUserLocked(userID)
+	if leftover, exists := m.lobbies[id]; exists && wasCheck {
+		m.abortReadyCheckLocked(leftover)
+	}
+}
+
 func (m *LobbyManager) removeUserLocked(userID string) {
 	id, ok := m.byUser[userID]
 	if !ok {
@@ -275,6 +483,7 @@ func (m *LobbyManager) removeUserLocked(userID string) {
 		}
 	}
 	if len(next) == 0 {
+		m.stopTimerLocked(id)
 		delete(m.lobbies, id)
 		return
 	}
@@ -299,6 +508,10 @@ func cloneLobby(l *Lobby) *Lobby {
 	}
 	out := *l
 	out.Players = append([]LobbyPlayer(nil), l.Players...)
+	if l.ReadyDeadline != nil {
+		t := *l.ReadyDeadline
+		out.ReadyDeadline = &t
+	}
 	return &out
 }
 
@@ -333,6 +546,49 @@ func SeatsFromLobby(lobby *Lobby) (GameMode, []Seat, error) {
 		seats = append(seats, Seat{Color: c, Kind: SeatBot})
 	}
 	return mode, seats, nil
+}
+
+func joinBlocked(status LobbyStatus) error {
+	switch status {
+	case LobbyWaiting:
+		return nil
+	case LobbyReadyCheck:
+		return &LobbyError{Code: ErrLobbyReadyCheck, Message: "ready check in progress"}
+	case LobbyInGame:
+		return &LobbyError{Code: ErrLobbyInGame, Message: "game already in progress"}
+	default:
+		return &LobbyError{Code: ErrLobbyInGame, Message: "lobby is not joinable"}
+	}
+}
+
+func isHost(lobby *Lobby, userID string) bool {
+	for _, p := range lobby.Players {
+		if p.UserID == userID {
+			return p.Host
+		}
+	}
+	return false
+}
+
+func hasPlayer(lobby *Lobby, userID string) bool {
+	for _, p := range lobby.Players {
+		if p.UserID == userID {
+			return true
+		}
+	}
+	return false
+}
+
+func allAccepted(lobby *Lobby) bool {
+	if len(lobby.Players) == 0 {
+		return false
+	}
+	for _, p := range lobby.Players {
+		if !p.Accepted {
+			return false
+		}
+	}
+	return true
 }
 
 func newLobbyID() string {

@@ -2,6 +2,7 @@ package game_test
 
 import (
 	"testing"
+	"time"
 
 	"blokus/game"
 )
@@ -100,18 +101,23 @@ func TestJoinLobbyNotFound(t *testing.T) {
 
 func TestJoinLobbyFull(t *testing.T) {
 	m := game.NewLobbyManager()
+	m.ReadyCheckDuration = time.Hour
 	host, err := m.CreateLobby("u1", "a", 2)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := m.JoinLobby("u2", "b", host.ID); err != nil {
+	filled, err := m.JoinLobby("u2", "b", host.ID)
+	if err != nil {
 		t.Fatal(err)
+	}
+	if filled.Status != game.LobbyReadyCheck {
+		t.Fatalf("full lobby should start ready check, status=%s", filled.Status)
 	}
 	_, err = m.JoinLobby("u3", "c", host.ID)
 	if err == nil {
-		t.Fatal("expected LOBBY_FULL")
+		t.Fatal("expected READY_CHECK_IN_PROGRESS")
 	}
-	if err.(*game.LobbyError).Code != game.ErrLobbyFull {
+	if err.(*game.LobbyError).Code != game.ErrLobbyReadyCheck {
 		t.Fatalf("got %v", err)
 	}
 }
@@ -374,8 +380,39 @@ func TestSeatsFromLobbyFillsBots(t *testing.T) {
 	}
 }
 
-func TestStartGameRequiresReadyAndFillsBots(t *testing.T) {
+func TestReadyCheckSoloStartsM1P3B(t *testing.T) {
 	m := game.NewLobbyManager()
+	host, err := m.CreateLobby("u1", "host", 4)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lobby, state, err := m.BeginReadyCheck("u1", host.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if state == nil {
+		t.Fatal("solo host should start immediately")
+	}
+	if lobby.Status != game.LobbyInGame {
+		t.Fatalf("lobby status=%s", lobby.Status)
+	}
+	if state.Status != game.StatusActive || state.Mode != game.ModeM1P3B {
+		t.Fatalf("status=%s mode=%s", state.Status, state.Mode)
+	}
+	if state.CurrentColor != game.ColorBlue {
+		t.Fatalf("turn=%s", state.CurrentColor)
+	}
+	if state.Seats[0].Kind != game.SeatHuman || state.Seats[0].UserID == nil || *state.Seats[0].UserID != "u1" {
+		t.Fatalf("blue seat %+v", state.Seats[0])
+	}
+	if state.Seats[1].Kind != game.SeatBot || state.Seats[2].Kind != game.SeatBot || state.Seats[3].Kind != game.SeatBot {
+		t.Fatalf("expected 3 bots %+v", state.Seats)
+	}
+}
+
+func TestReadyCheckAllAcceptStartsGame(t *testing.T) {
+	m := game.NewLobbyManager()
+	m.ReadyCheckDuration = time.Hour
 	host, err := m.CreateLobby("u1", "host", 4)
 	if err != nil {
 		t.Fatal(err)
@@ -384,29 +421,35 @@ func TestStartGameRequiresReadyAndFillsBots(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := m.StartGame(host.ID); err == nil {
-		t.Fatal("expected NOT_ALL_READY")
-	} else if err.(*game.LobbyError).Code != game.ErrLobbyNotReady {
-		t.Fatalf("got %v", err)
-	}
-
-	if _, err := m.ToggleReady("u2", host.ID); err != nil {
-		t.Fatal(err)
-	}
-	state, err := m.StartGame(host.ID)
+	lobby, state, err := m.BeginReadyCheck("u1", host.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if state.Status != game.StatusActive || state.Mode != game.ModeM2P2B {
-		t.Fatalf("status=%s mode=%s", state.Status, state.Mode)
+	if state != nil || lobby.Status != game.LobbyReadyCheck {
+		t.Fatalf("should wait for guest accept, state=%v status=%s", state, lobby.Status)
 	}
-	if state.CurrentColor != game.ColorBlue {
-		t.Fatalf("turn=%s", state.CurrentColor)
+	if lobby.ReadyDeadline == nil {
+		t.Fatal("expected ready deadline")
+	}
+	if !lobby.Players[0].Accepted || lobby.Players[1].Accepted {
+		t.Fatalf("host accepted, guest not: %+v", lobby.Players)
 	}
 
-	lobby, err := m.GetLobby(host.ID)
-	if err != nil || lobby.Status != game.LobbyInGame {
-		t.Fatalf("lobby status %v %+v", err, lobby)
+	if _, _, err := m.BeginReadyCheck("u2", host.ID); err == nil {
+		t.Fatal("expected NOT_HOST")
+	} else if err.(*game.LobbyError).Code != game.ErrLobbyNotHost {
+		t.Fatalf("got %v", err)
+	}
+
+	lobby, state, err = m.AcceptReadyCheck("u2", host.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if state == nil || state.Mode != game.ModeM2P2B || state.Status != game.StatusActive {
+		t.Fatalf("expected active M2P2B, state=%+v", state)
+	}
+	if lobby.Status != game.LobbyInGame {
+		t.Fatalf("lobby status=%s", lobby.Status)
 	}
 	if _, err := m.JoinLobby("u3", "late", host.ID); err == nil {
 		t.Fatal("expected LOBBY_IN_GAME")
@@ -415,20 +458,85 @@ func TestStartGameRequiresReadyAndFillsBots(t *testing.T) {
 	}
 }
 
-func TestStartGameSoloIsM1P3B(t *testing.T) {
+func TestReadyCheckDeclineDoesNotStart(t *testing.T) {
 	m := game.NewLobbyManager()
+	m.ReadyCheckDuration = time.Hour
 	host, err := m.CreateLobby("u1", "host", 4)
 	if err != nil {
 		t.Fatal(err)
 	}
-	state, err := m.StartGame(host.ID)
+	if _, err := m.JoinLobby("u2", "guest", host.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := m.BeginReadyCheck("u1", host.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	left, err := m.DeclineReadyCheck("u2", host.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if state.Mode != game.ModeM1P3B || state.Seats[0].Kind != game.SeatHuman {
-		t.Fatalf("mode=%s seats %+v", state.Mode, state.Seats)
+	if left == nil || left.Status != game.LobbyWaiting {
+		t.Fatalf("should return to waiting %+v", left)
 	}
-	if state.Seats[1].Kind != game.SeatBot || state.Seats[2].Kind != game.SeatBot || state.Seats[3].Kind != game.SeatBot {
-		t.Fatalf("expected 3 bots %+v", state.Seats)
+	if len(left.Players) != 1 || left.Players[0].UserID != "u1" {
+		t.Fatalf("decliner should be replaced/removed %+v", left.Players)
+	}
+
+	got, err := m.GetLobby(host.ID)
+	if err != nil || got.Status != game.LobbyWaiting {
+		t.Fatalf("game must not start: %v %+v", err, got)
+	}
+}
+
+func TestReadyCheckTimeoutRemovesUnaccepted(t *testing.T) {
+	m := game.NewLobbyManager()
+	m.ReadyCheckDuration = time.Hour
+	host, err := m.CreateLobby("u1", "host", 4)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := m.JoinLobby("u2", "guest", host.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := m.BeginReadyCheck("u1", host.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	left, err := m.ExpireReadyCheck(host.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if left == nil || left.Status != game.LobbyWaiting {
+		t.Fatalf("timeout must not start %+v", left)
+	}
+	if len(left.Players) != 1 || left.Players[0].UserID != "u1" {
+		t.Fatalf("unaccepted guest should be dropped %+v", left.Players)
+	}
+	if _, err := m.LobbyForUser("u2"); err == nil {
+		t.Fatal("u2 should no longer be in a lobby")
+	}
+}
+
+func TestReadyCheckLeaveAborts(t *testing.T) {
+	m := game.NewLobbyManager()
+	m.ReadyCheckDuration = time.Hour
+	host, err := m.CreateLobby("u1", "host", 4)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := m.JoinLobby("u2", "guest", host.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := m.BeginReadyCheck("u1", host.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	left, err := m.LeaveLobby("u2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if left.Status != game.LobbyWaiting || len(left.Players) != 1 {
+		t.Fatalf("leave during check should abort %+v", left)
 	}
 }
