@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package game;
+
+option go_package = "./pb";
+
+service GameEngine {
+  rpc ValidateAndMakeMove (MoveRequest) returns (GameStateResponse);
+  // Lobby action: CREATE_LOBBY, JOIN_LOBBY, TOGGLE_READY, LEAVE_LOBBY,
+  // BEGIN_READY_CHECK, ACCEPT_READY_CHECK, DECLINE_READY_CHECK.
+  rpc HandleLobbyAction (LobbyActionRequest) returns (ActionResponse);
+  // Game action: MAKE_MOVE, PASS_TURN, DISCONNECT.
+  rpc HandleGameAction (GameActionRequest) returns (ActionResponse);
+  rpc GetGameStateSnapshot (GameStateRequest) returns (ActionResponse);
+}
+
+message MoveRequest {
+  int32 user_id = 1;
+  string color = 2;
+  string piece_id = 3;
+  int32 origin_x = 4;
+  int32 origin_y = 5;
+  int32 rotation = 6;
+  bool flip = 7;
+}
+
+message GameStateResponse {
+  bool is_valid = 1;
+  string error_message = 2;
+  int32 current_turn_user_id = 3;
+  string state = 4;
+}
+
+message LobbyActionRequest {
+  int32 user_id = 1;
+  string action = 2;
+  string payload = 3;
+}
+
+message GameActionRequest {
+  int32 user_id = 1;
+  string action = 2;
+  string payload = 3;
+}
+
+message GameStateRequest {
+  int32 user_id = 1;
+}
+
+message ActionResponse {
+  bool success = 1;
+  string error_code = 2;
+  string message = 3;
+  string state = 4;
+}

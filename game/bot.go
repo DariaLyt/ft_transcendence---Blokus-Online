@@ -83,6 +83,29 @@ func (b *Bot) PlayBotTurnsIfNeeded(state *GameState) (int, error) {
 	return n, nil
 }
 
+func (b *Bot) Autofill(state *GameState) error {
+	steps := 0
+	for state != nil && state.Status == StatusActive {
+		ResolvePasses(state)
+		if state.Status != StatusActive {
+			break
+		}
+		if _, err := b.PlayTurn(state); err != nil {
+			ResolvePasses(state)
+			if state.Status == StatusActive && !state.Passed[state.CurrentColor] {
+				state.Passed[state.CurrentColor] = true
+				advanceTurn(state)
+				ResolvePasses(state)
+			}
+		}
+		steps++
+		if steps > 400 {
+			return fmt.Errorf("autofill safety limit reached")
+		}
+	}
+	return nil
+}
+
 func scoreMove(state *GameState, m Move, rng *rand.Rand) int {
 	size := PieceSize(PieceID(m.PieceID))
 	score := size * 40

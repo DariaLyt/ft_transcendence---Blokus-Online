@@ -217,6 +217,39 @@ func finishGame(state *GameState, lastMove Move) {
 	state.Scores = ComputeScores(state, lastMove)
 }
 
+func PassTurn(state *GameState, color Color) error {
+	if state == nil || state.Status != StatusActive {
+		return &MoveError{Code: ErrGameNotActive, Message: "game is not active"}
+	}
+	if color != state.CurrentColor {
+		return &MoveError{Code: ErrNotYourTurn, Message: "it is not this color's turn"}
+	}
+	if state.Passed[color] {
+		return &MoveError{Code: ErrColorPassed, Message: "this color has already passed"}
+	}
+	state.Passed[color] = true
+	advanceTurn(state)
+	ResolvePasses(state)
+	if state.Status == StatusActive && (allPassed(state) || !anyColorCanMove(state)) {
+		finishGame(state, Move{})
+	}
+	return nil
+}
+
+func ConvertSeatToBot(state *GameState, userID string) bool {
+	if state == nil || userID == "" {
+		return false
+	}
+	for i := range state.Seats {
+		if state.Seats[i].UserID != nil && *state.Seats[i].UserID == userID {
+			state.Seats[i].Kind = SeatBot
+			state.Seats[i].UserID = nil
+			return true
+		}
+	}
+	return false
+}
+
 func advanceTurn(state *GameState) {
 	state.CurrentColor = NextColor(state.CurrentColor)
 }

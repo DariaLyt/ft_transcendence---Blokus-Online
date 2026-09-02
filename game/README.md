@@ -265,12 +265,9 @@ Auth: Nest already authenticates the WebSocket. **Trust `user_id` from Nest** in
 
 ### Step 5 — Gameplay loop + finish callback
 
-- Turn timer (e.g. 60s): if no move, pass or abort per product decision (lobby doc currently says stop the game on timeout).
-- Disconnect: keep the seat for a grace period, then bot-takeover or forfeit.
-- On `StatusFinished`: compute scores (already in `ComputeScores`) and return them in the snapshot.
-- Finish callback to Nest: either Nest reads the finished snapshot after `HandleGameAction`, or add a later RPC / event. Prefer “Nest stores stats from the snapshot” so Go stays DB-free.
+**Done.** `GameEngine` owns the lobby manager, a 60s turn timer (`PassTurn` on expiry), and a 15s disconnect grace then bot takeover. Finished games include `scores` in the snapshot JSON. Nest stores stats from that snapshot; Go stays DB-free.
 
-**Done when:** `M1P3B` over gRPC plays to scores; illegal moves return engine codes (`EDGE_TOUCH_OWN`, …).
+**Done when:** `M1P3B` over gRPC plays to scores; illegal moves return engine codes (`EDGE_TOUCH_OWN`, …). Covered by `tests/grpc_flow_test.go`.
 
 ### Step 6 — Hand off to Nest / Docker (game folder only prepares)
 
