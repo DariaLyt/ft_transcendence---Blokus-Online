@@ -2,7 +2,7 @@ import type { AuthenticatedSocket } from './socketServer.js';
 import { IncomingFrameSchema, type GameModules } from '../types/gatewayTypes.js';
 import { sendToUser } from './broadcaster.js';
 import { z } from 'zod';
-import { sendMoveToGoEngine } from '../grpc/gameClient.js';
+import { sendMoveToGoEngine, sendLobbyAction } from '../grpc/gameClient.js';
 
 //temp
 const gameModules: GameModules = {
@@ -17,6 +17,48 @@ const gameModules: GameModules = {
 		return { status: 'NO_ACTIVE_GAME' };
 	},
 };
+
+function buildLobbyPayload(payload: any) {
+    switch (payload.type) {
+        case 'CREATE_LOBBY':
+            return {
+                responseType: 'LOBBY_CREATED',
+                data: { createLobby: { userName: payload.userName, maxPlayers: payload.maxPlayers } }
+            };
+        case 'JOIN_LOBBY':
+            return {
+                responseType: 'LOBBY_JOINED',
+                data: { joinLobby: { userName: payload.userName, lobbyId: payload.lobbyId } }
+            };
+        case 'TOGGLE_READY':
+            return {
+                responseType: 'READY_TOGGLED',
+                data: { toggleReady: { lobbyId: payload.lobbyId } }
+            };
+        case 'LEAVE_LOBBY':
+            return {
+                responseType: 'LOBBY_LEFT',
+                data: { leaveLobby: {} }
+            };
+        case 'BEGIN_READY_CHECK':
+            return {
+                responseType: 'READY_CHECK_BEGUN',
+                data: { beginReadyCheck: { lobbyId: payload.lobbyId } }
+            };
+        case 'ACCEPT_READY_CHECK':
+            return {
+                responseType: 'READY_CHECK_ACCEPTED',
+                data: { acceptReadyCheck: { lobbyId: payload.lobbyId } }
+            };
+        case 'DECLINE_READY_CHECK':
+            return {
+                responseType: 'READY_CHECK_DECLINED',
+                data: { declineReadyCheck: { lobbyId: payload.lobbyId } }
+            };
+        default:
+            return null;
+    }
+}
 
 export function handleIncomingSocketMessage(
 	ws: AuthenticatedSocket,
@@ -46,24 +88,32 @@ export function handleIncomingSocketMessage(
 
 		switch (frame.category) {
 			case 'LOBBY': {
-				// if (frame.payload.type == 'CREATE_LOBBY') {
-				// 	sendLobbyCreation({
-						
-				// 	})
-				// }
+				const action = buildLobbyPayload(frame.payload);
+
+				if (!action) {
+					sendToUser(userId, 'ERROR', { message: 'Unknown lobby action type' });
+					break;
+				}
+
+				sendLobbyAction(userId, action.data)
+				.then((goResponse) => {
+					console.log('[gRPC Success from Go]:', goResponse);
+					sendToUser(userId, action.responseType, goResponse);
+				})
+				.catch((err) => {
+					console.error('[gRPC Error from Go]:', err.message);
+					sendToUser(userId, 'ERROR', {
+						message: 'Game engine communication failed',
+					});
+				});
+				
 				break;
 			}
 
 			case 'GAME': {
 				if (frame.action === 'MAKE_MOVE') {
-					// const userId = ws.userId;
-					// if (!userId) {
-					// 	console.error('[WS Error]: User ID is missing.');
-					// 	break;
-					// }
-
 					sendMoveToGoEngine({
-						userId: userId,
+						userId,
 						color: frame.payload.color,
 						pieceId: frame.payload.pieceId,
 						originX: frame.payload.originX,
