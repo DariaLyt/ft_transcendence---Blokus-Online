@@ -31,12 +31,6 @@ message GameStateResponse {
   string state = 4;
 }
 
-message GameActionRequest {
-  int32 user_id = 1;
-  string action = 2;
-  string payload = 3;
-}
-
 message GameStateRequest {
   int32 user_id = 1;
 }
@@ -75,5 +69,30 @@ message LobbyActionRequest {
     LobbyIdOnlyPayload begin_ready_check = 6;
     LobbyIdOnlyPayload accept_ready_check = 7;
     LobbyIdOnlyPayload decline_ready_check = 8;
+  }
+}
+
+message MakeMovePayload {
+  string color = 1;
+  string piece_id = 2;
+  int32 origin_x = 3;
+  int32 origin_y = 4;
+  int32 rotation = 5;
+  bool flip = 6;
+}
+
+message PassTurnPayload {
+  string color = 1;
+}
+
+message DisconnectPayload {}
+
+message GameActionRequest {
+  int32 user_id = 1;
+
+  oneof payload {
+    MakeMovePayload make_move = 2;
+    PassTurnPayload pass_turn = 3;
+    DisconnectPayload disconnect = 4;
   }
 }

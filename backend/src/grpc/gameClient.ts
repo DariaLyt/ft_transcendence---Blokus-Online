@@ -67,3 +67,31 @@ export function sendLobbyAction(
         });
     });
 }
+
+export function sendGameAction(
+    userId: number,
+    payload: Record<string, any>
+): Promise<any> {
+    return new Promise((resolve, reject) => {
+        const request = {
+            userId,
+            ...payload,
+        };
+
+        gameClient.HandleGameAction(request, (err: any, response: any) => {
+            if (err) return reject(err);
+            resolve(response);
+        });
+    });
+}
+
+export function getGameState(userId: number): Promise<any> {
+    return new Promise((resolve, reject) => {
+        const request = {userId};
+
+        gameClient.GetGameStateSnapshot(request, (err: any, response: any) => {
+            if (err) return reject(err);
+            resolve(response);
+        });
+    });
+}

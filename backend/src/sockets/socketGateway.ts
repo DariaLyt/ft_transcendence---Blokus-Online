@@ -2,21 +2,21 @@ import type { AuthenticatedSocket } from './socketServer.js';
 import { IncomingFrameSchema, type GameModules } from '../types/gatewayTypes.js';
 import { sendToUser } from './broadcaster.js';
 import { z } from 'zod';
-import { sendMoveToGoEngine, sendLobbyAction } from '../grpc/gameClient.js';
+import { sendLobbyAction, sendGameAction, getGameState } from '../grpc/gameClient.js';
 
 //temp
-const gameModules: GameModules = {
-	handleLobbyAction: (userId, action, payload) => {
-		console.log(`[Lobby Module Mock] User ${userId} -> Action: ${action}`, payload);
-	},
-	handleGameAction: (userId, action, payload) => {
-		console.log(`[Game Module Mock] User ${userId} -> Action: ${action}`, payload);
-	},
-	getGameStateSnapshot: (userId) => {
-		console.log(`[Game Snapshot Mock] Fetching state for User ${userId}`);
-		return { status: 'NO_ACTIVE_GAME' };
-	},
-};
+// const gameModules: GameModules = {
+// 	handleLobbyAction: (userId, action, payload) => {
+// 		console.log(`[Lobby Module Mock] User ${userId} -> Action: ${action}`, payload);
+// 	},
+// 	handleGameAction: (userId, action, payload) => {
+// 		console.log(`[Game Module Mock] User ${userId} -> Action: ${action}`, payload);
+// 	},
+// 	getGameStateSnapshot: (userId) => {
+// 		console.log(`[Game Snapshot Mock] Fetching state for User ${userId}`);
+// 		return { status: 'NO_ACTIVE_GAME' };
+// 	},
+// };
 
 function buildLobbyPayload(payload: any) {
     switch (payload.type) {
@@ -60,10 +60,39 @@ function buildLobbyPayload(payload: any) {
     }
 }
 
+function buildGamePayload(payload: any) {
+    switch (payload.type) {
+        case 'MAKE_MOVE':
+            return {
+                responseType: 'MOVE_MADE',
+                data: { makeMove: { 
+					color: payload.color, 
+					pieceId: payload.pieceId,
+					originX: payload.originX,
+					originY: payload.originY,
+					rotation: payload.rotation,
+					flip: payload.flip 
+				} }
+            };
+        case 'PASS_TURN':
+            return {
+                responseType: 'TURN_PASSED',
+                data: { passTurn: { color: payload.color } }
+            };
+        case 'DISCONNECT':
+            return {
+                responseType: 'DISCONNECTED',
+                data: { disconnect: {} }
+            };
+        default:
+            return null;
+    }
+}
+
 export function handleIncomingSocketMessage(
 	ws: AuthenticatedSocket,
-	rawData: string,
-	modules: GameModules = gameModules
+	rawData: string
+	// modules: GameModules = gameModules
 ) {
 	if (!ws.userId) return;
 
@@ -111,33 +140,71 @@ export function handleIncomingSocketMessage(
 			}
 
 			case 'GAME': {
-				if (frame.action === 'MAKE_MOVE') {
-					sendMoveToGoEngine({
-						userId,
-						color: frame.payload.color,
-						pieceId: frame.payload.pieceId,
-						originX: frame.payload.originX,
-						originY: frame.payload.originY,
-						rotation: frame.payload.rotation || 0,
-						flip: frame.payload.flip || false,
-					})
-					.then((goResponse) => {
-						console.log('[gRPC Success from Go]:', goResponse);
-						sendToUser(userId, 'MOVE_RESULT', goResponse);
-					})
-					.catch((err) => {
-						console.error('[gRPC Error from Go]:', err.message);
-						sendToUser(userId, 'ERROR', {
-							message: 'Game engine communication failed',
-						});
-					});
+				const action = buildGamePayload(frame.payload);
+
+				if (!action) {
+					sendToUser(userId, 'ERROR', { message: 'Unknown game action type' });
+					break;
 				}
+
+				sendGameAction(userId, action.data)
+				.then((goResponse) => {
+					console.log('[gRPC Success from Go]:', goResponse);
+					// if (!goResponse.success) {
+					// 	sendToUser(userId, 'GAME_ERROR', {
+					// 		code: goResponse.errorCode,
+					// 		message: goResponse.message,
+					// 		state: goResponse.state
+					// 	});
+					// 	return;
+					// }
+					sendToUser(userId, action.responseType, goResponse);
+				})
+				.catch((err) => {
+					console.error('[gRPC Error from Go]:', err.message);
+					sendToUser(userId, 'ERROR', {
+						message: 'Game engine communication failed',
+					});
+				});
+
+				// if (frame.action === 'MAKE_MOVE') {
+				// 	sendMoveToGoEngine({
+				// 		userId,
+				// 		color: frame.payload.color,
+				// 		pieceId: frame.payload.pieceId,
+				// 		originX: frame.payload.originX,
+				// 		originY: frame.payload.originY,
+				// 		rotation: frame.payload.rotation || 0,
+				// 		flip: frame.payload.flip || false,
+				// 	})
+				// 	.then((goResponse) => {
+				// 		console.log('[gRPC Success from Go]:', goResponse);
+				// 		sendToUser(userId, 'MOVE_RESULT', goResponse);
+				// 	})
+				// 	.catch((err) => {
+				// 		console.error('[gRPC Error from Go]:', err.message);
+				// 		sendToUser(userId, 'ERROR', {
+				// 			message: 'Game engine communication failed',
+				// 		});
+				// 	});
+				// }
+
 				break;
 			}
 
 			case 'RESYNC': {
-				const snapshot = modules.getGameStateSnapshot(ws.userId);
-				sendToUser(ws.userId, 'GAME_STATE_SNAPSHOT', snapshot);
+				getGameState(userId)
+				.then((goResponse) => {
+					console.log('[gRPC Success from Go]:', goResponse);
+					sendToUser(userId, 'GAME_STATE_SNAPSHOT', goResponse);
+				})
+				.catch((err) => {
+					console.error('[gRPC Error from Go]:', err.message);
+					sendToUser(userId, 'ERROR', {
+						message: 'Game engine communication failed',
+					});
+				});
+
 				break;
 			}
 		}

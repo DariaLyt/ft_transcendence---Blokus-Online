@@ -36,28 +36,40 @@ export const declineReadyCheckSchema = z.object({
 	lobbyId: z.uuid(),
 });
 
-export const GameActionSchema = z.object({
-	category: z.literal('GAME'),
-	action: z.enum(['MAKE_MOVE', 'PASS_TURN']), //temp
-	payload: z.record(z.string(), z.any()), //temp
-});
+// export const GameActionSchema = z.object({
+// 	category: z.literal('GAME'),
+// 	action: z.enum(['MAKE_MOVE', 'PASS_TURN']), //temp
+// 	payload: z.record(z.string(), z.any()), //temp
+// });
 
-// const GameActionSchema = z.discriminatedUnion('action', [
-//   z.object({
-//     category: z.literal('GAME'),
-//     action: z.literal('MAKE_MOVE'),
-//     payload: z.object({
-//       from: z.string(),
-//       to: z.string(),
-//     }),
-//   }),
+const GameActionSchema = z.discriminatedUnion('action', [
+	z.object({
+		category: z.literal('GAME'),
+		action: z.literal('MAKE_MOVE'),
+		payload: z.object({
+			color: z.string(),
+			pieceId: z.string(),
+			originX: z.number().int(),
+			originY: z.number().int(),
+			rotation: z.number().int(),
+			flip: z.boolean(),
+		}),
+	}),
 
-//   z.object({
-//     category: z.literal('GAME'),
-//     action: z.literal('PASS_TURN'),
-//     payload: z.object({}),
-//   }),
-// ]);
+	z.object({
+		category: z.literal('GAME'),
+		action: z.literal('PASS_TURN'),
+		payload: z.object({
+			color: z.string(),
+		}),
+	}),
+
+	z.object({
+		category: z.literal('GAME'),
+		action: z.literal('DISCONNECT'),
+		payload: z.object({}),
+	}),
+]);
 
 export const ResyncActionSchema = z.object({
   	category: z.literal('RESYNC'),
