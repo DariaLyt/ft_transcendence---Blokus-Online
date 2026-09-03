@@ -6,7 +6,8 @@
   "scripts": {
     "predev": "node -e \"import('fs').then(fs => { if (!fs.existsSync('./certs/cert.pem')) import('child_process').then(cp => cp.execSync('mkdir -p certs && openssl req -x509 -newkey rsa:2048 -keyout certs/key.pem -out certs/cert.pem -days 365 -nodes -subj \\\"/CN=localhost\\\"')); })\"",
     "dev": "tsx watch src/server.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "proto:generate": "npx protoc -I src/proto --plugin=protoc-gen-ts_proto=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=src/proto --ts_proto_opt=esModuleInterop=true,oneof=unions src/proto/*.proto"
   },
   "keywords": [],
   "author": "",
@@ -14,7 +15,6 @@
   "type": "module",
   "dependencies": {
     "@grpc/grpc-js": "^1.14.4",
-    "@grpc/proto-loader": "^0.8.1",
     "bcrypt": "^6.0.0",
     "cookie": "^2.0.1",
     "cookie-parser": "^1.4.7",
@@ -39,6 +39,8 @@
     "@types/pg": "^8.23.1",
     "@types/ws": "^8.18.1",
     "drizzle-kit": "^0.31.10",
+    "protoc-gen-ts": "^0.8.7",
+    "ts-proto": "^2.12.1",
     "tsx": "^4.23.12",
     "typescript": "^7.0.2"
   },

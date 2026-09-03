@@ -49,3 +49,7 @@ export function sendMoveToGoEngine(moveData: {
 		});
 	});
 }
+
+// export function sendLobbyCreation(createLobby: {
+	
+// })

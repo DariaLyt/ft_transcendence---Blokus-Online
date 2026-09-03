@@ -31,12 +31,6 @@ message GameStateResponse {
   string state = 4;
 }
 
-message LobbyActionRequest {
-  int32 user_id = 1;
-  string action = 2;
-  string payload = 3;
-}
-
 message GameActionRequest {
   int32 user_id = 1;
   string action = 2;
@@ -52,4 +46,34 @@ message ActionResponse {
   string error_code = 2;
   string message = 3;
   string state = 4;
+}
+
+message CreateLobbyPayload {
+  string user_name = 1;
+  int32 max_players = 2;
+}
+
+message JoinLobbyPayload {
+  string user_name = 1;
+  string lobby_id = 2;
+}
+
+message LobbyIdOnlyPayload {
+  string lobby_id = 1;
+}
+
+message EmptyPayload {}
+
+message LobbyActionRequest {
+  int32 user_id = 1;
+
+  oneof payload {
+    CreateLobbyPayload create_lobby = 2;
+    JoinLobbyPayload join_lobby = 3;
+    LobbyIdOnlyPayload toggle_ready = 4;
+    EmptyPayload leave_lobby = 5;
+    LobbyIdOnlyPayload begin_ready_check = 6;
+    LobbyIdOnlyPayload accept_ready_check = 7;
+    LobbyIdOnlyPayload decline_ready_check = 8;
+  }
 }

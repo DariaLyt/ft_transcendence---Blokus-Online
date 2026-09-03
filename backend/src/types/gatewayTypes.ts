@@ -2,11 +2,13 @@ import { z } from 'zod';
 
 export const createLobbySchema = z.object({
 	type: z.literal('CREATE_LOBBY'),
+	userName: z.string(),
 	maxPlayers: z.number().int().min(2).max(4).default(4),
 });
 
 export const joinLobbySchema = z.object({
 	type: z.literal('JOIN_LOBBY'),
+	userName: z.string(),
 	lobbyId: z.uuid(),
 });
 
@@ -17,6 +19,20 @@ export const toggleReadySchema =  z.object({
 
 export const leaveLobbySchema = z.object({
 	type: z.literal('LEAVE_LOBBY'),
+});
+
+export const beginReadyCheckSchema = z.object({
+	type: z.literal('BEGIN_READY_CHECK'),
+	lobbyId: z.uuid(),
+});
+
+export const acceptReadyCheckSchema = z.object({
+	type: z.literal('ACCEPT_READY_CHECK'),
+	lobbyId: z.uuid(),
+});
+
+export const declineReadyCheckSchema = z.object({
+	type: z.literal('DECLINE_READY_CHECK'),
 	lobbyId: z.uuid(),
 });
 
@@ -54,6 +70,9 @@ export const LobbyFrameSchema = z.object({
 		joinLobbySchema,
 		toggleReadySchema,
 		leaveLobbySchema,
+		beginReadyCheckSchema,
+		acceptReadyCheckSchema,
+		declineReadyCheckSchema,
 	]),
 });
 

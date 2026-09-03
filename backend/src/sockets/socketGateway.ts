@@ -38,20 +38,29 @@ export function handleIncomingSocketMessage(
 
 		const frame = parseResult.data;
 
+		const userId = ws.userId;
+		if (!userId) {
+			console.error('[WS Error]: User ID is missing.');
+			return;
+		}
+
 		switch (frame.category) {
 			case 'LOBBY': {
-				const action = frame.payload.type;
-				modules.handleLobbyAction(ws.userId, action, frame.payload);
+				// if (frame.payload.type == 'CREATE_LOBBY') {
+				// 	sendLobbyCreation({
+						
+				// 	})
+				// }
 				break;
 			}
 
 			case 'GAME': {
 				if (frame.action === 'MAKE_MOVE') {
-					const userId = ws.userId;
-					if (!userId) {
-						console.error('[WS Error]: User ID is missing.');
-						break;
-					}
+					// const userId = ws.userId;
+					// if (!userId) {
+					// 	console.error('[WS Error]: User ID is missing.');
+					// 	break;
+					// }
 
 					sendMoveToGoEngine({
 						userId: userId,
