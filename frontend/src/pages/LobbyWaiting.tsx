@@ -126,7 +126,7 @@ export default function LobbyWaiting() {
 							<div className="flex items-center gap-4">
 								{player.isReady && (
 									<span className="text-sm text-green-600">
-										Ready ✓
+										Joined ✓
 									</span>
 								)}
 								{player.isHost && (
