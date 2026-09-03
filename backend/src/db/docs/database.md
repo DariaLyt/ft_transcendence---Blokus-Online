@@ -102,17 +102,17 @@ Connects games to tournaments.
 
 ## Relationships
 
-BASICS
+BASICS:
 - A user can participate in many games.
 - A game can have multiple players.
-- `game_players` connects users to games.
+- game_players connects users to games.
 - A user can have friendships with other users.
 - A user has player statistics.
 
 TOURNAMENT:
 - A user can participate in many tournaments.
 - A tournament can have multiple players.
-- `tournament_players` connects users to tournaments.
+- tournament_players connects users to tournaments.
 - A tournament can contain multiple matches.
 - Each tournament match references a game.
 
