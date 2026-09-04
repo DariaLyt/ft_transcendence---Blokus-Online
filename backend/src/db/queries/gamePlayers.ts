@@ -1,4 +1,4 @@
-//addPlayerToGame
+// addPlayerToGame
 // findPlayersByGameId
 // findPlayerInGame
 // updatePlayerScore
