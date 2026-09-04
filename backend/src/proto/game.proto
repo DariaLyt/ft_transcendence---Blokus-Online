@@ -5,21 +5,94 @@ package game;
 option go_package = "./pb";
 
 service GameEngine {
-  	rpc ValidateAndMakeMove (MoveRequest) returns (GameStateResponse);
+  rpc ValidateAndMakeMove(MoveRequest) returns (GameStateResponse);
+  // Lobby action: CREATE_LOBBY, JOIN_LOBBY, TOGGLE_READY, LEAVE_LOBBY,
+  // BEGIN_READY_CHECK, ACCEPT_READY_CHECK, DECLINE_READY_CHECK.
+  rpc HandleLobbyAction(LobbyActionRequest) returns (ActionResponse);
+  // Game action: MAKE_MOVE, PASS_TURN, DISCONNECT.
+  rpc HandleGameAction(GameActionRequest) returns (ActionResponse);
+  rpc GetGameStateSnapshot(GameStateRequest) returns (ActionResponse);
 }
 
 message MoveRequest {
-	int32 user_id = 1;
-	string color = 2;
-	string piece_id = 3;
-	int32 origin_x = 4;
-	int32 origin_y = 5;
-	int32 rotation = 6;
-	bool flip = 7;
+  int32 user_id = 1;
+  string color = 2;
+  string piece_id = 3;
+  int32 origin_x = 4;
+  int32 origin_y = 5;
+  int32 rotation = 6;
+  bool flip = 7;
 }
 
 message GameStateResponse {
-	bool is_valid = 1;
-	string error_message = 2;
-	int32 current_turn_user_id = 3;
+  bool is_valid = 1;
+  string error_message = 2;
+  int32 current_turn_user_id = 3;
+  string state = 4;
+}
+
+message GameStateRequest {
+  int32 user_id = 1;
+}
+
+message ActionResponse {
+  bool success = 1;
+  string error_code = 2;
+  string message = 3;
+  string state = 4;
+}
+
+message CreateLobbyPayload {
+  string user_name = 1;
+  int32 max_players = 2;
+}
+
+message JoinLobbyPayload {
+  string user_name = 1;
+  string lobby_id = 2;
+}
+
+message LobbyIdOnlyPayload {
+  string lobby_id = 1;
+}
+
+message EmptyPayload {}
+
+message LobbyActionRequest {
+  int32 user_id = 1;
+
+  oneof payload {
+    CreateLobbyPayload create_lobby = 2;
+    JoinLobbyPayload join_lobby = 3;
+    LobbyIdOnlyPayload toggle_ready = 4;
+    EmptyPayload leave_lobby = 5;
+    LobbyIdOnlyPayload begin_ready_check = 6;
+    LobbyIdOnlyPayload accept_ready_check = 7;
+    LobbyIdOnlyPayload decline_ready_check = 8;
+  }
+}
+
+message MakeMovePayload {
+  string color = 1;
+  string piece_id = 2;
+  int32 origin_x = 3;
+  int32 origin_y = 4;
+  int32 rotation = 5;
+  bool flip = 6;
+}
+
+message PassTurnPayload {
+  string color = 1;
+}
+
+message DisconnectPayload {}
+
+message GameActionRequest {
+  int32 user_id = 1;
+
+  oneof payload {
+    MakeMovePayload make_move = 2;
+    PassTurnPayload pass_turn = 3;
+    DisconnectPayload disconnect = 4;
+  }
 }

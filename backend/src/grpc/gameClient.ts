@@ -9,7 +9,8 @@ const __dirname = path.dirname(__filename);
 const PROTO_PATH = path.resolve(__dirname, '../proto/game.proto');
 
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
-	keepCase: true,
+	oneofs: true,
+    defaults: true,
 });
 
 const gameProto = (grpc.loadPackageDefinition(packageDefinition) as any).game;
@@ -32,11 +33,11 @@ export function sendMoveToGoEngine(moveData: {
 }): Promise<any> {
 	return new Promise((resolve, reject) => {
 		const payload = {
-			user_id: moveData.userId,
+			userId: moveData.userId,
 			color: moveData.color,
-			piece_id: moveData.pieceId,
-			origin_x: moveData.originX,
-			origin_y: moveData.originY,
+			pieceId: moveData.pieceId,
+			originX: moveData.originX,
+			originY: moveData.originY,
 			rotation: moveData.rotation,
 			flip: moveData.flip,
 		};
@@ -48,4 +49,49 @@ export function sendMoveToGoEngine(moveData: {
 			resolve(response);
 		});
 	});
+}
+
+export function sendLobbyAction(
+    userId: number,
+    payload: Record<string, any>
+): Promise<any> {
+    return new Promise((resolve, reject) => {
+        const request = {
+            userId,
+            ...payload,
+        };
+
+        gameClient.HandleLobbyAction(request, (err: any, response: any) => {
+            if (err) return reject(err);
+            resolve(response);
+        });
+    });
+}
+
+export function sendGameAction(
+    userId: number,
+    payload: Record<string, any>
+): Promise<any> {
+    return new Promise((resolve, reject) => {
+        const request = {
+            userId,
+            ...payload,
+        };
+
+        gameClient.HandleGameAction(request, (err: any, response: any) => {
+            if (err) return reject(err);
+            resolve(response);
+        });
+    });
+}
+
+export function getGameState(userId: number): Promise<any> {
+    return new Promise((resolve, reject) => {
+        const request = {userId};
+
+        gameClient.GetGameStateSnapshot(request, (err: any, response: any) => {
+            if (err) return reject(err);
+            resolve(response);
+        });
+    });
 }
