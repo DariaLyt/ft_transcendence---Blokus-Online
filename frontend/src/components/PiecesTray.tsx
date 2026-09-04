@@ -1,4 +1,5 @@
 import { PIECES } from '../data/pieces';
+import GamePiece from './GamePiece';
 import type { GameState } from '../data/game';
 import { useState } from 'react';
 
@@ -55,22 +56,10 @@ export default function PiecesTray({ gameState, currentUserId }: PiecesTrayProps
 										: ''
 								}`}
                             	>
-            					{piece.shape.map((row, rowIndex) => (
-                					<div key={rowIndex} className="flex flex-row">
-                    					{row.map((cell, cellIndex) => (
-                        					<div
-                            					key={cellIndex}
-												className={`w-6 h-6 box-border ${ // draws the shape and also puts it in gray if needed
-    												cell === 1
-        												? isAvailable
-            												? 'bg-blue-600 border border-blue-700'
-            												: 'bg-slate-300 border border-slate-400'
-        												: 'opacity-0'
-												}`}
-											/>
-                    					))}
-                					</div>
-            					))}
+									<GamePiece
+										piece={piece}
+										isAvailable={isAvailable}
+									/>
         					</div>
     					);
 					})}
