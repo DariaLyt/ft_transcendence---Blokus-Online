@@ -60,8 +60,9 @@ function buildLobbyPayload(payload: any) {
     }
 }
 
-function buildGamePayload(payload: any) {
-    switch (payload.type) {
+function buildGamePayload(frame: any) {
+	const { action, payload } = frame;
+    switch (action) {
         case 'MAKE_MOVE':
             return {
                 responseType: 'MOVE_MADE',
