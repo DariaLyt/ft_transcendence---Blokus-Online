@@ -217,6 +217,39 @@ func finishGame(state *GameState, lastMove Move) {
 	state.Scores = ComputeScores(state, lastMove)
 }
 
+func PassTurn(state *GameState, color Color) error {
+	if state == nil || state.Status != StatusActive {
+		return &MoveError{Code: ErrGameNotActive, Message: "game is not active"}
+	}
+	if color != state.CurrentColor {
+		return &MoveError{Code: ErrNotYourTurn, Message: "it is not this color's turn"}
+	}
+	if state.Passed[color] {
+		return &MoveError{Code: ErrColorPassed, Message: "this color has already passed"}
+	}
+	state.Passed[color] = true
+	advanceTurn(state)
+	ResolvePasses(state)
+	if state.Status == StatusActive && (allPassed(state) || !anyColorCanMove(state)) {
+		finishGame(state, Move{})
+	}
+	return nil
+}
+
+func ConvertSeatToBot(state *GameState, userID string) bool {
+	if state == nil || userID == "" {
+		return false
+	}
+	for i := range state.Seats {
+		if state.Seats[i].UserID != nil && *state.Seats[i].UserID == userID {
+			state.Seats[i].Kind = SeatBot
+			state.Seats[i].UserID = nil
+			return true
+		}
+	}
+	return false
+}
+
 func advanceTurn(state *GameState) {
 	state.CurrentColor = NextColor(state.CurrentColor)
 }
@@ -298,6 +331,14 @@ func orientationCovers(local []Cell, originX, originY int, target Cell) bool {
 }
 
 func NewActiveGame(id string, mode GameMode, seats []Seat) *GameState {
+	return newGame(id, mode, seats, StatusActive)
+}
+
+func NewLobbyGame(id string, mode GameMode, seats []Seat) *GameState {
+	return newGame(id, mode, seats, StatusLobby)
+}
+
+func newGame(id string, mode GameMode, seats []Seat, status GameStatus) *GameState {
 	return &GameState{
 		ID:           id,
 		Mode:         mode,
@@ -306,6 +347,6 @@ func NewActiveGame(id string, mode GameMode, seats []Seat) *GameState {
 		Remaining:    NewFullRemaining(),
 		CurrentColor: ColorBlue,
 		Passed:       NewEmptyPassed(),
-		Status:       StatusActive,
+		Status:       status,
 	}
 }
