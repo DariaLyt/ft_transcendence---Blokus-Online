@@ -2,7 +2,9 @@ backend/node_modules/
 backend/dist/
 backend/certs/
 backend/docs/test/
-backend/cookies.txt
+backen/cookies./txt
+
+cookies.txt
 
 frontend/node_modules
 
