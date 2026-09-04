@@ -19,6 +19,15 @@ services:
       retries: 5
     restart: unless-stopped
 
+  game:
+    build:
+      context: ./game
+      dockerfile: Dockerfile
+    container_name: game
+    expose:
+      - "50051"
+    restart: unless-stopped
+
   backend:
     build:
       context: ./backend
@@ -35,6 +44,7 @@ services:
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
+      GO_ENGINE_URL: game:50051
     volumes:
       - ./backend:/app           
       - /app/node_modules  
@@ -42,6 +52,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      game:
+        condition: service_started
     restart: unless-stopped
 
   frontend:
