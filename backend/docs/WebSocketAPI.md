@@ -9,6 +9,7 @@
   "category": "LOBBY",
   "payload": {
     "type": "CREATE_LOBBY",
+	"userId": 1,
     "userName": "Alice",
     "maxPlayers": 4
   }
@@ -22,6 +23,7 @@
   "category": "LOBBY",
   "payload": {
     "type": "JOIN_LOBBY",
+	"userId": 1,
     "userName": "Alice",
     "lobbyId": "lobby-uuid"
   }
@@ -35,6 +37,7 @@
   "category": "LOBBY",
   "payload": {
     "type": "TOGGLE_READY",
+	"userId": 1,
     "lobbyId": "lobby-uuid"
   }
 }
@@ -46,7 +49,8 @@
 {
   "category": "LOBBY",
   "payload": {
-    "type": "LEAVE_LOBBY"
+    "type": "LEAVE_LOBBY",
+	"userId": 1,
   }
 }
 ```
@@ -58,6 +62,7 @@
   "category": "LOBBY",
   "payload": {
     "type": "BEGIN_READY_CHECK",
+	"userId": 1,
     "lobbyId": "lobby-uuid"
   }
 }
@@ -70,6 +75,7 @@
   "category": "LOBBY",
   "payload": {
     "type": "ACCEPT_READY_CHECK",
+	"userId": 1,
     "lobbyId": "lobby-uuid"
   }
 }
@@ -82,6 +88,7 @@
   "category": "LOBBY",
   "payload": {
     "type": "DECLINE_READY_CHECK",
+	"userId": 1,
     "lobbyId": "lobby-uuid"
   }
 }
@@ -98,6 +105,7 @@
   "category": "GAME",
   "action": "MAKE_MOVE",
   "payload": {
+	"userId": 1,
     "color": "red",
     "pieceId": "piece_01",
     "originX": 3,
@@ -115,6 +123,7 @@
   "category": "GAME",
   "action": "PASS_TURN",
   "payload": {
+	"userId": 1,
     "color": "red"
   }
 }
@@ -126,7 +135,9 @@
 {
   "category": "GAME",
   "action": "DISCONNECT",
-  "payload": {}
+  "payload": {
+	"userId": 1
+  }
 }
 ```
 
