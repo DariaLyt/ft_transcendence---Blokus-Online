@@ -181,18 +181,342 @@ func (x *GameStateResponse) GetState() string {
 	return ""
 }
 
-type LobbyActionRequest struct {
+type CreateLobby struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserId        int32                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	Action        string                 `protobuf:"bytes,2,opt,name=action,proto3" json:"action,omitempty"`
-	Payload       string                 `protobuf:"bytes,3,opt,name=payload,proto3" json:"payload,omitempty"`
+	MaxPlayers    int32                  `protobuf:"varint,1,opt,name=max_players,json=maxPlayers,proto3" json:"max_players,omitempty"`
+	Username      string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateLobby) Reset() {
+	*x = CreateLobby{}
+	mi := &file_game_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateLobby) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateLobby) ProtoMessage() {}
+
+func (x *CreateLobby) ProtoReflect() protoreflect.Message {
+	mi := &file_game_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateLobby.ProtoReflect.Descriptor instead.
+func (*CreateLobby) Descriptor() ([]byte, []int) {
+	return file_game_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *CreateLobby) GetMaxPlayers() int32 {
+	if x != nil {
+		return x.MaxPlayers
+	}
+	return 0
+}
+
+func (x *CreateLobby) GetUsername() string {
+	if x != nil {
+		return x.Username
+	}
+	return ""
+}
+
+type JoinLobby struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	LobbyId       string                 `protobuf:"bytes,1,opt,name=lobby_id,json=lobbyId,proto3" json:"lobby_id,omitempty"`
+	Username      string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *JoinLobby) Reset() {
+	*x = JoinLobby{}
+	mi := &file_game_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *JoinLobby) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*JoinLobby) ProtoMessage() {}
+
+func (x *JoinLobby) ProtoReflect() protoreflect.Message {
+	mi := &file_game_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use JoinLobby.ProtoReflect.Descriptor instead.
+func (*JoinLobby) Descriptor() ([]byte, []int) {
+	return file_game_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *JoinLobby) GetLobbyId() string {
+	if x != nil {
+		return x.LobbyId
+	}
+	return ""
+}
+
+func (x *JoinLobby) GetUsername() string {
+	if x != nil {
+		return x.Username
+	}
+	return ""
+}
+
+type ToggleReady struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	LobbyId       string                 `protobuf:"bytes,1,opt,name=lobby_id,json=lobbyId,proto3" json:"lobby_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ToggleReady) Reset() {
+	*x = ToggleReady{}
+	mi := &file_game_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ToggleReady) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ToggleReady) ProtoMessage() {}
+
+func (x *ToggleReady) ProtoReflect() protoreflect.Message {
+	mi := &file_game_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ToggleReady.ProtoReflect.Descriptor instead.
+func (*ToggleReady) Descriptor() ([]byte, []int) {
+	return file_game_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *ToggleReady) GetLobbyId() string {
+	if x != nil {
+		return x.LobbyId
+	}
+	return ""
+}
+
+type LeaveLobby struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LeaveLobby) Reset() {
+	*x = LeaveLobby{}
+	mi := &file_game_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LeaveLobby) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LeaveLobby) ProtoMessage() {}
+
+func (x *LeaveLobby) ProtoReflect() protoreflect.Message {
+	mi := &file_game_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LeaveLobby.ProtoReflect.Descriptor instead.
+func (*LeaveLobby) Descriptor() ([]byte, []int) {
+	return file_game_proto_rawDescGZIP(), []int{5}
+}
+
+type BeginReadyCheck struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	LobbyId       string                 `protobuf:"bytes,1,opt,name=lobby_id,json=lobbyId,proto3" json:"lobby_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BeginReadyCheck) Reset() {
+	*x = BeginReadyCheck{}
+	mi := &file_game_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BeginReadyCheck) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BeginReadyCheck) ProtoMessage() {}
+
+func (x *BeginReadyCheck) ProtoReflect() protoreflect.Message {
+	mi := &file_game_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BeginReadyCheck.ProtoReflect.Descriptor instead.
+func (*BeginReadyCheck) Descriptor() ([]byte, []int) {
+	return file_game_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *BeginReadyCheck) GetLobbyId() string {
+	if x != nil {
+		return x.LobbyId
+	}
+	return ""
+}
+
+type AcceptReadyCheck struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	LobbyId       string                 `protobuf:"bytes,1,opt,name=lobby_id,json=lobbyId,proto3" json:"lobby_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AcceptReadyCheck) Reset() {
+	*x = AcceptReadyCheck{}
+	mi := &file_game_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AcceptReadyCheck) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AcceptReadyCheck) ProtoMessage() {}
+
+func (x *AcceptReadyCheck) ProtoReflect() protoreflect.Message {
+	mi := &file_game_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AcceptReadyCheck.ProtoReflect.Descriptor instead.
+func (*AcceptReadyCheck) Descriptor() ([]byte, []int) {
+	return file_game_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *AcceptReadyCheck) GetLobbyId() string {
+	if x != nil {
+		return x.LobbyId
+	}
+	return ""
+}
+
+type DeclineReadyCheck struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	LobbyId       string                 `protobuf:"bytes,1,opt,name=lobby_id,json=lobbyId,proto3" json:"lobby_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeclineReadyCheck) Reset() {
+	*x = DeclineReadyCheck{}
+	mi := &file_game_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeclineReadyCheck) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeclineReadyCheck) ProtoMessage() {}
+
+func (x *DeclineReadyCheck) ProtoReflect() protoreflect.Message {
+	mi := &file_game_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeclineReadyCheck.ProtoReflect.Descriptor instead.
+func (*DeclineReadyCheck) Descriptor() ([]byte, []int) {
+	return file_game_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *DeclineReadyCheck) GetLobbyId() string {
+	if x != nil {
+		return x.LobbyId
+	}
+	return ""
+}
+
+type LobbyActionRequest struct {
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	UserId int32                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	// Types that are valid to be assigned to Payload:
+	//
+	//	*LobbyActionRequest_CreateLobby
+	//	*LobbyActionRequest_JoinLobby
+	//	*LobbyActionRequest_ToggleReady
+	//	*LobbyActionRequest_LeaveLobby
+	//	*LobbyActionRequest_BeginReadyCheck
+	//	*LobbyActionRequest_AcceptReadyCheck
+	//	*LobbyActionRequest_DeclineReadyCheck
+	Payload       isLobbyActionRequest_Payload `protobuf_oneof:"payload"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *LobbyActionRequest) Reset() {
 	*x = LobbyActionRequest{}
-	mi := &file_game_proto_msgTypes[2]
+	mi := &file_game_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -204,7 +528,7 @@ func (x *LobbyActionRequest) String() string {
 func (*LobbyActionRequest) ProtoMessage() {}
 
 func (x *LobbyActionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_game_proto_msgTypes[2]
+	mi := &file_game_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -217,7 +541,7 @@ func (x *LobbyActionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LobbyActionRequest.ProtoReflect.Descriptor instead.
 func (*LobbyActionRequest) Descriptor() ([]byte, []int) {
-	return file_game_proto_rawDescGZIP(), []int{2}
+	return file_game_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *LobbyActionRequest) GetUserId() int32 {
@@ -227,32 +551,302 @@ func (x *LobbyActionRequest) GetUserId() int32 {
 	return 0
 }
 
-func (x *LobbyActionRequest) GetAction() string {
-	if x != nil {
-		return x.Action
-	}
-	return ""
-}
-
-func (x *LobbyActionRequest) GetPayload() string {
+func (x *LobbyActionRequest) GetPayload() isLobbyActionRequest_Payload {
 	if x != nil {
 		return x.Payload
 	}
+	return nil
+}
+
+func (x *LobbyActionRequest) GetCreateLobby() *CreateLobby {
+	if x != nil {
+		if x, ok := x.Payload.(*LobbyActionRequest_CreateLobby); ok {
+			return x.CreateLobby
+		}
+	}
+	return nil
+}
+
+func (x *LobbyActionRequest) GetJoinLobby() *JoinLobby {
+	if x != nil {
+		if x, ok := x.Payload.(*LobbyActionRequest_JoinLobby); ok {
+			return x.JoinLobby
+		}
+	}
+	return nil
+}
+
+func (x *LobbyActionRequest) GetToggleReady() *ToggleReady {
+	if x != nil {
+		if x, ok := x.Payload.(*LobbyActionRequest_ToggleReady); ok {
+			return x.ToggleReady
+		}
+	}
+	return nil
+}
+
+func (x *LobbyActionRequest) GetLeaveLobby() *LeaveLobby {
+	if x != nil {
+		if x, ok := x.Payload.(*LobbyActionRequest_LeaveLobby); ok {
+			return x.LeaveLobby
+		}
+	}
+	return nil
+}
+
+func (x *LobbyActionRequest) GetBeginReadyCheck() *BeginReadyCheck {
+	if x != nil {
+		if x, ok := x.Payload.(*LobbyActionRequest_BeginReadyCheck); ok {
+			return x.BeginReadyCheck
+		}
+	}
+	return nil
+}
+
+func (x *LobbyActionRequest) GetAcceptReadyCheck() *AcceptReadyCheck {
+	if x != nil {
+		if x, ok := x.Payload.(*LobbyActionRequest_AcceptReadyCheck); ok {
+			return x.AcceptReadyCheck
+		}
+	}
+	return nil
+}
+
+func (x *LobbyActionRequest) GetDeclineReadyCheck() *DeclineReadyCheck {
+	if x != nil {
+		if x, ok := x.Payload.(*LobbyActionRequest_DeclineReadyCheck); ok {
+			return x.DeclineReadyCheck
+		}
+	}
+	return nil
+}
+
+type isLobbyActionRequest_Payload interface {
+	isLobbyActionRequest_Payload()
+}
+
+type LobbyActionRequest_CreateLobby struct {
+	CreateLobby *CreateLobby `protobuf:"bytes,2,opt,name=create_lobby,json=createLobby,proto3,oneof"`
+}
+
+type LobbyActionRequest_JoinLobby struct {
+	JoinLobby *JoinLobby `protobuf:"bytes,3,opt,name=join_lobby,json=joinLobby,proto3,oneof"`
+}
+
+type LobbyActionRequest_ToggleReady struct {
+	ToggleReady *ToggleReady `protobuf:"bytes,4,opt,name=toggle_ready,json=toggleReady,proto3,oneof"`
+}
+
+type LobbyActionRequest_LeaveLobby struct {
+	LeaveLobby *LeaveLobby `protobuf:"bytes,5,opt,name=leave_lobby,json=leaveLobby,proto3,oneof"`
+}
+
+type LobbyActionRequest_BeginReadyCheck struct {
+	BeginReadyCheck *BeginReadyCheck `protobuf:"bytes,6,opt,name=begin_ready_check,json=beginReadyCheck,proto3,oneof"`
+}
+
+type LobbyActionRequest_AcceptReadyCheck struct {
+	AcceptReadyCheck *AcceptReadyCheck `protobuf:"bytes,7,opt,name=accept_ready_check,json=acceptReadyCheck,proto3,oneof"`
+}
+
+type LobbyActionRequest_DeclineReadyCheck struct {
+	DeclineReadyCheck *DeclineReadyCheck `protobuf:"bytes,8,opt,name=decline_ready_check,json=declineReadyCheck,proto3,oneof"`
+}
+
+func (*LobbyActionRequest_CreateLobby) isLobbyActionRequest_Payload() {}
+
+func (*LobbyActionRequest_JoinLobby) isLobbyActionRequest_Payload() {}
+
+func (*LobbyActionRequest_ToggleReady) isLobbyActionRequest_Payload() {}
+
+func (*LobbyActionRequest_LeaveLobby) isLobbyActionRequest_Payload() {}
+
+func (*LobbyActionRequest_BeginReadyCheck) isLobbyActionRequest_Payload() {}
+
+func (*LobbyActionRequest_AcceptReadyCheck) isLobbyActionRequest_Payload() {}
+
+func (*LobbyActionRequest_DeclineReadyCheck) isLobbyActionRequest_Payload() {}
+
+type MakeMove struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Color         string                 `protobuf:"bytes,1,opt,name=color,proto3" json:"color,omitempty"`
+	PieceId       string                 `protobuf:"bytes,2,opt,name=piece_id,json=pieceId,proto3" json:"piece_id,omitempty"`
+	OriginX       int32                  `protobuf:"varint,3,opt,name=origin_x,json=originX,proto3" json:"origin_x,omitempty"`
+	OriginY       int32                  `protobuf:"varint,4,opt,name=origin_y,json=originY,proto3" json:"origin_y,omitempty"`
+	Rotation      int32                  `protobuf:"varint,5,opt,name=rotation,proto3" json:"rotation,omitempty"`
+	Flip          bool                   `protobuf:"varint,6,opt,name=flip,proto3" json:"flip,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MakeMove) Reset() {
+	*x = MakeMove{}
+	mi := &file_game_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MakeMove) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MakeMove) ProtoMessage() {}
+
+func (x *MakeMove) ProtoReflect() protoreflect.Message {
+	mi := &file_game_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MakeMove.ProtoReflect.Descriptor instead.
+func (*MakeMove) Descriptor() ([]byte, []int) {
+	return file_game_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *MakeMove) GetColor() string {
+	if x != nil {
+		return x.Color
+	}
 	return ""
 }
 
-type GameActionRequest struct {
+func (x *MakeMove) GetPieceId() string {
+	if x != nil {
+		return x.PieceId
+	}
+	return ""
+}
+
+func (x *MakeMove) GetOriginX() int32 {
+	if x != nil {
+		return x.OriginX
+	}
+	return 0
+}
+
+func (x *MakeMove) GetOriginY() int32 {
+	if x != nil {
+		return x.OriginY
+	}
+	return 0
+}
+
+func (x *MakeMove) GetRotation() int32 {
+	if x != nil {
+		return x.Rotation
+	}
+	return 0
+}
+
+func (x *MakeMove) GetFlip() bool {
+	if x != nil {
+		return x.Flip
+	}
+	return false
+}
+
+type PassTurn struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserId        int32                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	Action        string                 `protobuf:"bytes,2,opt,name=action,proto3" json:"action,omitempty"`
-	Payload       string                 `protobuf:"bytes,3,opt,name=payload,proto3" json:"payload,omitempty"`
+	Color         string                 `protobuf:"bytes,1,opt,name=color,proto3" json:"color,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PassTurn) Reset() {
+	*x = PassTurn{}
+	mi := &file_game_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PassTurn) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PassTurn) ProtoMessage() {}
+
+func (x *PassTurn) ProtoReflect() protoreflect.Message {
+	mi := &file_game_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PassTurn.ProtoReflect.Descriptor instead.
+func (*PassTurn) Descriptor() ([]byte, []int) {
+	return file_game_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *PassTurn) GetColor() string {
+	if x != nil {
+		return x.Color
+	}
+	return ""
+}
+
+type Disconnect struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Disconnect) Reset() {
+	*x = Disconnect{}
+	mi := &file_game_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Disconnect) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Disconnect) ProtoMessage() {}
+
+func (x *Disconnect) ProtoReflect() protoreflect.Message {
+	mi := &file_game_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Disconnect.ProtoReflect.Descriptor instead.
+func (*Disconnect) Descriptor() ([]byte, []int) {
+	return file_game_proto_rawDescGZIP(), []int{12}
+}
+
+type GameActionRequest struct {
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	UserId int32                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	// Types that are valid to be assigned to Payload:
+	//
+	//	*GameActionRequest_MakeMove
+	//	*GameActionRequest_PassTurn
+	//	*GameActionRequest_Disconnect
+	Payload       isGameActionRequest_Payload `protobuf_oneof:"payload"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GameActionRequest) Reset() {
 	*x = GameActionRequest{}
-	mi := &file_game_proto_msgTypes[3]
+	mi := &file_game_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -264,7 +858,7 @@ func (x *GameActionRequest) String() string {
 func (*GameActionRequest) ProtoMessage() {}
 
 func (x *GameActionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_game_proto_msgTypes[3]
+	mi := &file_game_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -277,7 +871,7 @@ func (x *GameActionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GameActionRequest.ProtoReflect.Descriptor instead.
 func (*GameActionRequest) Descriptor() ([]byte, []int) {
-	return file_game_proto_rawDescGZIP(), []int{3}
+	return file_game_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *GameActionRequest) GetUserId() int32 {
@@ -287,19 +881,61 @@ func (x *GameActionRequest) GetUserId() int32 {
 	return 0
 }
 
-func (x *GameActionRequest) GetAction() string {
-	if x != nil {
-		return x.Action
-	}
-	return ""
-}
-
-func (x *GameActionRequest) GetPayload() string {
+func (x *GameActionRequest) GetPayload() isGameActionRequest_Payload {
 	if x != nil {
 		return x.Payload
 	}
-	return ""
+	return nil
 }
+
+func (x *GameActionRequest) GetMakeMove() *MakeMove {
+	if x != nil {
+		if x, ok := x.Payload.(*GameActionRequest_MakeMove); ok {
+			return x.MakeMove
+		}
+	}
+	return nil
+}
+
+func (x *GameActionRequest) GetPassTurn() *PassTurn {
+	if x != nil {
+		if x, ok := x.Payload.(*GameActionRequest_PassTurn); ok {
+			return x.PassTurn
+		}
+	}
+	return nil
+}
+
+func (x *GameActionRequest) GetDisconnect() *Disconnect {
+	if x != nil {
+		if x, ok := x.Payload.(*GameActionRequest_Disconnect); ok {
+			return x.Disconnect
+		}
+	}
+	return nil
+}
+
+type isGameActionRequest_Payload interface {
+	isGameActionRequest_Payload()
+}
+
+type GameActionRequest_MakeMove struct {
+	MakeMove *MakeMove `protobuf:"bytes,2,opt,name=make_move,json=makeMove,proto3,oneof"`
+}
+
+type GameActionRequest_PassTurn struct {
+	PassTurn *PassTurn `protobuf:"bytes,3,opt,name=pass_turn,json=passTurn,proto3,oneof"`
+}
+
+type GameActionRequest_Disconnect struct {
+	Disconnect *Disconnect `protobuf:"bytes,4,opt,name=disconnect,proto3,oneof"`
+}
+
+func (*GameActionRequest_MakeMove) isGameActionRequest_Payload() {}
+
+func (*GameActionRequest_PassTurn) isGameActionRequest_Payload() {}
+
+func (*GameActionRequest_Disconnect) isGameActionRequest_Payload() {}
 
 type GameStateRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -310,7 +946,7 @@ type GameStateRequest struct {
 
 func (x *GameStateRequest) Reset() {
 	*x = GameStateRequest{}
-	mi := &file_game_proto_msgTypes[4]
+	mi := &file_game_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -322,7 +958,7 @@ func (x *GameStateRequest) String() string {
 func (*GameStateRequest) ProtoMessage() {}
 
 func (x *GameStateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_game_proto_msgTypes[4]
+	mi := &file_game_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -335,7 +971,7 @@ func (x *GameStateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GameStateRequest.ProtoReflect.Descriptor instead.
 func (*GameStateRequest) Descriptor() ([]byte, []int) {
-	return file_game_proto_rawDescGZIP(), []int{4}
+	return file_game_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *GameStateRequest) GetUserId() int32 {
@@ -357,7 +993,7 @@ type ActionResponse struct {
 
 func (x *ActionResponse) Reset() {
 	*x = ActionResponse{}
-	mi := &file_game_proto_msgTypes[5]
+	mi := &file_game_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -369,7 +1005,7 @@ func (x *ActionResponse) String() string {
 func (*ActionResponse) ProtoMessage() {}
 
 func (x *ActionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_game_proto_msgTypes[5]
+	mi := &file_game_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -382,7 +1018,7 @@ func (x *ActionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ActionResponse.ProtoReflect.Descriptor instead.
 func (*ActionResponse) Descriptor() ([]byte, []int) {
-	return file_game_proto_rawDescGZIP(), []int{5}
+	return file_game_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *ActionResponse) GetSuccess() bool {
@@ -431,15 +1067,55 @@ const file_game_proto_rawDesc = "" +
 	"\bis_valid\x18\x01 \x01(\bR\aisValid\x12#\n" +
 	"\rerror_message\x18\x02 \x01(\tR\ferrorMessage\x12/\n" +
 	"\x14current_turn_user_id\x18\x03 \x01(\x05R\x11currentTurnUserId\x12\x14\n" +
-	"\x05state\x18\x04 \x01(\tR\x05state\"_\n" +
+	"\x05state\x18\x04 \x01(\tR\x05state\"J\n" +
+	"\vCreateLobby\x12\x1f\n" +
+	"\vmax_players\x18\x01 \x01(\x05R\n" +
+	"maxPlayers\x12\x1a\n" +
+	"\busername\x18\x02 \x01(\tR\busername\"B\n" +
+	"\tJoinLobby\x12\x19\n" +
+	"\blobby_id\x18\x01 \x01(\tR\alobbyId\x12\x1a\n" +
+	"\busername\x18\x02 \x01(\tR\busername\"(\n" +
+	"\vToggleReady\x12\x19\n" +
+	"\blobby_id\x18\x01 \x01(\tR\alobbyId\"\f\n" +
+	"\n" +
+	"LeaveLobby\",\n" +
+	"\x0fBeginReadyCheck\x12\x19\n" +
+	"\blobby_id\x18\x01 \x01(\tR\alobbyId\"-\n" +
+	"\x10AcceptReadyCheck\x12\x19\n" +
+	"\blobby_id\x18\x01 \x01(\tR\alobbyId\".\n" +
+	"\x11DeclineReadyCheck\x12\x19\n" +
+	"\blobby_id\x18\x01 \x01(\tR\alobbyId\"\xe7\x03\n" +
 	"\x12LobbyActionRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\x05R\x06userId\x12\x16\n" +
-	"\x06action\x18\x02 \x01(\tR\x06action\x12\x18\n" +
-	"\apayload\x18\x03 \x01(\tR\apayload\"^\n" +
+	"\auser_id\x18\x01 \x01(\x05R\x06userId\x126\n" +
+	"\fcreate_lobby\x18\x02 \x01(\v2\x11.game.CreateLobbyH\x00R\vcreateLobby\x120\n" +
+	"\n" +
+	"join_lobby\x18\x03 \x01(\v2\x0f.game.JoinLobbyH\x00R\tjoinLobby\x126\n" +
+	"\ftoggle_ready\x18\x04 \x01(\v2\x11.game.ToggleReadyH\x00R\vtoggleReady\x123\n" +
+	"\vleave_lobby\x18\x05 \x01(\v2\x10.game.LeaveLobbyH\x00R\n" +
+	"leaveLobby\x12C\n" +
+	"\x11begin_ready_check\x18\x06 \x01(\v2\x15.game.BeginReadyCheckH\x00R\x0fbeginReadyCheck\x12F\n" +
+	"\x12accept_ready_check\x18\a \x01(\v2\x16.game.AcceptReadyCheckH\x00R\x10acceptReadyCheck\x12I\n" +
+	"\x13decline_ready_check\x18\b \x01(\v2\x17.game.DeclineReadyCheckH\x00R\x11declineReadyCheckB\t\n" +
+	"\apayload\"\xa1\x01\n" +
+	"\bMakeMove\x12\x14\n" +
+	"\x05color\x18\x01 \x01(\tR\x05color\x12\x19\n" +
+	"\bpiece_id\x18\x02 \x01(\tR\apieceId\x12\x19\n" +
+	"\borigin_x\x18\x03 \x01(\x05R\aoriginX\x12\x19\n" +
+	"\borigin_y\x18\x04 \x01(\x05R\aoriginY\x12\x1a\n" +
+	"\brotation\x18\x05 \x01(\x05R\brotation\x12\x12\n" +
+	"\x04flip\x18\x06 \x01(\bR\x04flip\" \n" +
+	"\bPassTurn\x12\x14\n" +
+	"\x05color\x18\x01 \x01(\tR\x05color\"\f\n" +
+	"\n" +
+	"Disconnect\"\xc9\x01\n" +
 	"\x11GameActionRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\x05R\x06userId\x12\x16\n" +
-	"\x06action\x18\x02 \x01(\tR\x06action\x12\x18\n" +
-	"\apayload\x18\x03 \x01(\tR\apayload\"+\n" +
+	"\auser_id\x18\x01 \x01(\x05R\x06userId\x12-\n" +
+	"\tmake_move\x18\x02 \x01(\v2\x0e.game.MakeMoveH\x00R\bmakeMove\x12-\n" +
+	"\tpass_turn\x18\x03 \x01(\v2\x0e.game.PassTurnH\x00R\bpassTurn\x122\n" +
+	"\n" +
+	"disconnect\x18\x04 \x01(\v2\x10.game.DisconnectH\x00R\n" +
+	"disconnectB\t\n" +
+	"\apayload\"+\n" +
 	"\x10GameStateRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\x05R\x06userId\"y\n" +
 	"\x0eActionResponse\x12\x18\n" +
@@ -467,29 +1143,49 @@ func file_game_proto_rawDescGZIP() []byte {
 	return file_game_proto_rawDescData
 }
 
-var file_game_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_game_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_game_proto_goTypes = []any{
 	(*MoveRequest)(nil),        // 0: game.MoveRequest
 	(*GameStateResponse)(nil),  // 1: game.GameStateResponse
-	(*LobbyActionRequest)(nil), // 2: game.LobbyActionRequest
-	(*GameActionRequest)(nil),  // 3: game.GameActionRequest
-	(*GameStateRequest)(nil),   // 4: game.GameStateRequest
-	(*ActionResponse)(nil),     // 5: game.ActionResponse
+	(*CreateLobby)(nil),        // 2: game.CreateLobby
+	(*JoinLobby)(nil),          // 3: game.JoinLobby
+	(*ToggleReady)(nil),        // 4: game.ToggleReady
+	(*LeaveLobby)(nil),         // 5: game.LeaveLobby
+	(*BeginReadyCheck)(nil),    // 6: game.BeginReadyCheck
+	(*AcceptReadyCheck)(nil),   // 7: game.AcceptReadyCheck
+	(*DeclineReadyCheck)(nil),  // 8: game.DeclineReadyCheck
+	(*LobbyActionRequest)(nil), // 9: game.LobbyActionRequest
+	(*MakeMove)(nil),           // 10: game.MakeMove
+	(*PassTurn)(nil),           // 11: game.PassTurn
+	(*Disconnect)(nil),         // 12: game.Disconnect
+	(*GameActionRequest)(nil),  // 13: game.GameActionRequest
+	(*GameStateRequest)(nil),   // 14: game.GameStateRequest
+	(*ActionResponse)(nil),     // 15: game.ActionResponse
 }
 var file_game_proto_depIdxs = []int32{
-	0, // 0: game.GameEngine.ValidateAndMakeMove:input_type -> game.MoveRequest
-	2, // 1: game.GameEngine.HandleLobbyAction:input_type -> game.LobbyActionRequest
-	3, // 2: game.GameEngine.HandleGameAction:input_type -> game.GameActionRequest
-	4, // 3: game.GameEngine.GetGameStateSnapshot:input_type -> game.GameStateRequest
-	1, // 4: game.GameEngine.ValidateAndMakeMove:output_type -> game.GameStateResponse
-	5, // 5: game.GameEngine.HandleLobbyAction:output_type -> game.ActionResponse
-	5, // 6: game.GameEngine.HandleGameAction:output_type -> game.ActionResponse
-	5, // 7: game.GameEngine.GetGameStateSnapshot:output_type -> game.ActionResponse
-	4, // [4:8] is the sub-list for method output_type
-	0, // [0:4] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	2,  // 0: game.LobbyActionRequest.create_lobby:type_name -> game.CreateLobby
+	3,  // 1: game.LobbyActionRequest.join_lobby:type_name -> game.JoinLobby
+	4,  // 2: game.LobbyActionRequest.toggle_ready:type_name -> game.ToggleReady
+	5,  // 3: game.LobbyActionRequest.leave_lobby:type_name -> game.LeaveLobby
+	6,  // 4: game.LobbyActionRequest.begin_ready_check:type_name -> game.BeginReadyCheck
+	7,  // 5: game.LobbyActionRequest.accept_ready_check:type_name -> game.AcceptReadyCheck
+	8,  // 6: game.LobbyActionRequest.decline_ready_check:type_name -> game.DeclineReadyCheck
+	10, // 7: game.GameActionRequest.make_move:type_name -> game.MakeMove
+	11, // 8: game.GameActionRequest.pass_turn:type_name -> game.PassTurn
+	12, // 9: game.GameActionRequest.disconnect:type_name -> game.Disconnect
+	0,  // 10: game.GameEngine.ValidateAndMakeMove:input_type -> game.MoveRequest
+	9,  // 11: game.GameEngine.HandleLobbyAction:input_type -> game.LobbyActionRequest
+	13, // 12: game.GameEngine.HandleGameAction:input_type -> game.GameActionRequest
+	14, // 13: game.GameEngine.GetGameStateSnapshot:input_type -> game.GameStateRequest
+	1,  // 14: game.GameEngine.ValidateAndMakeMove:output_type -> game.GameStateResponse
+	15, // 15: game.GameEngine.HandleLobbyAction:output_type -> game.ActionResponse
+	15, // 16: game.GameEngine.HandleGameAction:output_type -> game.ActionResponse
+	15, // 17: game.GameEngine.GetGameStateSnapshot:output_type -> game.ActionResponse
+	14, // [14:18] is the sub-list for method output_type
+	10, // [10:14] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_game_proto_init() }
@@ -497,13 +1193,27 @@ func file_game_proto_init() {
 	if File_game_proto != nil {
 		return
 	}
+	file_game_proto_msgTypes[9].OneofWrappers = []any{
+		(*LobbyActionRequest_CreateLobby)(nil),
+		(*LobbyActionRequest_JoinLobby)(nil),
+		(*LobbyActionRequest_ToggleReady)(nil),
+		(*LobbyActionRequest_LeaveLobby)(nil),
+		(*LobbyActionRequest_BeginReadyCheck)(nil),
+		(*LobbyActionRequest_AcceptReadyCheck)(nil),
+		(*LobbyActionRequest_DeclineReadyCheck)(nil),
+	}
+	file_game_proto_msgTypes[13].OneofWrappers = []any{
+		(*GameActionRequest_MakeMove)(nil),
+		(*GameActionRequest_PassTurn)(nil),
+		(*GameActionRequest_Disconnect)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_game_proto_rawDesc), len(file_game_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
