@@ -14,3 +14,5 @@ cat cookies.txt
 wscat -n -c "https://localhost:3000" -H "Cookie: auth_token="
 
 {"category":"GAME","action":"MAKE_MOVE","payload":{"color":"RED","pieceId":"P1","originX":0,"originY":0,"rotation":0,"flip":false}}
+
+{"category":"LOBBY","action":"CREATE_LOBBY","payload":{"type":"CREATE_LOBBY","userId":1,"userName":"yuen","maxPlayers":4}}
