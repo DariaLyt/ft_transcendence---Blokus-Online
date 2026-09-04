@@ -1,0 +1,16 @@
+openssl req -x509 -newkey rsa:4096 -keyout server.key -out server.crt -days 365 -nodes -subj "/CN=localhost"
+
+curl -k -i -X POST https://localhost:3000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"yuen","email":"yuen@gmail.com","password":""}'
+
+curl -k -i -X POST https://localhost:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"identifier":"yuen", "password":""}' \
+  -c cookies.txt
+
+cat cookies.txt
+
+wscat -n -c "https://localhost:3000" -H "Cookie: auth_token="
+
+{"category":"GAME","action":"MAKE_MOVE","payload":{"color":"RED","pieceId":"P1","originX":0,"originY":0,"rotation":0,"flip":false}}
