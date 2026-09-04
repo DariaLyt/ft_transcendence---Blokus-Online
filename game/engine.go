@@ -81,9 +81,6 @@ func (e *GameEngine) HandleLobbyAction(_ context.Context, req *pb.LobbyActionReq
 		return failAction("INVALID_USER", "nil request"), nil
 	}
 	userID := strconv.Itoa(int(req.GetUserId()))
-	action := strings.ToUpper(strings.TrimSpace(req.GetAction()))
-	p := parseJSONPayload(req.GetPayload())
-	lobbyID := firstNonEmpty(p.LobbyID, lobbyIDFor(e, userID))
 
 	var (
 		lobby *Lobby
@@ -91,23 +88,47 @@ func (e *GameEngine) HandleLobbyAction(_ context.Context, req *pb.LobbyActionReq
 		err   error
 	)
 
-	switch action {
-	case "CREATE_LOBBY":
-		lobby, err = e.lobbies.CreateLobby(userID, p.Username, p.MaxPlayers)
-	case "JOIN_LOBBY":
-		lobby, err = e.lobbies.JoinLobby(userID, p.Username, p.LobbyID)
-	case "TOGGLE_READY":
-		lobby, err = e.lobbies.ToggleReady(userID, lobbyID)
-	case "LEAVE_LOBBY":
+	switch p := req.GetPayload().(type) {
+	case *pb.LobbyActionRequest_CreateLobby:
+		in := p.CreateLobby
+		if in == nil {
+			in = &pb.CreateLobby{}
+		}
+		lobby, err = e.lobbies.CreateLobby(userID, in.GetUsername(), int(in.GetMaxPlayers()))
+	case *pb.LobbyActionRequest_JoinLobby:
+		in := p.JoinLobby
+		if in == nil {
+			in = &pb.JoinLobby{}
+		}
+		lobby, err = e.lobbies.JoinLobby(userID, in.GetUsername(), in.GetLobbyId())
+	case *pb.LobbyActionRequest_ToggleReady:
+		id := ""
+		if p.ToggleReady != nil {
+			id = p.ToggleReady.GetLobbyId()
+		}
+		lobby, err = e.lobbies.ToggleReady(userID, e.lobbyIDOrCurrent(userID, id))
+	case *pb.LobbyActionRequest_LeaveLobby:
 		lobby, err = e.lobbies.LeaveLobby(userID)
-	case "BEGIN_READY_CHECK":
-		lobby, state, err = e.lobbies.BeginReadyCheck(userID, lobbyID)
-	case "ACCEPT_READY_CHECK":
-		lobby, state, err = e.lobbies.AcceptReadyCheck(userID, lobbyID)
-	case "DECLINE_READY_CHECK":
-		lobby, err = e.lobbies.DeclineReadyCheck(userID, lobbyID)
+	case *pb.LobbyActionRequest_BeginReadyCheck:
+		id := ""
+		if p.BeginReadyCheck != nil {
+			id = p.BeginReadyCheck.GetLobbyId()
+		}
+		lobby, state, err = e.lobbies.BeginReadyCheck(userID, e.lobbyIDOrCurrent(userID, id))
+	case *pb.LobbyActionRequest_AcceptReadyCheck:
+		id := ""
+		if p.AcceptReadyCheck != nil {
+			id = p.AcceptReadyCheck.GetLobbyId()
+		}
+		lobby, state, err = e.lobbies.AcceptReadyCheck(userID, e.lobbyIDOrCurrent(userID, id))
+	case *pb.LobbyActionRequest_DeclineReadyCheck:
+		id := ""
+		if p.DeclineReadyCheck != nil {
+			id = p.DeclineReadyCheck.GetLobbyId()
+		}
+		lobby, err = e.lobbies.DeclineReadyCheck(userID, e.lobbyIDOrCurrent(userID, id))
 	default:
-		return failAction("UNKNOWN_ACTION", "unknown lobby action "+action), nil
+		return failAction("UNKNOWN_ACTION", "unknown lobby action"), nil
 	}
 
 	if err != nil {
@@ -130,28 +151,31 @@ func (e *GameEngine) HandleGameAction(_ context.Context, req *pb.GameActionReque
 	if req == nil {
 		return failAction("INVALID_USER", "nil request"), nil
 	}
-	action := strings.ToUpper(strings.TrimSpace(req.GetAction()))
-	p := parseJSONPayload(req.GetPayload())
 	userID := req.GetUserId()
 	userKey := strconv.Itoa(int(userID))
+	_, isDisconnect := req.GetPayload().(*pb.GameActionRequest_Disconnect)
 
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	state := e.byUser[userID]
-	if state == nil && action != "DISCONNECT" {
+	if state == nil && !isDisconnect {
 		return failAction(string(ErrGameNotActive), "game is not active"), nil
 	}
 
-	switch action {
-	case "MAKE_MOVE":
+	switch p := req.GetPayload().(type) {
+	case *pb.GameActionRequest_MakeMove:
+		in := p.MakeMove
+		if in == nil {
+			in = &pb.MakeMove{}
+		}
 		resp := ValidateAndMakeMove(state, &pb.MoveRequest{
 			UserId:   userID,
-			Color:    p.Color,
-			PieceId:  p.PieceID,
-			OriginX:  int32(p.OriginX),
-			OriginY:  int32(p.OriginY),
-			Rotation: int32(p.Rotation),
-			Flip:     p.Flip,
+			Color:    in.GetColor(),
+			PieceId:  in.GetPieceId(),
+			OriginX:  in.GetOriginX(),
+			OriginY:  in.GetOriginY(),
+			Rotation: in.GetRotation(),
+			Flip:     in.GetFlip(),
 		})
 		snap := encodeSnapshot(nil, state)
 		if resp.GetIsValid() {
@@ -159,10 +183,10 @@ func (e *GameEngine) HandleGameAction(_ context.Context, req *pb.GameActionReque
 			return okAction(snap), nil
 		}
 		return failActionState(codeFromEngineMessage(resp.GetErrorMessage()), resp.GetErrorMessage(), snap), nil
-	case "PASS_TURN":
+	case *pb.GameActionRequest_PassTurn:
 		color := state.CurrentColor
-		if p.Color != "" {
-			color = Color(strings.ToLower(p.Color))
+		if p.PassTurn != nil && p.PassTurn.GetColor() != "" {
+			color = Color(strings.ToLower(p.PassTurn.GetColor()))
 		}
 		if err := assertUserColor(state, userKey, color); err != nil {
 			return failActionFromErr(err), nil
@@ -173,11 +197,11 @@ func (e *GameEngine) HandleGameAction(_ context.Context, req *pb.GameActionReque
 		_, _ = (&Bot{}).PlayBotTurnsIfNeeded(state)
 		e.armTurnTimerLocked(state)
 		return okAction(encodeSnapshot(nil, state)), nil
-	case "DISCONNECT":
+	case *pb.GameActionRequest_Disconnect:
 		e.scheduleDisconnectLocked(userID)
 		return okAction(encodeSnapshot(nil, state)), nil
 	default:
-		return failAction("UNKNOWN_ACTION", "unknown game action "+action), nil
+		return failAction("UNKNOWN_ACTION", "unknown game action"), nil
 	}
 }
 
@@ -354,27 +378,6 @@ func invalidMove(state *GameState, err error) *pb.GameStateResponse {
 	}
 }
 
-type actionPayload struct {
-	MaxPlayers int    `json:"maxPlayers"`
-	LobbyID    string `json:"lobbyId"`
-	Username   string `json:"username"`
-	Color      string `json:"color"`
-	PieceID    string `json:"pieceId"`
-	OriginX    int    `json:"originX"`
-	OriginY    int    `json:"originY"`
-	Rotation   int    `json:"rotation"`
-	Flip       bool   `json:"flip"`
-}
-
-func parseJSONPayload(raw string) actionPayload {
-	var p actionPayload
-	if raw == "" {
-		return p
-	}
-	_ = json.Unmarshal([]byte(raw), &p)
-	return p
-}
-
 func encodeSnapshot(lobby *Lobby, state *GameState) string {
 	wrap := map[string]any{}
 	if lobby == nil && state == nil {
@@ -422,14 +425,10 @@ func codeFromEngineMessage(msg string) string {
 	return msg
 }
 
-func firstNonEmpty(a, b string) string {
-	if a != "" {
-		return a
+func (e *GameEngine) lobbyIDOrCurrent(userID, lobbyID string) string {
+	if lobbyID != "" {
+		return lobbyID
 	}
-	return b
-}
-
-func lobbyIDFor(e *GameEngine, userID string) string {
 	lobby, err := e.lobbies.LobbyForUser(userID)
 	if err != nil || lobby == nil {
 		return ""
