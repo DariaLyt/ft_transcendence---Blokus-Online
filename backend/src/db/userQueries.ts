@@ -3,7 +3,7 @@ import type { User } from '../types/userTypes.js'
 
 export async function findUserById(id: number): Promise<Omit<User, 'password_hash'> | null> {
 	const result = await pool.query(
-		'SELECT id, username, email, created_at FROM users WHERE id = $1',
+		'SELECT id, username, email, avatar_url, created_at FROM users WHERE id = $1',
 		[id]
 	);
 	return result.rows[0] || null;

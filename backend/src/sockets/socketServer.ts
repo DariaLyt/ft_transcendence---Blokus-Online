@@ -4,8 +4,10 @@ import { parseCookie } from 'cookie';
 import jwt from 'jsonwebtoken';
 import { getJwtSecret } from '../config/env.js';
 import { setupHeartbeat } from './heartbeat.js';
-import { addConnection, removeConnection } from './connectionManager.js';
+import { addConnection, handlePlayerDisconnect } from './connectionManager.js';
 import { handleIncomingSocketMessage } from './socketGateway.js';
+import { notifyFriendsStatusChange } from '../services/presenceService.js';
+import { sendGameAction } from '../grpc/gameClient.js';
 
 export interface AuthenticatedSocket extends WebSocket {
 	userId?: number;
@@ -44,9 +46,12 @@ export function initWebSocketServer(server: HttpsServer) {
 
 	wss.on('connection', (ws: AuthenticatedSocket) => {
 		if (!ws.userId) return ws.terminate();
+		const userId = ws.userId;
 
-		addConnection(ws.userId, ws);
-		console.log(`Client connected via WSS (User ID: ${ws.userId})`);
+		addConnection(userId, ws);
+		console.log(`Client connected via WSS (User ID: ${userId})`);
+
+		notifyFriendsStatusChange(userId, true);
 
 		ws.on('pong', () => {
 			ws.isAlive = true;
@@ -57,11 +62,17 @@ export function initWebSocketServer(server: HttpsServer) {
 		});
 
 		ws.on('close', () => {
-			if (ws.userId) {
-        		removeConnection(ws.userId);
-				console.log(`Client disconnected (User ID: ${ws.userId})`);
-			}
-		});
+			console.log(`[WS] Connection closed for user ${userId}`);
+
+			handlePlayerDisconnect(userId, async (finalUserId) => {
+				console.log(`[Presence] Processing final offline state for user ${finalUserId}`);
+				await notifyFriendsStatusChange(finalUserId, false);
+				sendGameAction(finalUserId, {
+					responseType: 'DISCONNECTED',
+					data: { disconnect: {} }
+				});
+			});
+					});
 	});
 
 	return wss;

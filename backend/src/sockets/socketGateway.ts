@@ -1,5 +1,5 @@
 import type { AuthenticatedSocket } from './socketServer.js';
-import { IncomingFrameSchema, type GameModules } from '../types/gatewayTypes.js';
+import { IncomingFrameSchema } from '../types/gatewayTypes.js';
 import { sendToUser } from './broadcaster.js';
 import { z } from 'zod';
 import { sendLobbyAction, sendGameAction, getGameState } from '../grpc/gameClient.js';
@@ -128,6 +128,14 @@ export function handleIncomingSocketMessage(
 				sendLobbyAction(userId, action.data)
 				.then((goResponse) => {
 					console.log('[gRPC Success from Go]:', goResponse);
+					if (!goResponse.success) {
+						sendToUser(userId, 'ERROR', {
+							errorCode: goResponse.errorCode,
+							message: goResponse.message,
+							state: goResponse.state
+						});
+						return;
+					}
 					sendToUser(userId, action.responseType, goResponse);
 				})
 				.catch((err) => {
@@ -151,14 +159,14 @@ export function handleIncomingSocketMessage(
 				sendGameAction(userId, action.data)
 				.then((goResponse) => {
 					console.log('[gRPC Success from Go]:', goResponse);
-					// if (!goResponse.success) {
-					// 	sendToUser(userId, 'GAME_ERROR', {
-					// 		code: goResponse.errorCode,
-					// 		message: goResponse.message,
-					// 		state: goResponse.state
-					// 	});
-					// 	return;
-					// }
+					if (!goResponse.success) {
+						sendToUser(userId, 'ERROR', {
+							errorCode: goResponse.errorCode,
+							message: goResponse.message,
+							state: goResponse.state
+						});
+						return;
+					}
 					sendToUser(userId, action.responseType, goResponse);
 				})
 				.catch((err) => {
@@ -197,6 +205,14 @@ export function handleIncomingSocketMessage(
 				getGameState(userId)
 				.then((goResponse) => {
 					console.log('[gRPC Success from Go]:', goResponse);
+					if (!goResponse.success) {
+						sendToUser(userId, 'ERROR', {
+							errorCode: goResponse.errorCode,
+							message: goResponse.message,
+							state: goResponse.state
+						});
+						return;
+					}
 					sendToUser(userId, 'GAME_STATE_SNAPSHOT', goResponse);
 				})
 				.catch((err) => {
