@@ -4,7 +4,7 @@ import { useLocation } from "react-router-dom"; // Gives information about the c
 import { Link } from "react-router-dom";
 
 export default function LoginPage() {
-    const [email, setEmail] = useState("");
+    const [identifier, setIdentifier] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const navigate = useNavigate();
@@ -12,7 +12,7 @@ export default function LoginPage() {
 
     const handleLogin = async () => {
         const response = await fetch(
-            "http://localhost:3000/api/auth/login", // send a request and wait for the server's response
+            "https://localhost:3000/api/auth/login", // send a request and wait for the server's response
             {
                 method: "POST", // we're sending data to backend
                 headers: {
@@ -20,7 +20,7 @@ export default function LoginPage() {
                 },
                 credentials: "include", // include cookies with request and accept cookies from response
                 body: JSON.stringify({ // convert the values to JSON
-                    email: email,
+                    identifier: identifier,
                     password: password,
                 }),
             }
@@ -48,9 +48,9 @@ export default function LoginPage() {
                 <div className="mb-4">
                     <label className="block text-sm font-medium text-slate-700 mb-1">Email or username</label>
                     <input type="email"
-                        value={email} //connects input to React state
+                        value={identifier} //connects input to React state
                         onChange={(e) => {
-                            setEmail(e.target.value); // event handler that runs when input changes
+                            setIdentifier(e.target.value); // event handler that runs when input changes
                             setError(""); //error message disappears when user retries if input was invalid
                         }}
                         className="w-full border border-slate-300 rounded-lg px-3 py-2"/>
