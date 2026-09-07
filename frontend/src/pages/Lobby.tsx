@@ -1,44 +1,65 @@
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { sendMessage, onMessage } from "../websocket/socket";
 
 export default function Lobby() {
     const navigate = useNavigate();
     const [showJoin, setShowJoin] = useState(false);
     const [lobbyId, setLobbyId] = useState("");
 
+    useEffect(() => { // when a message arrives, check what event it is
+        const unsubscribe = onMessage((message) => {
+            if (message.event === "LOBBY_CREATED") {
+                const payload = message.payload as {
+                    state: string; // we get this from backend as a string
+                };
+                const state = JSON.parse(payload.state); // turn it into object
+                const lobbyId = state.lobby.id;
+                navigate(`/lobby/waiting/${lobbyId}`); // navigate to the lobby with the id
+            }
+            if (message.event === "LOBBY_JOINED") {
+                navigate(`/lobby/waiting/${lobbyId}`);
+            }
+        });
+        return unsubscribe; // stop listening when lobby page closes
+    }, []); // happens once when the components mounts
+
     const handleCreateLobby = async () => {
-		//PLACEHOLDER: exact endpoint will be confirmed later
-    	/**const response = await fetch(
-        	"https://localhost:3000/api/game/lobby",
+    	const response = await fetch(
+        	"https://localhost:3000/api/auth/me",
         	{
-            	method: "POST",
             	credentials: "include",
         	}
     	);
 
-    	const data = await response.json(); **/
-        navigate("/lobby/waiting");
+    	const data = await response.json();
+        sendMessage({
+            category: "LOBBY",
+            payload: {
+                type: "CREATE_LOBBY",
+                userName: data.user.username,
+                maxPlayers: 4,
+            },
+        });
     };
 
     const handleJoinLobby = async () => {
-        // PLACEHOLDER: exact endpoint will be confirmed later
-        /**const response = await fetch(
-		  "https://localhost:3000/api/game/lobby/join",
-			{
-		    	method: "POST",
-            	headers: {
-                	"Content-Type": "application/json",
-            	},
+    	const response = await fetch(
+        	"https://localhost:3000/api/auth/me",
+        	{
             	credentials: "include",
-            	body: JSON.stringify({
-                	lobbyId: lobbyId,
-            	}),
-		  	}
-		  );
-		  
-		const data = await response.json(); **/
-        navigate("/lobby/waiting");
-		
+        	}
+    	);
+
+    	const data = await response.json();
+        sendMessage({
+            category: "LOBBY",
+            payload: {
+                type: "JOIN_LOBBY",
+                userName: data.user.username,
+                lobbyId: lobbyId,
+            },
+        });
     };
 
     return (
@@ -93,7 +114,7 @@ export default function Lobby() {
 
                     </div>
                 ) : (
-                    <div className="flex flex-col flex-1">
+                    <div className="flex flex-col flex-1"> 
 
                         <div className="mb-8">
                             <label
@@ -118,7 +139,7 @@ export default function Lobby() {
 
                             <button
                                 type="button"
-                                onClick={handleJoinLobby}
+                                onClick={handleJoinLobby} // TODO: I need from backend a way to get all the currently available lobbies so i can display them
                                 disabled={!lobbyId.trim()}
                                 className={`w-full px-6 py-3 rounded-lg text-white ${
                                     lobbyId.trim()
