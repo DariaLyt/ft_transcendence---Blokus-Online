@@ -54,51 +54,6 @@ Stores friendship relationships between users.
 | status | Current friendship/request status |
 | created_at | Time the friendship/request was created |
 
-### statistics
-
-Stores player statistics used for profiles and the leaderboard.
-
-| Column | Description |
-| --- | --- |
-| id | Unique statistics ID |
-| user_id | References users.id |
-| games_played | Number of games played |
-| games_won | Number of games won |
-| games_lost | Number of games lost |
-| total_score | Player's accumulated score |
-
-### tournaments
-
-Stores tournaments.
-
-| Column | Description |
-| --- | --- |
-| id | Unique tournament ID |
-| status | Current status of the tournament |
-| created_at | Time the tournament was created |
-| finished_at | Time the tournament finished |
-
-### tournament_players
-
-Connects users to tournaments.
-
-| Column | Description |
-| --- | --- |
-| id | Unique entry ID |
-| tournament_id | References tournaments.id |
-| user_id | References users.id |
-
-### tournament_matches
-
-Connects games to tournaments.
-
-| Column | Description |
-| --- | --- |
-| id | Unique tournament match ID |
-| tournament_id | References tournaments.id |
-| game_id | References games.id |
-| round | Tournament round |
-
 
 ## Relationships
 
@@ -109,10 +64,41 @@ BASICS:
 - A user can have friendships with other users.
 - A user has player statistics.
 
-TOURNAMENT:
-- A user can participate in many tournaments.
-- A tournament can have multiple players.
-- tournament_players connects users to tournaments.
-- A tournament can contain multiple matches.
-- Each tournament match references a game.
 
+## queries/
+│
+├── users.ts
+│   ├── createUser
+│   ├── findUserById
+│   ├── findUserByUsername
+│   ├── findUserByEmail
+│   ├── updateUser
+│   └── deleteUser
+│
+├── games.ts
+│   ├── createGame
+│   ├── findGameById
+│   ├── findGamesByUserId
+│   ├── findActiveGames
+│   ├── findFinishedGames
+│   ├── updateGameStatus
+│   └── finishGame
+│
+├── gamePlayers.ts
+│   ├── addGamePlayer
+│   ├── findGamePlayers
+│   ├── findPlayerInGame
+│   ├── updatePlayerResult
+│   └── removeGamePlayer
+│
+├── friendships.ts
+│   ├── createFriendRequest
+│   ├── findFriendship
+│   ├── findUserFriends
+│   ├── findPendingFriendRequests
+│   ├── updateFriendshipStatus
+│   └── removeFriendship
+│
+└── statistics.ts              ← query file, NOT a table
+	├── getUserStats
+	└── getLeaderboard
