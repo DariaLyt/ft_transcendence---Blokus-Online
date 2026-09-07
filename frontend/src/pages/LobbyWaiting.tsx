@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 
 type LobbyPlayer = {
@@ -23,6 +23,7 @@ type User = {
 
 export default function LobbyWaiting() {
     const navigate = useNavigate();
+	const { lobbyId } = useParams();
 	const [currentUser, setCurrentUser] = useState<User | null>(null);
 
 	useEffect(() => {
@@ -108,12 +109,23 @@ export default function LobbyWaiting() {
                     <p className="text-slate-500">
                         Players: {players.length} / {lobby.maxPlayers}
                     </p>
+					<div className="mt-6 p-4 bg-slate-100 rounded-lg">
+						<p className="text-sm text-slate-500 mb-1">
+            				Lobby ID
+        				</p>
+						<p className="text-xl font-bold text-slate-800">
+            				{lobbyId}
+        				</p>
+        				<p className="text-sm text-slate-400 mt-1">
+            				Share this ID with other players.
+        				</p>
+    				</div>
 
                     <p className="text-slate-400 text-sm mt-2">
                         You can start with any number of players.
                         Empty seats will be filled by bots.
                     </p>
-                </div>
+            </div>
 
                 <div className="w-full mb-8">
                     {players.map((player) => (
