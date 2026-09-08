@@ -11,14 +11,6 @@ export async function createGame(){
     return result;
 }
 
-export async function findGameById(id: number){
-    const [result] = await db
-        .select()
-        .from(games)
-        .where(eq(games.id, id));
-    return result || null;
-}
-
 export async function updateGameStatus(id: number, status: string){
     const [result] = await db
         .update(games)
@@ -37,6 +29,14 @@ export async function finishGame(id: number){
         })
         .where(eq(games.id, id))
         .returning();
+    return result || null;
+}
+
+export async function findGameById(id: number){
+    const [result] = await db
+        .select()
+        .from(games)
+        .where(eq(games.id, id));
     return result || null;
 }
 
@@ -68,7 +68,3 @@ export async function findGamesByUserId(userId: number){
 
     return result;
 }
-
-
-
-
