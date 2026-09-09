@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { sendMessage, onMessage } from "../websocket/socket";
 
 
 type Player = {
@@ -9,24 +10,26 @@ type Player = {
 	isHost: boolean;
 };
 
+type User = {
+	id: number;
+	username: string;
+}
+
 export default function ReadyCheck() {
     const navigate = useNavigate();
+    const [players, setPlayers] = useState<Player[]>([]);
+    const [currentUser, setCurrentUser] = useState<User | null>(null);
+    const [lobbyId, setLobbyId] = useState("");
 
-    // PLACEHOLDER: using same structure as backend but with fake data
-    const [players, setPlayers] = useState<Player[]>([
-		{
-        	userId: "1",
-        	username: "You",
-        	accepted: false,
-        	isHost: true,
-    	},
-    	{
-        	userId: "2",
-        	username: "Player 2",
-        	accepted: false,
-        	isHost: false,
-    	},
-    ]);
+    useEffect(() => {
+    	fetch("https://localhost:3000/api/auth/me", {
+        credentials: "include",
+    	})
+        	.then((response) => response.json())
+        	.then((data) => {
+            	setCurrentUser(data.user);
+        	});
+	}, []);
 
     // PLACEHOLDER: this will come from the backend as readyDeadline
 	// If readyDeadline is reached, backend will cancel the ready check. 
@@ -42,26 +45,52 @@ export default function ReadyCheck() {
 	 * }, [readyDeadline]);
 	 */
 
-    const currentPlayer = players[0];
+    const currentPlayer = players.find(
+		(player) => player.userId === String(currentUser?.id)
+	);
+    useEffect(() => { 
+		const unsubscribe = onMessage((message) => {
+        	if (message.event === "GAME_STATE_SNAPSHOT") { // when the page opens it gets the players in that lobby
+            	const payload = message.payload as {
+                	state: string;
+            	};
 
-    
-    // PLACEHOLDER: later send ACCEPT_READY_CHECK + lobbyID to backend
-    const handleAccept = async () => {
-       /** const response = await fetch(
-            "https://localhost:3000/api/game/ready-check/accept",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                credentials: "include",
-                body: JSON.stringify({
-                    lobbyId: "PLACEHOLDER_LOBBY_ID",
-                }),
+            	const state = JSON.parse(payload.state);
+            	if (state.lobby) {
+                	setPlayers(state.lobby.players);
+                    setLobbyId(state.lobby.id);
+            	}
+        	}
+            if (message.event === "READY_CHECK_ACCEPTED") {
+                const payload = message.payload as {
+                	state: string;
+            	};
+
+            	const state = JSON.parse(payload.state);
+            	if (state.lobby) {
+                	setPlayers(state.lobby.players); //update players' status
+            	}
+                if (state.game) {
+                    navigate("/game"); // if everyone accepted game is ready to start
+                }
             }
-        );
+    	});
 
-        const data = await response.json();   */
+        sendMessage({
+            category: "RESYNC",
+        });
+
+		return unsubscribe;
+	}, []);
+    
+    const handleAccept = () => {
+        sendMessage({
+            category: "LOBBY",
+            payload: {
+                type: "ACCEPT_READY_CHECK",
+                lobbyId: lobbyId,
+            },
+        });
     };
   
     // PLACEHOLDER: later send DECLINE_READY_CHECK + lobbyID to backend
@@ -92,11 +121,11 @@ export default function ReadyCheck() {
             <div className="w-[600px] min-h-[400px] bg-white p-10 rounded-xl shadow-md flex flex-col items-center justify-center">
 
                 <h1 className="text-3xl font-bold text-slate-800 mb-4">
-                    Ready check
+                    Ready to play?
                 </h1>
 
                 <p className="text-slate-500 text-lg mb-8">
-                    Confirm you're ready to play.
+                    The game is ready to start. Confirm you want to start playing now.
                 </p>
 
                 <div className="w-full mb-8">
@@ -125,7 +154,7 @@ export default function ReadyCheck() {
 
                 <div className="text-center mb-6">
                     <p className="text-slate-500">
-                        Ready check
+                        Game will start when everyone accepts
                     </p>
 
                     <p className="text-3xl font-bold text-slate-800">
@@ -136,15 +165,15 @@ export default function ReadyCheck() {
 				<div className="flex gap-4">
     				<button
         				type="button"
-        				// onClick={handleAccept}
-        				disabled={currentPlayer.accepted}
+        				onClick={handleAccept}
+        				disabled={currentPlayer?.accepted}
         				className={`px-6 py-3 rounded-lg text-white ${
-            			currentPlayer.accepted
+            			currentPlayer?.accepted
                 			? "bg-green-600 cursor-default"
                 			: "bg-slate-700 hover:bg-slate-800"
         				}`}
     				>
-        				{currentPlayer.accepted
+        				{currentPlayer?.accepted
             				? "Accepted ✓"
             				: "Accept"}
     				</button>
