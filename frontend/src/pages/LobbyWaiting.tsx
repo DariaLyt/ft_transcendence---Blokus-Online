@@ -41,7 +41,7 @@ export default function LobbyWaiting() {
 	useEffect(() => { // TODO: backend should broadcast a lobby update to all players when
 		// another player joins or leaves
 		const unsubscribe = onMessage((message) => { // listens for answer
-        	if (message.event === "GAME_STATE_SNAPSHOT") {
+        	if (message.event === "GAME_STATE_SNAPSHOT") { // gives current state of the lobby
             	const payload = message.payload as {
                 	state: string;
             	};
@@ -51,6 +51,16 @@ export default function LobbyWaiting() {
                 	setLobby(state.lobby);
             	}
         	}
+			if (message.event === "READY_TOGGLED") { // state changed so need update
+				const payload = message.payload as {
+                	state: string;
+            	};
+
+            	const state = JSON.parse(payload.state);
+            	if (state.lobby) {
+                	setLobby(state.lobby);
+            	}
+			}
 			if (message.event === "READY_CHECK_BEGUN") {
 				navigate("/ready-check");
 			}
@@ -83,6 +93,16 @@ export default function LobbyWaiting() {
             },
         });
     };
+
+	const handleToggleReady = () => {
+		sendMessage({
+			category: "LOBBY",
+			payload: {
+				type: "TOGGLE_READY",
+				lobbyId: lobby.id,
+			}
+		});
+	};
 
     const handleLeaveLobby = () => {
 		sendMessage({
@@ -134,7 +154,7 @@ export default function LobbyWaiting() {
 							<div className="flex items-center gap-4">
 								{player.isReady && (
 									<span className="text-sm text-green-600">
-										Joined ✓
+										Ready ✓
 									</span>
 								)}
 								{player.isHost && (
@@ -148,6 +168,14 @@ export default function LobbyWaiting() {
                 </div>
 
                 <div className="mt-auto flex flex-col gap-3">
+					{!currentPlayer?.isHost && (
+					<button
+						type="button"
+						onClick={handleToggleReady}
+						className="w-full px-6 py-3 rounded-lg bg-green-600 text-white hover:bg-green-700">
+						{currentPlayer?.isReady ? "Not ready" : "Ready"}
+					</button>
+					)}
 					{currentPlayer?.isHost && (
                     <button
                         type="button"
