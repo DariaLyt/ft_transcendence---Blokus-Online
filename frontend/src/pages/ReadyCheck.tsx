@@ -20,6 +20,7 @@ export default function ReadyCheck() {
     const [players, setPlayers] = useState<Player[]>([]);
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [lobbyId, setLobbyId] = useState("");
+    const [readyDeadline, setReadyDeadline] = useState("");
 
     useEffect(() => {
     	fetch("https://localhost:3000/api/auth/me", {
@@ -31,19 +32,25 @@ export default function ReadyCheck() {
         	});
 	}, []);
 
-    // PLACEHOLDER: this will come from the backend as readyDeadline
-	// If readyDeadline is reached, backend will cancel the ready check. 
-	// The lobby returns to "waiting".Players who did not accept are removed.
-	// The remaining players stay in the lobby.
     const [countdown, setCountdown] = useState(15);
-	/**
-	 * Frontend will calculate time remaining = readyDeadline - current time
-	 * something like:
-	 * const [readyDeadline, set ReadyDeadline] = useState("");
-	 * useEffect(() => {
-	 *  // calculate the remaining time from readyDeadline
-	 * }, [readyDeadline]);
-	 */
+
+    // TODO: backend should notify players when the ready check expires
+    // so the frontend can handle the updated lobby state.
+	useEffect(() => {
+	  if (!readyDeadline) return;
+
+      const timer = setInterval(() => { // run every second
+        const remaining = Math.max( // prevents negative numbers
+            0,
+            Math.ceil(
+                (new Date(readyDeadline).getTime() - Date.now()) / 1000 // get the seconds remaining
+            )
+        );
+        setCountdown(remaining);
+      }, 1000);
+      return () => clearInterval(timer); // stop timer
+	}, [readyDeadline]); // effect depends on readyDeadline
+
 
     const currentPlayer = players.find(
 		(player) => player.userId === String(currentUser?.id)
@@ -59,6 +66,7 @@ export default function ReadyCheck() {
             	if (state.lobby) {
                 	setPlayers(state.lobby.players);
                     setLobbyId(state.lobby.id);
+                    setReadyDeadline(state.lobby.readyDeadline);
             	}
         	}
             if (message.event === "READY_CHECK_ACCEPTED") {
@@ -73,6 +81,9 @@ export default function ReadyCheck() {
                 if (state.game) {
                     navigate("/game"); // if everyone accepted game is ready to start
                 }
+            }
+            if (message.event === "READY_CHECK_DECLINED") {
+                navigate(`/lobby/waiting/${lobbyId}`);
             }
     	});
 
@@ -92,29 +103,19 @@ export default function ReadyCheck() {
             },
         });
     };
-  
-    // PLACEHOLDER: later send DECLINE_READY_CHECK + lobbyID to backend
-    const handleDecline = async () => {
-       /** const response = await fetch(
-            "https://localhost:3000/api/game/ready-check/decline",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                credentials: "include",
-                body: JSON.stringify({
-                    lobbyId: "PLACEHOLDER_LOBBY_ID",
-                }),
-            }
-        );
 
-        const data = await response.json(); */
+    const handleDecline = () => {
+        sendMessage({
+            category: "LOBBY",
+            payload: {
+                type: "DECLINE_READY_CHECK",
+                lobbyId: lobbyId,
+            },
+        });
     };
 
-    // PLACEHOLDER: the backend will tell us when the ready check succeeds and the game starts
-	// When the backend sends GameState with status "active", navigate to the game
-	// If a player leaves during the ready check, backend treats this as a decline and stops the ready check.
+// TODO: backend should notify the other players when a player
+// declines and the ready check is aborted.
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-slate-100">
@@ -180,7 +181,7 @@ export default function ReadyCheck() {
 
     				<button
         				type="button"
-        				// onClick={handleDecline}
+        				onClick={handleDecline}
         				className="px-6 py-3 rounded-lg bg-red-600 text-white hover:bg-red-700">
         					Decline
     				</button>
