@@ -93,10 +93,9 @@ BASICS:
 │
 ├── friendships.ts
 │   ├── createFriendRequest
-│   ├── findFriendship
 │   ├── findUserFriends
 │   ├── findPendingFriendRequests
-│   ├── updateFriendshipStatus
+│   ├── acceptFriendRequest
 │   └── removeFriendship
 │
 └── statistics.ts              ← query file, NOT a table
