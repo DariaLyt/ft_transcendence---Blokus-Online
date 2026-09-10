@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { sendMessage, onMessage } from "../websocket/socket";
+import Navbar from "../components/NavBar";
 
 export default function Lobby() {
     const navigate = useNavigate();
@@ -63,6 +64,9 @@ export default function Lobby() {
     };
 
     return (
+        <div>
+            <Navbar />
+    
         <div className="min-h-screen flex items-center justify-center bg-slate-100">
             <div className="w-[600px] min-h-[450px] bg-white p-10 rounded-xl shadow-md flex flex-col">
 
@@ -161,6 +165,7 @@ export default function Lobby() {
                     </div>
                 )}
             </div>
+        </div>
         </div>
     );
 }

@@ -1,7 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-export default function Navbar() {
+type NavbarProps = {
+    disablePlay?: boolean;
+};
+
+export default function Navbar({ disablePlay = false}: NavbarProps) {
   const [isDropdownOPen, setIsDropdownOPen] = useState(false);
   const navigate = useNavigate();
 
@@ -14,6 +18,7 @@ export default function Navbar() {
         navigate("/");
       }
   };
+
 
   return (
       <header className="bg-white border-b border-sky-100 px-6 py-4 flex items-center justify-between shadow-sm">
@@ -33,6 +38,7 @@ export default function Navbar() {
         <nav className="flex items-center gap-6">
           <button
             type="button"
+            disabled={disablePlay}
             onClick={() => navigate("/menu")}
             className="font-semibold text-blue-600 hover:text-blue-700 cursor-pointer"
           > Play</button>

@@ -1,9 +1,12 @@
 import { useNavigate } from "react-router-dom";
+import Navbar from "../components/NavBar";
 
 export default function Menu() {
    const navigate = useNavigate();
 
     return (
+		<div>
+			<Navbar />
         <div className="min-h-screen flex items-center justify-center bg-slate-100">
             <div className="w-[600px] min-h-[600px] bg-white p-10 rounded-xl shadow-md flex flex-col">
                 
@@ -32,32 +35,19 @@ export default function Menu() {
 
 					<button
     					type="button"
-						//onClick={() => navigate("/tournament")}// TODO: add a tournament page
+						//onClick={() => navigate("/spectate")}// TODO: add a spectator page
     					className="w-full flex-1 p-8 rounded-xl bg-slate-50 border border-slate-200 text-left hover:bg-slate-100 flex flex-col">
     				<h2 className="text-3xl font-bold text-blue-800 mb-6">
-        				Tournament
-    				</h2>
-
-    				<p className="text-slate-500 text-lg">
-        				Compete against other players in a tournament.
-    				</p>
-					</button>
-
-					<button
-    					type="button"
-    					//onClick={() => navigate("/spectate")} // TODO: add a spectator page
-    					className="w-full flex-1 p-8 rounded-xl bg-slate-100 border border-slate-200 text-left hover:bg-slate-200 flex flex-col">
-    				<h2 className="text-3xl font-bold text-slate-800 mb-6">
         				Spectate
     				</h2>
 
     				<p className="text-slate-500 text-lg">
-        				Watch an ongoing game. 
+        				Watch an ongoing game.
     				</p>
 					</button>
-					
                 </div>
             </div>
         </div>
+		</div>
     );
 }

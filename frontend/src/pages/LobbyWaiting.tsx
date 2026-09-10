@@ -1,6 +1,7 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { sendMessage, onMessage } from "../websocket/socket";
+import Navbar from "../components/NavBar";
 
 type LobbyPlayer = {
 	userId: string;
@@ -114,6 +115,9 @@ export default function LobbyWaiting() {
     };
 
     return (
+		<div>
+			<Navbar disablePlay/>
+		
         <div className="min-h-screen flex items-center justify-center bg-slate-100">
             <div className="w-[600px] min-h-[500px] bg-white p-10 rounded-xl shadow-md flex flex-col">
 
@@ -195,5 +199,6 @@ export default function LobbyWaiting() {
 
             </div>
         </div>
+		</div>
     );
 }

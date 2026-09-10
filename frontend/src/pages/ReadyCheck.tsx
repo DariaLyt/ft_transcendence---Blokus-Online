@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { sendMessage, onMessage } from "../websocket/socket";
+import Navbar from "../components/NavBar";
 
 
 type Player = {
@@ -118,6 +119,9 @@ export default function ReadyCheck() {
 // declines and the ready check is aborted.
 
     return (
+        <div>
+            <Navbar disablePlay/>
+        
         <div className="min-h-screen flex items-center justify-center bg-slate-100">
             <div className="w-[600px] min-h-[400px] bg-white p-10 rounded-xl shadow-md flex flex-col items-center justify-center">
 
@@ -187,6 +191,7 @@ export default function ReadyCheck() {
     				</button>
 				</div>
             </div>
+        </div>
         </div>
     );
 }
