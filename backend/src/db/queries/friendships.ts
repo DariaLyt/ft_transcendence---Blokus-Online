@@ -1,4 +1,4 @@
-import { db } from "../index";
+import { db } from "../conn.js";
 import { friendships } from "../schema";
 import { eq, ne, and, or } from "drizzle-orm";
 

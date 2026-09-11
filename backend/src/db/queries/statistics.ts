@@ -1,4 +1,4 @@
-import { db } from "../index";
+import { db } from "../conn.js";
 import { users, games, gamePlayers } from "../schema";
 import { eq, and, count, sum, avg, desc } from "drizzle-orm";
 
