@@ -31,20 +31,9 @@ message GameStateResponse {
   string state = 4;
 }
 
-message LobbyActionRequest {
-  int32 user_id = 1;
-  string action = 2;
-  string payload = 3;
-}
-
-message GameActionRequest {
-  int32 user_id = 1;
-  string action = 2;
-  string payload = 3;
-}
-
 message GameStateRequest {
   int32 user_id = 1;
+  string game_id = 2;
 }
 
 message ActionResponse {
@@ -52,4 +41,71 @@ message ActionResponse {
   string error_code = 2;
   string message = 3;
   string state = 4;
+}
+
+message CreateLobby {
+  string username = 1;
+  int32 max_players = 2;
+}
+
+message JoinLobby {
+  string username = 1;
+  string lobby_id = 2;
+}
+
+message ToggleReady {
+  string lobby_id = 1;
+}
+
+message LeaveLobby {}
+
+message BeginReadyCheck {
+  string lobby_id = 1;
+}
+
+message AcceptReadyCheck {
+  string lobby_id = 1;
+}
+
+message DeclineReadyCheck {
+  string lobby_id = 1;
+}
+
+message LobbyActionRequest {
+  int32 user_id = 1;
+
+  oneof payload {
+    CreateLobby create_lobby = 2;
+    JoinLobby join_lobby = 3;
+    ToggleReady toggle_ready = 4;
+    LeaveLobby leave_lobby = 5;
+    BeginReadyCheck begin_ready_check = 6;
+    AcceptReadyCheck accept_ready_check = 7;
+    DeclineReadyCheck decline_ready_check = 8;
+  }
+}
+
+message MakeMove {
+  string color = 1;
+  string piece_id = 2;
+  int32 origin_x = 3;
+  int32 origin_y = 4;
+  int32 rotation = 5;
+  bool flip = 6;
+}
+
+message PassTurn {
+  string color = 1;
+}
+
+message Disconnect {}
+
+message GameActionRequest {
+  int32 user_id = 1;
+
+  oneof payload {
+    MakeMove make_move = 2;
+    PassTurn pass_turn = 3;
+    Disconnect disconnect = 4;
+  }
 }

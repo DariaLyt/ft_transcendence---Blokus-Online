@@ -33,6 +33,7 @@ message GameStateResponse {
 
 message GameStateRequest {
   int32 user_id = 1;
+  string game_id = 2;
 }
 
 message ActionResponse {

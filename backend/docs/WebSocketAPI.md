@@ -144,6 +144,48 @@ To request the current state:
 
 ---
 
+## Spectator Actions
+
+### WATCH_GAME
+
+Subscribes the current websocket user to live updates for an active game.
+
+```json
+{
+  "category": "SPECTATE",
+  "action": "WATCH_GAME",
+  "payload": {
+    "gameId": "lobby-or-game-id"
+  }
+}
+```
+
+Successful responses and later live updates use:
+
+```json
+{
+  "event": "SPECTATOR_GAME_STATE",
+  "payload": {
+    "success": true,
+    "state": "{\"game\":{...}}"
+  }
+}
+```
+
+### LEAVE_GAME
+
+```json
+{
+  "category": "SPECTATE",
+  "action": "LEAVE_GAME",
+  "payload": {
+    "gameId": "lobby-or-game-id"
+  }
+}
+```
+
+---
+
 ## Notes
 
 * For backend/GameEngine request/response structures, refer to `game.proto`.

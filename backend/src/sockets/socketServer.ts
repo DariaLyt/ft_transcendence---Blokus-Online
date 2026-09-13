@@ -6,6 +6,7 @@ import { getJwtSecret } from '../config/env.js';
 import { setupHeartbeat } from './heartbeat.js';
 import { addConnection, removeConnection } from './connectionManager.js';
 import { handleIncomingSocketMessage } from './socketGateway.js';
+import { unsubscribeFromAllGames } from './gameSubscriptions.js';
 
 export interface AuthenticatedSocket extends WebSocket {
 	userId?: number;
@@ -58,6 +59,7 @@ export function initWebSocketServer(server: HttpsServer) {
 
 		ws.on('close', () => {
 			if (ws.userId) {
+				unsubscribeFromAllGames(ws.userId);
         		removeConnection(ws.userId);
 				console.log(`Client disconnected (User ID: ${ws.userId})`);
 			}

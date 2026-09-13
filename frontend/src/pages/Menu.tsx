@@ -45,7 +45,7 @@ export default function Menu() {
 
 					<button
     					type="button"
-    					//onClick={() => navigate("/spectate")} // TODO: add a spectator page
+    					onClick={() => navigate("/spectate")}
     					className="w-full flex-1 p-8 rounded-xl bg-slate-100 border border-slate-200 text-left hover:bg-slate-200 flex flex-col">
     				<h2 className="text-3xl font-bold text-slate-800 mb-6">
         				Spectate

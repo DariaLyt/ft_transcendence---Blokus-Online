@@ -95,3 +95,14 @@ export function getGameState(userId: number): Promise<any> {
         });
     });
 }
+
+export function getGameStateById(gameId: string): Promise<any> {
+    return new Promise((resolve, reject) => {
+        const request = { gameId };
+
+        gameClient.GetGameStateSnapshot(request, (err: any, response: any) => {
+            if (err) return reject(err);
+            resolve(response);
+        });
+    });
+}

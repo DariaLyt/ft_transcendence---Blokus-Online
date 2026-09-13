@@ -77,7 +77,7 @@ export default function GamePage() {
 			/>
 		
 			<div className="grid grid-cols-1 min-[1400px]:grid-cols-[auto_400px] gap-6 w-full justify-center">
-				<Board />
+				<Board gameState={gameState} />
 			<div className="flex flex-col gap-6">
 				<PlayersInfo gameState={gameState} />
 				<PiecesTray 
