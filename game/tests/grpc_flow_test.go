@@ -9,8 +9,6 @@ import (
 
 	"blokus/game"
 	pb "blokus/game/proto/pb"
-	"google.golang.org/protobuf/encoding/protowire"
-	"google.golang.org/protobuf/proto"
 )
 
 func TestLobbyCreateStartMoveAndScores(t *testing.T) {
@@ -209,8 +207,7 @@ func TestSnapshotByGameIDAllowsSpectators(t *testing.T) {
 		t.Fatalf("start: %+v %v", started, err)
 	}
 
-	spectatorReq := gameStateRequestByGameID(t, lobbyID)
-	watched, err := eng.GetGameStateSnapshot(ctx, spectatorReq)
+	watched, err := eng.GetGameStateSnapshot(ctx, &pb.GameStateRequest{GameId: lobbyID})
 	if err != nil || !watched.GetSuccess() {
 		t.Fatalf("watch: %+v %v", watched, err)
 	}
@@ -303,18 +300,6 @@ func disconnectRequest(userID int32) *pb.GameActionRequest {
 			Disconnect: &pb.Disconnect{},
 		},
 	}
-}
-
-func gameStateRequestByGameID(t *testing.T, gameID string) *pb.GameStateRequest {
-	t.Helper()
-	raw := protowire.AppendTag(nil, 2, protowire.BytesType)
-	raw = protowire.AppendString(raw, gameID)
-
-	req := &pb.GameStateRequest{}
-	if err := proto.Unmarshal(raw, req); err != nil {
-		t.Fatal(err)
-	}
-	return req
 }
 
 func TestPassTurnHelper(t *testing.T) {

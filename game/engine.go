@@ -9,7 +9,6 @@ import (
 	"time"
 
 	pb "blokus/game/proto/pb"
-	"google.golang.org/protobuf/encoding/protowire"
 )
 
 const DefaultTurnDuration = 60 * time.Second
@@ -210,7 +209,7 @@ func (e *GameEngine) GetGameStateSnapshot(_ context.Context, req *pb.GameStateRe
 	if req == nil {
 		return failAction("INVALID_USER", "nil request"), nil
 	}
-	if gameID := gameIDFromSnapshotRequest(req); gameID != "" {
+	if gameID := strings.TrimSpace(req.GetGameId()); gameID != "" {
 		return e.getGameStateByID(gameID), nil
 	}
 	uid := strconv.Itoa(int(req.GetUserId()))
@@ -236,30 +235,6 @@ func (e *GameEngine) getGameStateByID(gameID string) *pb.ActionResponse {
 		return failActionState(string(ErrGameNotActive), "game is not active", snap)
 	}
 	return okAction(snap)
-}
-
-func gameIDFromSnapshotRequest(req *pb.GameStateRequest) string {
-	fields := req.ProtoReflect().GetUnknown()
-	for len(fields) > 0 {
-		num, typ, n := protowire.ConsumeTag(fields)
-		if n < 0 {
-			return ""
-		}
-		fields = fields[n:]
-		if num == 2 && typ == protowire.BytesType {
-			value, n := protowire.ConsumeString(fields)
-			if n < 0 {
-				return ""
-			}
-			return strings.TrimSpace(value)
-		}
-		n = protowire.ConsumeFieldValue(num, typ, fields)
-		if n < 0 {
-			return ""
-		}
-		fields = fields[n:]
-	}
-	return ""
 }
 
 func (e *GameEngine) ExpireTurn(gameID string) {

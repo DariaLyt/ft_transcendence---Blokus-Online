@@ -1,4 +1,5 @@
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { FormEvent } from "react";
 import Navbar from "../components/NavBar";
 import Board from "../components/Board";
 import GameStatus from "../components/GameStatus";
