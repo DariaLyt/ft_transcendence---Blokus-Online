@@ -18,7 +18,7 @@ export default function App() {
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/menu" element={<Menu />} />
                 <Route path="/lobby" element={<Lobby />} />
-                <Route path="/lobby/waiting" element={<LobbyWaiting />} />
+                <Route path="/lobby/waiting/:lobbyId" element={<LobbyWaiting />} />
                 <Route path="/ready-check" element={<ReadyCheck />} />
                 <Route path="/game" element={<GamePage />} />
                 <Route path="/profile" element={<ProfilePage />} />

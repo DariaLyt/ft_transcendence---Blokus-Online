@@ -7,7 +7,7 @@ export default function ChangePassword() {
 	const [error, setError] = useState("");
 
 	const handleChangePassword = async () => {
-    	const response = await fetch("http://localhost:3000/api/auth/me/password",
+    	const response = await fetch("https://localhost:3000/api/auth/me/password",
             {
                 method: "PUT",
                 headers: {
