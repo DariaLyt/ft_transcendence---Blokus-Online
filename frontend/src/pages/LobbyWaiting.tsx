@@ -1,3 +1,35 @@
+import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { useGameSession } from "../sockets/GameSessionContext";
+
+export default function LobbyWaiting() {
+    const navigate = useNavigate();
+    const { currentUser, lobby, game, lastError, sendLobby } = useGameSession();
+
+    useEffect(() => {
+        if (lobby?.status === "ready_check") {
+            navigate("/ready-check");
+        }
+        if (lobby?.status === "in_game" || game?.status === "active") {
+            navigate("/game");
+        }
+    }, [lobby?.status, game?.status, navigate]);
+
+    const players = lobby?.players ?? [];
+    const currentPlayer = players.find(
+        (player) => player.userId === String(currentUser?.id)
+    );
+
+    const handleStartGame = () => {
+        if (!lobby?.id) {
+            return;
+        }
+        sendLobby("BEGIN_READY_CHECK", { lobbyId: lobby.id });
+    };
+
+    const handleLeaveLobby = () => {
+        sendLobby("LEAVE_LOBBY");
+        navigate("/lobby");
 import { useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { sendMessage, onMessage } from "../websocket/socket";
@@ -127,7 +159,7 @@ export default function LobbyWaiting() {
                     </h1>
 
                     <p className="text-slate-500">
-                        Players: {players.length} / {lobby.maxPlayers}
+                        Players: {players.length} / {lobby?.maxPlayers ?? 4}
                     </p>
 					<div className="mt-6 p-4 bg-slate-100 rounded-lg">
 						<p className="text-sm text-slate-500 mb-1">
@@ -141,11 +173,20 @@ export default function LobbyWaiting() {
         				</p>
     				</div>
 
+                    {lobby?.id && (
+                        <p className="text-slate-400 text-xs mt-2 break-all">
+                            Lobby ID: {lobby.id}
+                        </p>
+                    )}
+
                     <p className="text-slate-400 text-sm mt-2">
                         You can start with any number of players.
                         Empty seats will be filled by bots.
                     </p>
-            </div>
+                    {lastError && (
+                        <p className="text-red-600 text-sm mt-2">{lastError}</p>
+                    )}
+                </div>
 
                 <div className="w-full mb-8">
                     {players.map((player) => (
@@ -153,7 +194,7 @@ export default function LobbyWaiting() {
 							key={player.userId}
 							className="flex items-center justify-between py-4 border-b border-slate-200">
 							<span className="">
-								{player.username}
+								{player.username || `Player ${player.userId}`}
 							</span>
 							<div className="flex items-center gap-4">
 								{player.isReady && (
@@ -169,6 +210,9 @@ export default function LobbyWaiting() {
 							</div>
 						</div>
                     ))}
+                    {players.length === 0 && (
+                        <p className="text-slate-400 text-sm">Waiting for lobby data…</p>
+                    )}
                 </div>
 
                 <div className="mt-auto flex flex-col gap-3">

@@ -1,12 +1,42 @@
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { useGameSession } from "../sockets/GameSessionContext";
 import { useEffect, useState } from "react";
 import { sendMessage, onMessage } from "../websocket/socket";
 import Navbar from "../components/NavBar";
 
 export default function Lobby() {
     const navigate = useNavigate();
+    const { currentUser, sendLobby, connected } = useGameSession();
     const [showJoin, setShowJoin] = useState(false);
     const [lobbyId, setLobbyId] = useState("");
+    const [error, setError] = useState("");
+
+    const handleCreateLobby = () => {
+        if (!currentUser) {
+            setError("You need to be logged in to create a lobby.");
+            return;
+        }
+        sendLobby("CREATE_LOBBY", {
+            userName: currentUser.username,
+            maxPlayers: 4,
+        });
+        navigate("/lobby/waiting");
+    };
+
+    const handleJoinLobby = () => {
+        if (!currentUser) {
+            setError("You need to be logged in to join a lobby.");
+            return;
+        }
+        if (!lobbyId.trim()) {
+            return;
+        }
+        sendLobby("JOIN_LOBBY", {
+            userName: currentUser.username,
+            lobbyId: lobbyId.trim(),
+        });
+        navigate("/lobby/waiting");
 
     useEffect(() => { // when a message arrives, check what event it is
         const unsubscribe = onMessage((message) => {
@@ -78,6 +108,14 @@ export default function Lobby() {
                     <p className="text-slate-500">
                         How would you like to play?
                     </p>
+                    {!connected && (
+                        <p className="text-amber-600 text-sm mt-2">
+                            Connecting to the game server…
+                        </p>
+                    )}
+                    {error && (
+                        <p className="text-red-600 text-sm mt-2">{error}</p>
+                    )}
                 </div>
 
                 {!showJoin ? (

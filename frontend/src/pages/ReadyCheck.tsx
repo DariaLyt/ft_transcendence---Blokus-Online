@@ -1,15 +1,17 @@
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useGameSession } from "../sockets/GameSessionContext";
 import { useState, useEffect } from "react";
 import { sendMessage, onMessage } from "../websocket/socket";
 import Navbar from "../components/NavBar";
 
-
-type Player = {
-    userId: string
-    username: string;
-    accepted: boolean;
-	isHost: boolean;
-};
+function secondsLeft(deadline?: string | null): number {
+    if (!deadline) {
+        return 0;
+    }
+    const ms = new Date(deadline).getTime() - Date.now();
+    return Math.max(0, Math.ceil(ms / 1000));
+}
 
 type User = {
 	id: number;
@@ -18,6 +20,45 @@ type User = {
 
 export default function ReadyCheck() {
     const navigate = useNavigate();
+    const { currentUser, lobby, game, lastError, sendLobby } = useGameSession();
+    const [countdown, setCountdown] = useState(() => secondsLeft(lobby?.readyDeadline));
+
+    useEffect(() => {
+        if (lobby?.status === "waiting") {
+            navigate("/lobby/waiting");
+        }
+        if (lobby?.status === "in_game" || game?.status === "active") {
+            navigate("/game");
+        }
+    }, [lobby?.status, game?.status, navigate]);
+
+    useEffect(() => {
+        setCountdown(secondsLeft(lobby?.readyDeadline));
+        const id = window.setInterval(() => {
+            setCountdown(secondsLeft(lobby?.readyDeadline));
+        }, 250);
+        return () => window.clearInterval(id);
+    }, [lobby?.readyDeadline]);
+
+    const players = lobby?.players ?? [];
+    const currentPlayer = players.find(
+        (player) => player.userId === String(currentUser?.id)
+    );
+
+    const handleAccept = () => {
+        if (!lobby?.id) {
+            return;
+        }
+        sendLobby("ACCEPT_READY_CHECK", { lobbyId: lobby.id });
+    };
+
+    const handleDecline = () => {
+        if (!lobby?.id) {
+            return;
+        }
+        sendLobby("DECLINE_READY_CHECK", { lobbyId: lobby.id });
+    };
+
     const [players, setPlayers] = useState<Player[]>([]);
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [lobbyId, setLobbyId] = useState("");
@@ -132,6 +173,9 @@ export default function ReadyCheck() {
                 <p className="text-slate-500 text-lg mb-8">
                     The game is ready to start. Confirm you want to start playing now.
                 </p>
+                {lastError && (
+                    <p className="text-red-600 text-sm mb-4">{lastError}</p>
+                )}
 
                 <div className="w-full mb-8">
                     {players.map((player) => (
@@ -139,7 +183,7 @@ export default function ReadyCheck() {
                             key={player.userId}
                             className="flex justify-between items-center py-3 border-b border-slate-200">
                             <span className="font-medium text-slate-700">
-                                {player.username}
+                                {player.username || `Player ${player.userId}`}
                             </span>
          
                             <span
