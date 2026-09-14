@@ -45,13 +45,13 @@ message ActionResponse {
 
 // [NEW] names/fields match Go engine. Search [OLD] below for previous Payload types.
 message CreateLobby {
-  int32 max_players = 1;
-  string username = 2;
+  string username = 1;
+  int32 max_players = 2;
 }
 
-message JoinLobby { // [NEW]
-  string lobby_id = 1;
-  string username = 2;
+message JoinLobby {
+  string username = 1;
+  string lobby_id = 2;
 }
 
 message ToggleReady { // [NEW] was LobbyIdOnlyPayload

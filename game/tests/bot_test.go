@@ -58,6 +58,48 @@ func TestBotSuggestsLegalMove(t *testing.T) {
 	}
 }
 
+func TestBotPrefersNearLastMove(t *testing.T) {
+	seats, _ := game.DefaultSeatsForMode(game.ModeM1P3B)
+	state := game.NewActiveGame("bot-near", game.ModeM1P3B, seats)
+	bot := &game.Bot{RNG: rand.New(rand.NewSource(7))}
+
+	if err := game.ApplyMove(state, game.Move{Color: game.ColorBlue, PieceID: string(game.PieceI5), X: 0, Y: 0}); err != nil {
+		t.Fatal(err)
+	}
+	m, err := bot.SuggestMove(state, game.ColorYellow)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cells, err := game.AbsoluteCells(m)
+	if err != nil {
+		t.Fatal(err)
+	}
+	last, err := game.AbsoluteCells(*state.LastMove)
+	if err != nil {
+		t.Fatal(err)
+	}
+	minDist := 40
+	for _, c := range cells {
+		for _, prev := range last {
+			dx := c.X - prev.X
+			if dx < 0 {
+				dx = -dx
+			}
+			dy := c.Y - prev.Y
+			if dy < 0 {
+				dy = -dy
+			}
+			d := dx + dy
+			if d < minDist {
+				minDist = d
+			}
+		}
+	}
+	if minDist > 25 {
+		t.Fatalf("bot move %+v too far from last move, dist=%d", m, minDist)
+	}
+}
+
 func TestBotPlaysThroughTurns(t *testing.T) {
 	seats, _ := game.DefaultSeatsForMode(game.ModeM1P3B)
 	state := game.NewActiveGame("bot-flow", game.ModeM1P3B, seats)
@@ -75,5 +117,32 @@ func TestBotPlaysThroughTurns(t *testing.T) {
 	}
 	if state.Status == game.StatusActive && game.IsBotTurn(state) {
 		t.Fatalf("still bot turn after PlayBotTurnsIfNeeded: %s", state.CurrentColor)
+	}
+}
+
+func TestPlaceRandomMovePlacesAPiece(t *testing.T) {
+	seats, _ := game.DefaultSeatsForMode(game.ModeM4P)
+	state := game.NewActiveGame("rand-place", game.ModeM4P, seats)
+	before := len(state.Remaining[game.ColorBlue])
+
+	if err := game.PlaceRandomMove(state); err != nil {
+		t.Fatal(err)
+	}
+	if len(state.Remaining[game.ColorBlue]) != before-1 {
+		t.Fatalf("remaining=%d want %d", len(state.Remaining[game.ColorBlue]), before-1)
+	}
+	if state.CurrentColor == game.ColorBlue {
+		t.Fatal("turn should advance after a random placement")
+	}
+	hasBlue := false
+	for y := 0; y < game.BoardSize; y++ {
+		for x := 0; x < game.BoardSize; x++ {
+			if state.Board[y][x] != nil && *state.Board[y][x] == game.ColorBlue {
+				hasBlue = true
+			}
+		}
+	}
+	if !hasBlue {
+		t.Fatal("expected a blue piece on the board")
 	}
 }

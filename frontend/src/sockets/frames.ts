@@ -13,9 +13,13 @@ export type LobbyFrameType =
 export type GameActionType = 'MAKE_MOVE' | 'PASS_TURN' | 'DISCONNECT';
 
 export function lobbyFrame(type: LobbyFrameType, extra: Record<string, unknown> = {}) {
+	const payload: Record<string, unknown> = { type, ...extra };
+	if (typeof payload.lobbyId === 'string') {
+		payload.lobbyId = payload.lobbyId.trim();
+	}
 	return {
 		category: 'LOBBY' as const,
-		payload: { type, ...extra },
+		payload,
 	};
 }
 

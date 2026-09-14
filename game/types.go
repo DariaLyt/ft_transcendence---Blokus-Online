@@ -1,5 +1,7 @@
 package game
 
+import "time"
+
 type Color string
 
 const (
@@ -54,9 +56,9 @@ type Cell struct {
 }
 
 type Seat struct {
-	Color Color    `json:"color"`
-	Kind  SeatKind `json:"kind"`
-	UserID *string `json:"userId,omitempty"` // userid for humans, nil for bots
+	Color  Color    `json:"color"`
+	Kind   SeatKind `json:"kind"`
+	UserID *string  `json:"userId,omitempty"` // userid for humans, nil for bots
 }
 
 type Move struct {
@@ -69,15 +71,17 @@ type Move struct {
 }
 
 type GameState struct {
-	ID   string   `json:"id"`
-	Mode GameMode `json:"mode"`
-	Board [][]*Color `json:"board"`
-	Seats []Seat     `json:"seats"`
-	Remaining map[Color][]string `json:"remaining"`
-	CurrentColor Color `json:"currentColor"`
-	Passed map[Color]bool `json:"passed"`
-	Status GameStatus     `json:"status"`
-	Scores map[Color]int `json:"scores,omitempty"`
+	ID           string             `json:"id"`
+	Mode         GameMode           `json:"mode"`
+	Board        [][]*Color         `json:"board"`
+	Seats        []Seat             `json:"seats"`
+	Remaining    map[Color][]string `json:"remaining"`
+	CurrentColor Color              `json:"currentColor"`
+	Passed       map[Color]bool     `json:"passed"`
+	Status       GameStatus         `json:"status"`
+	Scores       map[Color]int      `json:"scores,omitempty"`
+	LastMove     *Move              `json:"lastMove,omitempty"`
+	TurnDeadline *time.Time         `json:"turnDeadline,omitempty"`
 }
 
 type CreateGameRequest struct {
@@ -86,25 +90,25 @@ type CreateGameRequest struct {
 }
 
 type CreateSeatInput struct {
-	Color  Color   `json:"color"`
-	UserID *string `json:"userId,omitempty"`
+	Color  Color    `json:"color"`
+	UserID *string  `json:"userId,omitempty"`
 	Kind   SeatKind `json:"kind,omitempty"`
 }
 
 type MoveErrorCode string
 
 const (
-	ErrOutOfBounds    MoveErrorCode = "OUT_OF_BOUNDS"
-	ErrEdgeTouchOwn   MoveErrorCode = "EDGE_TOUCH_OWN"
-	ErrNoCornerTouch  MoveErrorCode = "NO_CORNER_TOUCH"
-	ErrFirstCorner    MoveErrorCode = "FIRST_CORNER_REQUIRED"
-	ErrPieceUsed      MoveErrorCode = "PIECE_USED"
-	ErrUnknownPiece   MoveErrorCode = "UNKNOWN_PIECE"
-	ErrNotYourTurn    MoveErrorCode = "NOT_YOUR_TURN"
-	ErrNotYourColor   MoveErrorCode = "NOT_YOUR_COLOR"
-	ErrGameNotActive  MoveErrorCode = "GAME_NOT_ACTIVE"
-	ErrCellOccupied   MoveErrorCode = "CELL_OCCUPIED"
-	ErrColorPassed    MoveErrorCode = "COLOR_PASSED"
+	ErrOutOfBounds     MoveErrorCode = "OUT_OF_BOUNDS"
+	ErrEdgeTouchOwn    MoveErrorCode = "EDGE_TOUCH_OWN"
+	ErrNoCornerTouch   MoveErrorCode = "NO_CORNER_TOUCH"
+	ErrFirstCorner     MoveErrorCode = "FIRST_CORNER_REQUIRED"
+	ErrPieceUsed       MoveErrorCode = "PIECE_USED"
+	ErrUnknownPiece    MoveErrorCode = "UNKNOWN_PIECE"
+	ErrNotYourTurn     MoveErrorCode = "NOT_YOUR_TURN"
+	ErrNotYourColor    MoveErrorCode = "NOT_YOUR_COLOR"
+	ErrGameNotActive   MoveErrorCode = "GAME_NOT_ACTIVE"
+	ErrCellOccupied    MoveErrorCode = "CELL_OCCUPIED"
+	ErrColorPassed     MoveErrorCode = "COLOR_PASSED"
 	ErrInvalidRotation MoveErrorCode = "INVALID_ROTATION"
 )
 

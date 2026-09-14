@@ -73,6 +73,7 @@ export function normalizeGameState(raw: any): GameState | null {
 		passed,
 		status: raw.status ?? 'active',
 		scores: raw.scores,
+		turnDeadline: raw.turnDeadline ?? null,
 	};
 }
 
@@ -119,6 +120,17 @@ export function parseEngineSnapshot(payload: any): EngineSnapshot {
 		lobby: normalizeLobby(body?.lobby),
 		game: normalizeGameState(body?.game),
 	};
+}
+
+export function snapshotIncludesUser(snapshot: EngineSnapshot, userId?: number): boolean {
+	if (userId == null) {
+		return false;
+	}
+	const id = String(userId);
+	if (snapshot.lobby?.players.some((player) => player.userId === id)) {
+		return true;
+	}
+	return Boolean(snapshot.game?.seats.some((seat) => seat.userId === userId));
 }
 
 export function userIdsFromSnapshot(snapshot: EngineSnapshot): number[] {

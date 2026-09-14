@@ -13,6 +13,7 @@ import (
 
 const DefaultTurnDuration = 60 * time.Second
 const DefaultDisconnectGrace = 15 * time.Second
+const DefaultBotDelay = 2 * time.Second
 
 type GameEngine struct {
 	pb.UnimplementedGameEngineServer
@@ -21,8 +22,10 @@ type GameEngine struct {
 	byGame          map[string]*GameState
 	lobbies         *LobbyManager
 	turnTimers      map[string]*time.Timer
+	botTimers       map[string]*time.Timer
 	TurnDuration    time.Duration
 	DisconnectGrace time.Duration
+	BotDelay        time.Duration
 }
 
 func NewGameEngine() *GameEngine {
@@ -31,8 +34,10 @@ func NewGameEngine() *GameEngine {
 		byGame:          make(map[string]*GameState),
 		lobbies:         NewLobbyManager(),
 		turnTimers:      make(map[string]*time.Timer),
+		botTimers:       make(map[string]*time.Timer),
 		TurnDuration:    DefaultTurnDuration,
 		DisconnectGrace: DefaultDisconnectGrace,
+		BotDelay:        0,
 	}
 }
 
@@ -71,6 +76,7 @@ func (e *GameEngine) ValidateAndMakeMove(_ context.Context, req *pb.MoveRequest)
 		resp.State = encodeSnapshot(nil, state)
 		if resp.GetIsValid() {
 			e.armTurnTimerLocked(state)
+			e.armBotTimerLocked(state)
 		}
 	}
 	return resp, nil
@@ -134,11 +140,17 @@ func (e *GameEngine) HandleLobbyAction(_ context.Context, req *pb.LobbyActionReq
 	if err != nil {
 		return failActionFromErr(err), nil
 	}
+	switch req.GetPayload().(type) {
+	case *pb.LobbyActionRequest_CreateLobby, *pb.LobbyActionRequest_JoinLobby, *pb.LobbyActionRequest_LeaveLobby:
+		e.mu.Lock()
+		e.unregisterUserLocked(req.GetUserId())
+		e.mu.Unlock()
+	}
 	if state != nil {
 		e.mu.Lock()
 		e.registerGameLocked(state)
-		_, _ = (&Bot{}).PlayBotTurnsIfNeeded(state)
 		e.armTurnTimerLocked(state)
+		e.armBotTimerLocked(state)
 		e.mu.Unlock()
 		if lobby == nil {
 			lobby, _ = e.lobbies.GetLobby(state.ID)
@@ -180,6 +192,7 @@ func (e *GameEngine) HandleGameAction(_ context.Context, req *pb.GameActionReque
 		snap := encodeSnapshot(nil, state)
 		if resp.GetIsValid() {
 			e.armTurnTimerLocked(state)
+			e.armBotTimerLocked(state)
 			return okAction(snap), nil
 		}
 		return failActionState(codeFromEngineMessage(resp.GetErrorMessage()), resp.GetErrorMessage(), snap), nil
@@ -194,8 +207,8 @@ func (e *GameEngine) HandleGameAction(_ context.Context, req *pb.GameActionReque
 		if err := PassTurn(state, color); err != nil {
 			return failActionFromErr(err), nil
 		}
-		_, _ = (&Bot{}).PlayBotTurnsIfNeeded(state)
 		e.armTurnTimerLocked(state)
+		e.armBotTimerLocked(state)
 		return okAction(encodeSnapshot(nil, state)), nil
 	case *pb.GameActionRequest_Disconnect:
 		e.scheduleDisconnectLocked(userID)
@@ -244,9 +257,13 @@ func (e *GameEngine) ExpireTurn(gameID string) {
 	if state == nil || state.Status != StatusActive {
 		return
 	}
-	_ = PassTurn(state, state.CurrentColor)
-	_, _ = (&Bot{}).PlayBotTurnsIfNeeded(state)
+	if !IsBotTurn(state) {
+		if err := PlaceRandomMove(state); err != nil {
+			_ = PassTurn(state, state.CurrentColor)
+		}
+	}
 	e.armTurnTimerLocked(state)
+	e.armBotTimerLocked(state)
 }
 
 func (e *GameEngine) Autofill(userID int32) *pb.ActionResponse {
@@ -272,16 +289,67 @@ func (e *GameEngine) armTurnTimerLocked(state *GameState) {
 		delete(e.turnTimers, state.ID)
 	}
 	if state.Status != StatusActive {
+		state.TurnDeadline = nil
 		return
 	}
 	d := e.TurnDuration
 	if d <= 0 {
 		d = DefaultTurnDuration
 	}
+	deadline := time.Now().UTC().Add(d)
+	state.TurnDeadline = &deadline
 	id := state.ID
 	e.turnTimers[id] = time.AfterFunc(d, func() {
 		e.ExpireTurn(id)
 	})
+}
+
+func (e *GameEngine) stopBotTimerLocked(gameID string) {
+	if t, ok := e.botTimers[gameID]; ok {
+		t.Stop()
+		delete(e.botTimers, gameID)
+	}
+}
+
+func (e *GameEngine) armBotTimerLocked(state *GameState) {
+	if state == nil {
+		return
+	}
+	e.stopBotTimerLocked(state.ID)
+	if state.Status != StatusActive || !IsBotTurn(state) {
+		return
+	}
+	if e.BotDelay <= 0 {
+		_, _ = (&Bot{}).PlayBotTurnsIfNeeded(state)
+		return
+	}
+	delay := e.BotDelay
+	if delay <= 0 {
+		delay = DefaultBotDelay
+	}
+	id := state.ID
+	e.botTimers[id] = time.AfterFunc(delay, func() {
+		e.playScheduledBot(id)
+	})
+}
+
+func (e *GameEngine) playScheduledBot(gameID string) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	state := e.byGame[gameID]
+	if state == nil || state.Status != StatusActive || !IsBotTurn(state) {
+		return
+	}
+	if _, err := (&Bot{}).PlayTurn(state); err != nil {
+		ResolvePasses(state)
+		if state.Status == StatusActive && IsBotTurn(state) {
+			state.Passed[state.CurrentColor] = true
+			advanceTurn(state)
+			ResolvePasses(state)
+		}
+	}
+	e.armTurnTimerLocked(state)
+	e.armBotTimerLocked(state)
 }
 
 func (e *GameEngine) scheduleDisconnectLocked(userID int32) {
@@ -304,8 +372,8 @@ func (e *GameEngine) disconnectNowLocked(userID int32) {
 	}
 	if ConvertSeatToBot(state, strconv.Itoa(int(userID))) {
 		e.unregisterUserLocked(userID)
-		_, _ = (&Bot{}).PlayBotTurnsIfNeeded(state)
 		e.armTurnTimerLocked(state)
+		e.armBotTimerLocked(state)
 	}
 }
 
@@ -339,7 +407,6 @@ func ValidateAndMakeMove(state *GameState, req *pb.MoveRequest) *pb.GameStateRes
 		return invalidMove(state, err)
 	}
 
-	_, _ = (&Bot{}).PlayBotTurnsIfNeeded(state)
 	return &pb.GameStateResponse{
 		IsValid:           true,
 		CurrentTurnUserId: currentTurnUserID(state),

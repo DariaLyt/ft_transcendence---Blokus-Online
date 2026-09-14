@@ -13,17 +13,24 @@ function secondsLeft(deadline?: string | null): number {
 
 export default function ReadyCheck() {
     const navigate = useNavigate();
-    const { currentUser, lobby, game, lastError, sendLobby } = useGameSession();
+    const { currentUser, lobby, lastError, sendLobby } = useGameSession();
     const [countdown, setCountdown] = useState(() => secondsLeft(lobby?.readyDeadline));
+    const inThisLobby = Boolean(
+        currentUser &&
+        lobby?.players.some((player) => player.userId === String(currentUser.id))
+    );
 
     useEffect(() => {
+        if (!inThisLobby) {
+            return;
+        }
         if (lobby?.status === "waiting") {
             navigate(lobby.id ? `/lobby/waiting/${lobby.id}` : "/lobby/waiting");
         }
-        if (lobby?.status === "in_game" || game?.status === "active") {
+        if (lobby?.status === "in_game") {
             navigate("/game");
         }
-    }, [lobby?.status, lobby?.id, game?.status, navigate]);
+    }, [inThisLobby, lobby?.status, lobby?.id, navigate]);
 
     useEffect(() => {
         setCountdown(secondsLeft(lobby?.readyDeadline));

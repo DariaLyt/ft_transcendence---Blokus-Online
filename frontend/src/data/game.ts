@@ -18,4 +18,5 @@ export type GameState = {
 	passed: Record<Color, boolean>; // to know which color has passed their turn
 	status: "lobby" | "active" | "finished" | "aborted";
 	scores?: Record<Color, number>;
+	turnDeadline?: string | null;
 };
