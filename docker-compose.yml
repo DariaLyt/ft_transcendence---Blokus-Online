@@ -45,9 +45,11 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
       GO_ENGINE_URL: game:50051
+      AVATAR_UPLOAD_DIR: ${AVATAR_UPLOAD_DIR}
     volumes:
       - ./backend:/app           
-      - /app/node_modules  
+      - /app/node_modules
+      - ./backend/uploads/avatars:/app/uploads/avatars
     command: npm run dev
     depends_on:
       db:

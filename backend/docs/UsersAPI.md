@@ -70,7 +70,7 @@ Content-Type: application/json
 
 ```json
 {
-  "email": "john@example.com",
+  "identifier": "john@example.com",
   "password": "mypassword123"
 }
 ```
@@ -226,6 +226,30 @@ Status: 200 OK
 {
   "status": "ok",
   "database": "connected"
+}
+```
+
+## 🟤 UPLOAD AVATAR
+
+POST /me/avatar
+
+Uploads or updates the profile avatar for the currently authenticated user.
+
+### Request
+
+Content-Type: multipart/form-data
+
+Form Data Parameters:
+* `avatar` (file, required): Image file (JPEG, PNG, WebP). Maximum file size: 2MB.
+
+### Success Response
+
+Status: 200 OK
+
+```json
+{
+  "message": "Avatar updated successfully",
+  "avatarUrl": "/uploads/avatars/avatar-1-1788621044767.png"
 }
 ```
 

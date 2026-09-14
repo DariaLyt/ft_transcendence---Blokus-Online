@@ -144,6 +144,24 @@ To request the current state:
 
 ---
 
+## Errors
+
+Generic error payload
+
+```json
+{
+  "category": "ERROR",
+  "payload": {
+    "code": "INVALID_PAYLOAD",
+    "message": "Invalid message payload structure",
+    "details": {},
+    "state": {}
+  }
+}
+```
+
+---
+
 ## Notes
 
 * For backend/GameEngine request/response structures, refer to `game.proto`.
