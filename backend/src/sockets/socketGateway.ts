@@ -1,6 +1,6 @@
 import type { AuthenticatedSocket } from './socketServer.js';
 import { IncomingFrameSchema, type GameModules } from '../types/gatewayTypes.js';
-import { sendToUser } from './broadcaster.js';
+import { sendToUser, sendToUsers } from './broadcaster.js'; // [NEW]
 import { z } from 'zod';
 import { sendLobbyAction, sendGameAction, getGameState } from '../grpc/gameClient.js';
 
@@ -21,39 +21,68 @@ import { sendLobbyAction, sendGameAction, getGameState } from '../grpc/gameClien
 function buildLobbyPayload(payload: any) {
     switch (payload.type) {
         case 'CREATE_LOBBY':
+            // [OLD]
+            // return {
+            //     responseType: 'LOBBY_CREATED',
+            //     data: { createLobby: { userName: payload.userName, maxPlayers: payload.maxPlayers } }
+            // };
+            // [NEW] oneof field for Go proto (username, not userName)
             return {
-                responseType: 'LOBBY_CREATED',
-                data: { createLobby: { userName: payload.userName, maxPlayers: payload.maxPlayers } }
+                createLobby: { username: payload.userName, maxPlayers: payload.maxPlayers }
             };
         case 'JOIN_LOBBY':
-            return {
-                responseType: 'LOBBY_JOINED',
-                data: { joinLobby: { userName: payload.userName, lobbyId: payload.lobbyId } }
+            // [OLD]
+            // return {
+            //     responseType: 'LOBBY_JOINED',
+            //     data: { joinLobby: { userName: payload.userName, lobbyId: payload.lobbyId } }
+            // };
+            return { // [NEW]
+                joinLobby: { username: payload.userName, lobbyId: payload.lobbyId }
             };
         case 'TOGGLE_READY':
-            return {
-                responseType: 'READY_TOGGLED',
-                data: { toggleReady: { lobbyId: payload.lobbyId } }
+            // [OLD]
+            // return {
+            //     responseType: 'READY_TOGGLED',
+            //     data: { toggleReady: { lobbyId: payload.lobbyId } }
+            // };
+            return { // [NEW]
+                toggleReady: { lobbyId: payload.lobbyId }
             };
         case 'LEAVE_LOBBY':
-            return {
-                responseType: 'LOBBY_LEFT',
-                data: { leaveLobby: {} }
+            // [OLD]
+            // return {
+            //     responseType: 'LOBBY_LEFT',
+            //     data: { leaveLobby: {} }
+            // };
+            return { // [NEW]
+                leaveLobby: {}
             };
         case 'BEGIN_READY_CHECK':
-            return {
-                responseType: 'READY_CHECK_BEGUN',
-                data: { beginReadyCheck: { lobbyId: payload.lobbyId } }
+            // [OLD]
+            // return {
+            //     responseType: 'READY_CHECK_BEGUN',
+            //     data: { beginReadyCheck: { lobbyId: payload.lobbyId } }
+            // };
+            return { // [NEW]
+                beginReadyCheck: { lobbyId: payload.lobbyId }
             };
         case 'ACCEPT_READY_CHECK':
-            return {
-                responseType: 'READY_CHECK_ACCEPTED',
-                data: { acceptReadyCheck: { lobbyId: payload.lobbyId } }
+            // [OLD]
+            // return {
+            //     responseType: 'READY_CHECK_ACCEPTED',
+            //     data: { acceptReadyCheck: { lobbyId: payload.lobbyId } }
+            // };
+            return { // [NEW]
+                acceptReadyCheck: { lobbyId: payload.lobbyId }
             };
         case 'DECLINE_READY_CHECK':
-            return {
-                responseType: 'READY_CHECK_DECLINED',
-                data: { declineReadyCheck: { lobbyId: payload.lobbyId } }
+            // [OLD]
+            // return {
+            //     responseType: 'READY_CHECK_DECLINED',
+            //     data: { declineReadyCheck: { lobbyId: payload.lobbyId } }
+            // };
+            return { // [NEW]
+                declineReadyCheck: { lobbyId: payload.lobbyId }
             };
         default:
             return null;
@@ -64,30 +93,119 @@ function buildGamePayload(frame: any) {
 	const { action, payload } = frame;
     switch (action) {
         case 'MAKE_MOVE':
-            return {
-                responseType: 'MOVE_MADE',
-                data: { makeMove: { 
-					color: payload.color, 
+            // [OLD]
+            // return {
+            //     responseType: 'MOVE_MADE',
+            //     data: { makeMove: {
+            //         color: payload.color,
+            //         pieceId: payload.pieceId,
+            //         originX: payload.originX,
+            //         originY: payload.originY,
+            //         rotation: payload.rotation,
+            //         flip: payload.flip
+            //     } }
+            // };
+            return { // [NEW]
+                makeMove: {
+					color: payload.color,
 					pieceId: payload.pieceId,
 					originX: payload.originX,
 					originY: payload.originY,
 					rotation: payload.rotation,
-					flip: payload.flip 
-				} }
+					flip: payload.flip
+				}
             };
         case 'PASS_TURN':
-            return {
-                responseType: 'TURN_PASSED',
-                data: { passTurn: { color: payload.color } }
+            // [OLD]
+            // return {
+            //     responseType: 'TURN_PASSED',
+            //     data: { passTurn: { color: payload.color } }
+            // };
+            return { // [NEW]
+                passTurn: { color: payload.color }
             };
         case 'DISCONNECT':
-            return {
-                responseType: 'DISCONNECTED',
-                data: { disconnect: {} }
+            // [OLD]
+            // return {
+            //     responseType: 'DISCONNECTED',
+            //     data: { disconnect: {} }
+            // };
+            return { // [NEW]
+                disconnect: {}
             };
         default:
             return null;
     }
+}
+
+// [NEW] parse Go ActionResponse.state JSON before broadcasting
+function parseSnapshot(resp: any): any {
+	const raw = resp?.state;
+	if (typeof raw === 'string' && raw !== '') {
+		try {
+			return JSON.parse(raw);
+		} catch {
+			return { status: 'NO_ACTIVE_GAME' };
+		}
+	}
+	if (raw && typeof raw === 'object') {
+		return raw;
+	}
+	if (resp?.lobby || resp?.game) {
+		return resp;
+	}
+	return { status: 'NO_ACTIVE_GAME' };
+}
+
+// [NEW] collect every human user id in the lobby/game so all clients get the snapshot
+function userIdsFromSnapshot(snapshot: any, fallbackUserId: number): number[] {
+	const ids = new Set<number>();
+	for (const player of snapshot?.lobby?.players ?? []) {
+		const n = Number(player?.userId);
+		if (Number.isFinite(n)) {
+			ids.add(n);
+		}
+	}
+	for (const seat of snapshot?.game?.seats ?? []) {
+		const n = Number(seat?.userId);
+		if (Number.isFinite(n)) {
+			ids.add(n);
+		}
+	}
+	if (ids.size === 0) {
+		ids.add(fallbackUserId);
+	}
+	return [...ids];
+}
+
+// [NEW]
+function isEngineFailure(resp: any): boolean {
+	if (!resp) {
+		return true;
+	}
+	if (resp.success === true) {
+		return false;
+	}
+	if (resp.success === false) {
+		return true;
+	}
+	return Boolean(resp.error_code || resp.errorCode || resp.message);
+}
+
+// [NEW] unified GAME_STATE_SNAPSHOT to all involved users; ERROR to the actor on failure
+function broadcastEngineResult(userId: number, resp: any) {
+	const snapshot = parseSnapshot(resp);
+	const targets = userIdsFromSnapshot(snapshot, userId);
+
+	if (isEngineFailure(resp)) {
+		sendToUser(userId, 'ERROR', {
+			message: resp?.message || 'Game engine rejected the action',
+			code: resp?.error_code || resp?.errorCode,
+			details: snapshot,
+		});
+	}
+
+	sendToUsers(targets, 'GAME_STATE_SNAPSHOT', snapshot);
 }
 
 export function handleIncomingSocketMessage(
@@ -125,10 +243,12 @@ export function handleIncomingSocketMessage(
 					break;
 				}
 
-				sendLobbyAction(userId, action.data)
+				// [OLD] sendLobbyAction(userId, action.data)
+				sendLobbyAction(userId, action) // [NEW]
 				.then((goResponse) => {
 					console.log('[gRPC Success from Go]:', goResponse);
-					sendToUser(userId, action.responseType, goResponse);
+					// [OLD] sendToUser(userId, action.responseType, goResponse);
+					broadcastEngineResult(userId, goResponse); // [NEW]
 				})
 				.catch((err) => {
 					console.error('[gRPC Error from Go]:', err.message);
@@ -141,14 +261,16 @@ export function handleIncomingSocketMessage(
 			}
 
 			case 'GAME': {
-				const action = buildGamePayload(frame.payload);
+				// [OLD] const action = buildGamePayload(frame.payload);
+				const action = buildGamePayload(frame); // [NEW] action lives on the frame, not payload
 
 				if (!action) {
 					sendToUser(userId, 'ERROR', { message: 'Unknown game action type' });
 					break;
 				}
 
-				sendGameAction(userId, action.data)
+				// [OLD] sendGameAction(userId, action.data)
+				sendGameAction(userId, action) // [NEW]
 				.then((goResponse) => {
 					console.log('[gRPC Success from Go]:', goResponse);
 					// if (!goResponse.success) {
@@ -159,7 +281,8 @@ export function handleIncomingSocketMessage(
 					// 	});
 					// 	return;
 					// }
-					sendToUser(userId, action.responseType, goResponse);
+					// [OLD] sendToUser(userId, action.responseType, goResponse);
+					broadcastEngineResult(userId, goResponse); // [NEW]
 				})
 				.catch((err) => {
 					console.error('[gRPC Error from Go]:', err.message);
@@ -197,7 +320,8 @@ export function handleIncomingSocketMessage(
 				getGameState(userId)
 				.then((goResponse) => {
 					console.log('[gRPC Success from Go]:', goResponse);
-					sendToUser(userId, 'GAME_STATE_SNAPSHOT', goResponse);
+					// [OLD] sendToUser(userId, 'GAME_STATE_SNAPSHOT', goResponse);
+					broadcastEngineResult(userId, goResponse); // [NEW]
 				})
 				.catch((err) => {
 					console.error('[gRPC Error from Go]:', err.message);

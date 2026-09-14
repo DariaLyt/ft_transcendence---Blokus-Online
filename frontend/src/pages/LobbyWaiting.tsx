@@ -1,98 +1,34 @@
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
-
-type LobbyPlayer = {
-	userId: string;
-	username: string;
-	isReady: boolean;
-	isHost: boolean;
-}
-
-type Lobby = {
-	id: string;
-	maxPlayers: number;
-	status: "waiting" | "in_game";
-	players: LobbyPlayer[];
-	createdAt: string;
-}
-
-type User = {
-	id: number;
-	username: string;
-}
+import { useEffect } from "react";
+import { useGameSession } from "../sockets/GameSessionContext";
 
 export default function LobbyWaiting() {
     const navigate = useNavigate();
-	const [currentUser, setCurrentUser] = useState<User | null>(null);
+    const { currentUser, lobby, game, lastError, sendLobby } = useGameSession();
 
-	useEffect(() => {
-    	fetch("https://localhost:3000/api/auth/me", {
-        credentials: "include",
-    	})
-        	.then((response) => response.json())
-        	.then((data) => {
-            	setCurrentUser(data.user);
-        	});
-	}, []);
+    useEffect(() => {
+        if (lobby?.status === "ready_check") {
+            navigate("/ready-check");
+        }
+        if (lobby?.status === "in_game" || game?.status === "active") {
+            navigate("/game");
+        }
+    }, [lobby?.status, game?.status, navigate]);
 
-    // PLACEHOLDER: frontend structure ready for when the real data arrives
-	const lobby: Lobby = {
-    	id: "example-lobby-id",
-    	maxPlayers: 4,
-    	status: "waiting",
-    	players: [
-        	{
-            	userId: "1",
-            	username: "You",
-            	isReady: true,
-            	isHost: true,
-        	},
-    	],
-    	createdAt: "",
-	};
+    const players = lobby?.players ?? [];
+    const currentPlayer = players.find(
+        (player) => player.userId === String(currentUser?.id)
+    );
 
-	const players = lobby.players;
-	const currentPlayer = players.find(
-		(player) => player.userId === String(currentUser?.id)
-	);
-
-    const handleStartGame = async () => {
-        // PLACEHOLDER: exact endpoint will be confirmed later
-		/**const response = await fetch(
-        	"https://localhost:3000/api/game/lobby/start",
-        	{
-			    method: "POST",
-            	headers: {
-                	"Content-Type": "application/json",
-            	},
-            	credentials: "include",
-            	body: JSON.stringify({
-                	lobbyId: lobby.id,
-            	}),
-			}
-		);
-		const data = await response.json();
-		 **/
-        navigate("/ready-check");
+    const handleStartGame = () => {
+        if (!lobby?.id) {
+            return;
+        }
+        sendLobby("BEGIN_READY_CHECK", { lobbyId: lobby.id });
     };
 
-    const handleLeaveLobby = async () => {
-    	// PLACEHOLDER: exact endpoint method will be confirmed later
-    	/**const response = await fetch(
-        	"https://localhost:3000/api/game/lobby/leave",
-        	{
-            	method: "POST",
-            	headers: {
-                	"Content-Type": "application/json",
-            	},
-            	credentials: "include",
-            	body: JSON.stringify({
-                	lobbyId: lobby.id,
-            	}),
-        	}
-    	);
-
-    	const data = await response.json(); **/
+    const handleLeaveLobby = () => {
+        sendLobby("LEAVE_LOBBY");
         navigate("/lobby");
     };
 
@@ -106,13 +42,22 @@ export default function LobbyWaiting() {
                     </h1>
 
                     <p className="text-slate-500">
-                        Players: {players.length} / {lobby.maxPlayers}
+                        Players: {players.length} / {lobby?.maxPlayers ?? 4}
                     </p>
+
+                    {lobby?.id && (
+                        <p className="text-slate-400 text-xs mt-2 break-all">
+                            Lobby ID: {lobby.id}
+                        </p>
+                    )}
 
                     <p className="text-slate-400 text-sm mt-2">
                         You can start with any number of players.
                         Empty seats will be filled by bots.
                     </p>
+                    {lastError && (
+                        <p className="text-red-600 text-sm mt-2">{lastError}</p>
+                    )}
                 </div>
 
                 <div className="w-full mb-8">
@@ -121,7 +66,7 @@ export default function LobbyWaiting() {
 							key={player.userId}
 							className="flex items-center justify-between py-4 border-b border-slate-200">
 							<span className="">
-								{player.username}
+								{player.username || `Player ${player.userId}`}
 							</span>
 							<div className="flex items-center gap-4">
 								{player.isReady && (
@@ -137,6 +82,9 @@ export default function LobbyWaiting() {
 							</div>
 						</div>
                     ))}
+                    {players.length === 0 && (
+                        <p className="text-slate-400 text-sm">Waiting for lobby data…</p>
+                    )}
                 </div>
 
                 <div className="mt-auto flex flex-col gap-3">

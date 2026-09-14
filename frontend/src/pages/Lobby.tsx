@@ -1,44 +1,39 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useGameSession } from "../sockets/GameSessionContext";
 
 export default function Lobby() {
     const navigate = useNavigate();
+    const { currentUser, sendLobby, connected } = useGameSession();
     const [showJoin, setShowJoin] = useState(false);
     const [lobbyId, setLobbyId] = useState("");
+    const [error, setError] = useState("");
 
-    const handleCreateLobby = async () => {
-		//PLACEHOLDER: exact endpoint will be confirmed later
-    	/**const response = await fetch(
-        	"https://localhost:3000/api/game/lobby",
-        	{
-            	method: "POST",
-            	credentials: "include",
-        	}
-    	);
-
-    	const data = await response.json(); **/
+    const handleCreateLobby = () => {
+        if (!currentUser) {
+            setError("You need to be logged in to create a lobby.");
+            return;
+        }
+        sendLobby("CREATE_LOBBY", {
+            userName: currentUser.username,
+            maxPlayers: 4,
+        });
         navigate("/lobby/waiting");
     };
 
-    const handleJoinLobby = async () => {
-        // PLACEHOLDER: exact endpoint will be confirmed later
-        /**const response = await fetch(
-		  "https://localhost:3000/api/game/lobby/join",
-			{
-		    	method: "POST",
-            	headers: {
-                	"Content-Type": "application/json",
-            	},
-            	credentials: "include",
-            	body: JSON.stringify({
-                	lobbyId: lobbyId,
-            	}),
-		  	}
-		  );
-		  
-		const data = await response.json(); **/
+    const handleJoinLobby = () => {
+        if (!currentUser) {
+            setError("You need to be logged in to join a lobby.");
+            return;
+        }
+        if (!lobbyId.trim()) {
+            return;
+        }
+        sendLobby("JOIN_LOBBY", {
+            userName: currentUser.username,
+            lobbyId: lobbyId.trim(),
+        });
         navigate("/lobby/waiting");
-		
     };
 
     return (
@@ -53,6 +48,14 @@ export default function Lobby() {
                     <p className="text-slate-500">
                         How would you like to play?
                     </p>
+                    {!connected && (
+                        <p className="text-amber-600 text-sm mt-2">
+                            Connecting to the game server…
+                        </p>
+                    )}
+                    {error && (
+                        <p className="text-red-600 text-sm mt-2">{error}</p>
+                    )}
                 </div>
 
                 {!showJoin ? (

@@ -3,86 +3,129 @@ import Board from "../components/Board";
 import PiecesTray from "../components/PiecesTray";
 import GameStatus from "../components/GameStatus";
 import PlayersInfo from "../components/PlayersInfo";
-import type { GameState } from "../data/game";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useGameSession } from "../sockets/GameSessionContext";
+import { PIECES } from "../data/pieces";
+import { findPiece } from "../data/pieceTransform";
+import type { Rotation } from "../data/pieceTransform";
 
 export default function GamePage() {
-	const [currentUser, setCurrentUser] = useState<any>(null);
+	const navigate = useNavigate();
+	const { currentUser, game, lastError, sendGame } = useGameSession();
+	const [selectedPiece, setSelectedPiece] = useState<string | null>(null);
+	const [rotation, setRotation] = useState<Rotation>(0);
+	const [flip, setFlip] = useState(false);
+
+	const currentSeat = game?.seats.find((seat) => seat.userId === currentUser?.id);
+	const remaining = currentSeat ? game?.remaining[currentSeat.color] ?? [] : [];
+
 	useEffect(() => {
-		fetch("https://localhost:3000/api/auth/me", {
-			credentials: "include",
-		})
-			.then((response) => response.json())
-			.then((data) => {
-				setCurrentUser(data.user);
-			})
-	}, []);
-	const gameState: GameState = { // PLACEHOLDER: fake data for now but following the structure from backend
-		id:"example-game-id",
-		mode: "M3P1B",
-		board: Array.from({ length: 20}, () =>
-			Array.from({length: 20}, () => null)
-		),
-		seats: [
-			{
-				color: "blue",
-				kind: "human",
-				userId: 1,
-			},
-			{
-				color: "yellow",
-				kind: "human",
-				userId: 2,
-			},
-			{
-				color: "red",
-				kind: "human",
-				userId: 3,
-			},
-			{
-				color: "green",
-				kind: "bot",
-			},
-		],
-		remaining: {
-			blue: [],
-			yellow: [],
-			red: [],
-			green: [],
-		},
-		currentColor: "blue",
-		passed: {
-			blue: false,
-			yellow: false,
-			red: false,
-			green: false,
-		},
-		status: "active",
-		scores: {
-			blue: 0,
-			yellow: 0,
-			red: 0,
-			green: 0,
+		if (selectedPiece && !remaining.includes(selectedPiece)) {
+			setSelectedPiece(null);
 		}
+	}, [remaining, selectedPiece]);
+	const isYourTurn =
+		game?.status === "active" &&
+		Boolean(currentSeat) &&
+		currentSeat?.color === game.currentColor;
+	const piece = selectedPiece ? findPiece(PIECES, selectedPiece) : null;
+
+	const handlePlace = (x: number, y: number) => {
+		if (!game || !currentSeat || !selectedPiece || !isYourTurn) {
+			return;
+		}
+		sendGame("MAKE_MOVE", {
+			color: currentSeat.color,
+			pieceId: selectedPiece,
+			originX: x,
+			originY: y,
+			rotation,
+			flip,
+		});
 	};
+
+	const handlePass = () => {
+		if (!currentSeat || !isYourTurn) {
+			return;
+		}
+		sendGame("PASS_TURN", { color: currentSeat.color });
+	};
+
+	if (!game) {
+		return (
+			<div className="min-h-screen bg-sky-50/50 text-slate-800 flex flex-col">
+				<Navbar />
+				<main className="flex-1 flex flex-col items-center justify-center gap-4 p-6">
+					<p className="text-slate-500">No active game yet.</p>
+					<button
+						type="button"
+						onClick={() => navigate("/lobby")}
+						className="px-6 py-3 rounded-lg bg-blue-700 text-white"
+					>
+						Back to lobby
+					</button>
+				</main>
+			</div>
+		);
+	}
+
 	return (
 		<div className="min-h-screen bg-sky-50/50 text-slate-800 flex flex-col"> 
 		<Navbar />
   
-		{/* Main content area */}
 	  	<main className="flex-1 flex flex-col items-center justify-center gap-6 p-6 max-w-7xl mx-auto w-full">
 			<GameStatus
-				gameState={gameState}
+				gameState={game}
 				currentUserId={currentUser?.id}
 			/>
+			{lastError && (
+				<p className="text-red-600 text-sm">{lastError}</p>
+			)}
 		
 			<div className="grid grid-cols-1 min-[1400px]:grid-cols-[auto_400px] gap-6 w-full justify-center">
-				<Board />
+				<Board
+					board={game.board}
+					selectedPiece={piece}
+					rotation={rotation}
+					flip={flip}
+					canPlace={Boolean(isYourTurn && selectedPiece)}
+					ghostColor={currentSeat?.color ?? "blue"}
+					onPlace={handlePlace}
+				/>
 			<div className="flex flex-col gap-6">
-				<PlayersInfo gameState={gameState} />
+				<PlayersInfo gameState={game} />
+				{isYourTurn && (
+					<div className="flex gap-2">
+						<button
+							type="button"
+							onClick={() => setRotation((r) => ((r + 90) % 360) as Rotation)}
+							className="flex-1 px-3 py-2 rounded-lg bg-slate-200 text-sm"
+						>
+							Rotate
+						</button>
+						<button
+							type="button"
+							onClick={() => setFlip((f) => !f)}
+							className="flex-1 px-3 py-2 rounded-lg bg-slate-200 text-sm"
+						>
+							Flip {flip ? "on" : "off"}
+						</button>
+						<button
+							type="button"
+							onClick={handlePass}
+							className="flex-1 px-3 py-2 rounded-lg bg-slate-700 text-white text-sm"
+						>
+							Pass
+						</button>
+					</div>
+				)}
 				<PiecesTray 
-					gameState={gameState}
+					gameState={game}
 					currentUserId={currentUser?.id}
+					selectedPiece={selectedPiece}
+					onSelect={setSelectedPiece}
+					canSelect={Boolean(isYourTurn)}
 				/>
 			</div>
 			</div>

@@ -12,7 +12,7 @@ export default function LoginPage() {
 
     const handleLogin = async () => {
         const response = await fetch(
-            "http://localhost:3000/api/auth/login", // send a request and wait for the server's response
+            "https://localhost:3000/api/auth/login", // send a request and wait for the server's response
             {
                 method: "POST", // we're sending data to backend
                 headers: {
@@ -20,7 +20,7 @@ export default function LoginPage() {
                 },
                 credentials: "include", // include cookies with request and accept cookies from response
                 body: JSON.stringify({ // convert the values to JSON
-                    email: email,
+                    identifier: email,
                     password: password,
                 }),
             }

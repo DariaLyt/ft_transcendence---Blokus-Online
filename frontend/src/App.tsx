@@ -8,12 +8,13 @@ import Menu from './pages/Menu';
 import ReadyCheck from './pages/ReadyCheck';
 import Lobby from './pages/Lobby';
 import LobbyWaiting from './pages/LobbyWaiting';
+import { GameSessionProvider } from './sockets/GameSessionContext';
 
 export default function App() {
     return (
         <BrowserRouter>
+          <GameSessionProvider>
             <Routes>
-              {/* 3. The actual rules: */}
                 <Route path="/" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/menu" element={<Menu />} />
@@ -23,6 +24,7 @@ export default function App() {
                 <Route path="/game" element={<GamePage />} />
                 <Route path="/profile" element={<ProfilePage />} />
             </Routes>
+          </GameSessionProvider>
         </BrowserRouter>
     );
 }

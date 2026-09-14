@@ -5,13 +5,13 @@ package game;
 option go_package = "./pb";
 
 service GameEngine {
-  rpc ValidateAndMakeMove(MoveRequest) returns (GameStateResponse);
+  rpc ValidateAndMakeMove (MoveRequest) returns (GameStateResponse);
   // Lobby action: CREATE_LOBBY, JOIN_LOBBY, TOGGLE_READY, LEAVE_LOBBY,
   // BEGIN_READY_CHECK, ACCEPT_READY_CHECK, DECLINE_READY_CHECK.
-  rpc HandleLobbyAction(LobbyActionRequest) returns (ActionResponse);
+  rpc HandleLobbyAction (LobbyActionRequest) returns (ActionResponse);
   // Game action: MAKE_MOVE, PASS_TURN, DISCONNECT.
-  rpc HandleGameAction(GameActionRequest) returns (ActionResponse);
-  rpc GetGameStateSnapshot(GameStateRequest) returns (ActionResponse);
+  rpc HandleGameAction (GameActionRequest) returns (ActionResponse);
+  rpc GetGameStateSnapshot (GameStateRequest) returns (ActionResponse);
 }
 
 message MoveRequest {
@@ -42,37 +42,49 @@ message ActionResponse {
   string state = 4;
 }
 
-message CreateLobbyPayload {
-  string user_name = 1;
-  int32 max_players = 2;
+// [NEW] names/fields match Go engine. Search [OLD] below for previous Payload types.
+message CreateLobby {
+  int32 max_players = 1;
+  string username = 2;
 }
 
-message JoinLobbyPayload {
-  string user_name = 1;
-  string lobby_id = 2;
+message JoinLobby { // [NEW]
+  string lobby_id = 1;
+  string username = 2;
 }
 
-message LobbyIdOnlyPayload {
+message ToggleReady { // [NEW] was LobbyIdOnlyPayload
   string lobby_id = 1;
 }
 
-message EmptyPayload {}
+message LeaveLobby {} // [NEW] was EmptyPayload
+
+message BeginReadyCheck { // [NEW] was LobbyIdOnlyPayload
+  string lobby_id = 1;
+}
+
+message AcceptReadyCheck { // [NEW] was LobbyIdOnlyPayload
+  string lobby_id = 1;
+}
+
+message DeclineReadyCheck { // [NEW] was LobbyIdOnlyPayload
+  string lobby_id = 1;
+}
 
 message LobbyActionRequest {
   int32 user_id = 1;
-
   oneof payload {
-    CreateLobbyPayload create_lobby = 2;
-    JoinLobbyPayload join_lobby = 3;
-    LobbyIdOnlyPayload toggle_ready = 4;
-    EmptyPayload leave_lobby = 5;
-    LobbyIdOnlyPayload begin_ready_check = 6;
-    LobbyIdOnlyPayload accept_ready_check = 7;
-    LobbyIdOnlyPayload decline_ready_check = 8;
+    CreateLobby create_lobby = 2; // [NEW] was CreateLobbyPayload
+    JoinLobby join_lobby = 3; // [NEW] was JoinLobbyPayload
+    ToggleReady toggle_ready = 4; // [NEW] was LobbyIdOnlyPayload
+    LeaveLobby leave_lobby = 5; // [NEW] was EmptyPayload
+    BeginReadyCheck begin_ready_check = 6; // [NEW] was LobbyIdOnlyPayload
+    AcceptReadyCheck accept_ready_check = 7; // [NEW] was LobbyIdOnlyPayload
+    DeclineReadyCheck decline_ready_check = 8; // [NEW] was LobbyIdOnlyPayload
   }
 }
 
-message MakeMovePayload {
+message MakeMove { // [NEW] was MakeMovePayload
   string color = 1;
   string piece_id = 2;
   int32 origin_x = 3;
@@ -81,18 +93,73 @@ message MakeMovePayload {
   bool flip = 6;
 }
 
-message PassTurnPayload {
+message PassTurn { // [NEW] was PassTurnPayload
   string color = 1;
 }
 
-message DisconnectPayload {}
+message Disconnect {} // [NEW] was DisconnectPayload
 
 message GameActionRequest {
   int32 user_id = 1;
-
   oneof payload {
-    MakeMovePayload make_move = 2;
-    PassTurnPayload pass_turn = 3;
-    DisconnectPayload disconnect = 4;
+    MakeMove make_move = 2; // [NEW] was MakeMovePayload
+    PassTurn pass_turn = 3; // [NEW] was PassTurnPayload
+    Disconnect disconnect = 4; // [NEW] was DisconnectPayload
   }
 }
+
+// ===== [OLD] previous proto messages (kept for reference) =====
+// message CreateLobbyPayload {
+//   string user_name = 1;
+//   int32 max_players = 2;
+// }
+//
+// message JoinLobbyPayload {
+//   string user_name = 1;
+//   string lobby_id = 2;
+// }
+//
+// message LobbyIdOnlyPayload {
+//   string lobby_id = 1;
+// }
+//
+// message EmptyPayload {}
+//
+// message LobbyActionRequest {
+//   int32 user_id = 1;
+//
+//   oneof payload {
+//     CreateLobbyPayload create_lobby = 2;
+//     JoinLobbyPayload join_lobby = 3;
+//     LobbyIdOnlyPayload toggle_ready = 4;
+//     EmptyPayload leave_lobby = 5;
+//     LobbyIdOnlyPayload begin_ready_check = 6;
+//     LobbyIdOnlyPayload accept_ready_check = 7;
+//     LobbyIdOnlyPayload decline_ready_check = 8;
+//   }
+// }
+//
+// message MakeMovePayload {
+//   string color = 1;
+//   string piece_id = 2;
+//   int32 origin_x = 3;
+//   int32 origin_y = 4;
+//   int32 rotation = 5;
+//   bool flip = 6;
+// }
+//
+// message PassTurnPayload {
+//   string color = 1;
+// }
+//
+// message DisconnectPayload {}
+//
+// message GameActionRequest {
+//   int32 user_id = 1;
+//
+//   oneof payload {
+//     MakeMovePayload make_move = 2;
+//     PassTurnPayload pass_turn = 3;
+//     DisconnectPayload disconnect = 4;
+//   }
+// }
