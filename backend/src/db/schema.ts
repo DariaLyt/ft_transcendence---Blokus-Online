@@ -56,3 +56,21 @@ export const gamePlayers = pgTable("game_players", {
 	score: integer("score"),
 });
 
+export const friendships = pgTable("friendships", {
+	id: serial("id").primaryKey(),
+	userId: integer("user_id")
+		.notNull()
+		.references(() => users.id),
+
+	friendId: integer("friend_id")
+		.notNull()
+		.references(() => users.id),
+
+	status: varchar("status", { length: 20 })
+	.notNull()
+	.default("pending"),
+
+	createdAt: timestamp("created_at")
+	.defaultNow()
+	.notNull(),
+});

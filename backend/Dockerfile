@@ -4,6 +4,9 @@ FROM node:22-slim
 # Goes to the app directory
 WORKDIR /app
 
+# Install OpenSSL for HTTPS certificate generation
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+
 # Copy package.json and package-lock.json
 COPY package*.json ./
 
