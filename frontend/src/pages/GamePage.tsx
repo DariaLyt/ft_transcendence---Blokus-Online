@@ -84,7 +84,6 @@ export default function GamePage() {
 			)}
 		
 			<div className="grid grid-cols-1 min-[1400px]:grid-cols-[auto_400px] gap-6 w-full justify-center">
-				<Board gameState={gameState} />
 				<Board
 					board={game.board}
 					selectedPiece={piece}

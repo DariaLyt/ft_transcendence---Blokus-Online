@@ -1,8 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useGameSession } from "../sockets/GameSessionContext";
-import { useEffect, useState } from "react";
-import { sendMessage, onMessage } from "../websocket/socket";
 import Navbar from "../components/NavBar";
 
 export default function Lobby() {
@@ -36,67 +34,13 @@ export default function Lobby() {
             userName: currentUser.username,
             lobbyId: lobbyId.trim(),
         });
-        navigate("/lobby/waiting");
-
-    useEffect(() => { // when a message arrives, check what event it is
-        const unsubscribe = onMessage((message) => {
-            if (message.event === "LOBBY_CREATED") {
-                const payload = message.payload as {
-                    state: string; // we get this from backend as a string
-                };
-                const state = JSON.parse(payload.state); // turn it into object
-                const lobbyId = state.lobby.id;
-                navigate(`/lobby/waiting/${lobbyId}`); // navigate to the lobby with the id
-            }
-            if (message.event === "LOBBY_JOINED") {
-                navigate(`/lobby/waiting/${lobbyId}`);
-            }
-        });
-        return unsubscribe; // stop listening when lobby page closes
-    }, []); // happens once when the components mounts
-
-    const handleCreateLobby = async () => {
-    	const response = await fetch(
-        	"https://localhost:3000/api/auth/me",
-        	{
-            	credentials: "include",
-        	}
-    	);
-
-    	const data = await response.json();
-        sendMessage({
-            category: "LOBBY",
-            payload: {
-                type: "CREATE_LOBBY",
-                userName: data.user.username,
-                maxPlayers: 4,
-            },
-        });
-    };
-
-    const handleJoinLobby = async () => {
-    	const response = await fetch(
-        	"https://localhost:3000/api/auth/me",
-        	{
-            	credentials: "include",
-        	}
-    	);
-
-    	const data = await response.json();
-        sendMessage({
-            category: "LOBBY",
-            payload: {
-                type: "JOIN_LOBBY",
-                userName: data.user.username,
-                lobbyId: lobbyId,
-            },
-        });
+        navigate(`/lobby/waiting/${lobbyId.trim()}`);
     };
 
     return (
         <div>
             <Navbar />
-    
+
         <div className="min-h-screen flex items-center justify-center bg-slate-100">
             <div className="w-[600px] min-h-[450px] bg-white p-10 rounded-xl shadow-md flex flex-col">
 
@@ -156,7 +100,7 @@ export default function Lobby() {
 
                     </div>
                 ) : (
-                    <div className="flex flex-col flex-1"> 
+                    <div className="flex flex-col flex-1">
 
                         <div className="mb-8">
                             <label
@@ -181,7 +125,7 @@ export default function Lobby() {
 
                             <button
                                 type="button"
-                                onClick={handleJoinLobby} // TODO: I need from backend a way to get all the currently available lobbies so i can display them
+                                onClick={handleJoinLobby}
                                 disabled={!lobbyId.trim()}
                                 className={`w-full px-6 py-3 rounded-lg text-white ${
                                     lobbyId.trim()

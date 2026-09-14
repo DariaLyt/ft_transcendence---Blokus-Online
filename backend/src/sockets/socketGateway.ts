@@ -167,6 +167,8 @@ function broadcastSpectatorState(goResponse: any) {
 	if (!gameId) return;
 
 	broadcastToGameWatchers(gameId, 'SPECTATOR_GAME_STATE', goResponse);
+}
+
 // [NEW] parse Go ActionResponse.state JSON before broadcasting
 function parseSnapshot(resp: any): any {
 	const raw = resp?.state;
@@ -280,9 +282,7 @@ export function handleIncomingSocketMessage(
 						sendGoError(userId, goResponse);
 						return;
 					}
-					sendToUser(userId, action.responseType, goResponse);
 					broadcastSpectatorState(goResponse);
-					// [OLD] sendToUser(userId, action.responseType, goResponse);
 					broadcastEngineResult(userId, goResponse); // [NEW]
 				})
 				.catch((err) => {
@@ -311,17 +311,7 @@ export function handleIncomingSocketMessage(
 						sendGoError(userId, goResponse);
 						return;
 					}
-					sendToUser(userId, action.responseType, goResponse);
 					broadcastSpectatorState(goResponse);
-					// if (!goResponse.success) {
-					// 	sendToUser(userId, 'GAME_ERROR', {
-					// 		code: goResponse.errorCode,
-					// 		message: goResponse.message,
-					// 		state: goResponse.state
-					// 	});
-					// 	return;
-					// }
-					// [OLD] sendToUser(userId, action.responseType, goResponse);
 					broadcastEngineResult(userId, goResponse); // [NEW]
 				})
 				.catch((err) => {
@@ -393,8 +383,6 @@ export function handleIncomingSocketMessage(
 						sendGoError(userId, goResponse);
 						return;
 					}
-					sendToUser(userId, 'GAME_STATE_SNAPSHOT', goResponse);
-					// [OLD] sendToUser(userId, 'GAME_STATE_SNAPSHOT', goResponse);
 					broadcastEngineResult(userId, goResponse); // [NEW]
 				})
 				.catch((err) => {

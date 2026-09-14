@@ -63,23 +63,17 @@ export function initWebSocketServer(server: HttpsServer) {
 		});
 
 		ws.on('close', () => {
-			if (ws.userId) {
-				unsubscribeFromAllGames(ws.userId);
-        		removeConnection(ws.userId);
-				console.log(`Client disconnected (User ID: ${ws.userId})`);
-			}
-		});
 			console.log(`[WS] Connection closed for user ${userId}`);
+			unsubscribeFromAllGames(userId);
 
 			handlePlayerDisconnect(userId, async (finalUserId) => {
 				console.log(`[Presence] Processing final offline state for user ${finalUserId}`);
 				await notifyFriendsStatusChange(finalUserId, false);
-				sendGameAction(finalUserId, {
-					responseType: 'DISCONNECTED',
-					data: { disconnect: {} }
+				sendGameAction(finalUserId, { disconnect: {} }).catch((err) => {
+					console.error('[gRPC Error from Go]:', err.message);
 				});
 			});
-					});
+		});
 	});
 
 	return wss;
