@@ -6,6 +6,7 @@ import { getJwtSecret } from '../config/env.js';
 import { setupHeartbeat } from './heartbeat.js';
 import { addConnection, handlePlayerDisconnect } from './connectionManager.js';
 import { handleIncomingSocketMessage } from './socketGateway.js';
+import { unsubscribeFromAllGames } from './gameSubscriptions.js';
 import { notifyFriendsStatusChange } from '../services/presenceService.js';
 import { sendGameAction } from '../grpc/gameClient.js';
 
@@ -62,6 +63,12 @@ export function initWebSocketServer(server: HttpsServer) {
 		});
 
 		ws.on('close', () => {
+			if (ws.userId) {
+				unsubscribeFromAllGames(ws.userId);
+        		removeConnection(ws.userId);
+				console.log(`Client disconnected (User ID: ${ws.userId})`);
+			}
+		});
 			console.log(`[WS] Connection closed for user ${userId}`);
 
 			handlePlayerDisconnect(userId, async (finalUserId) => {

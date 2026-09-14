@@ -261,6 +261,35 @@ func TestTwoPlayerReadyCheckStartsM2P2B(t *testing.T) {
 	}
 }
 
+func TestSnapshotByGameIDAllowsSpectators(t *testing.T) {
+	eng := game.NewGameEngine()
+	eng.TurnDuration = time.Hour
+	ctx := context.Background()
+
+	created, err := eng.HandleLobbyAction(ctx, createLobbyRequest(1, "host", 4))
+	if err != nil || !created.GetSuccess() {
+		t.Fatalf("create: %+v %v", created, err)
+	}
+	lobbyID := snapshot(t, created.GetState()).Lobby.ID
+
+	started, err := eng.HandleLobbyAction(ctx, beginReadyCheckRequest(1, lobbyID))
+	if err != nil || !started.GetSuccess() {
+		t.Fatalf("start: %+v %v", started, err)
+	}
+
+	watched, err := eng.GetGameStateSnapshot(ctx, &pb.GameStateRequest{GameId: lobbyID})
+	if err != nil || !watched.GetSuccess() {
+		t.Fatalf("watch: %+v %v", watched, err)
+	}
+	wrap := snapshot(t, watched.GetState())
+	if wrap.Game == nil || wrap.Game.ID != lobbyID {
+		t.Fatalf("watched game %+v", wrap.Game)
+	}
+	if len(wrap.Lobby.Players) != 1 {
+		t.Fatalf("spectator should not join lobby: %+v", wrap.Lobby.Players)
+	}
+}
+
 type snapWrap struct {
 	Lobby *game.Lobby     `json:"lobby"`
 	Game  *game.GameState `json:"game"`
@@ -273,6 +302,74 @@ func snapshot(t *testing.T, raw string) snapWrap {
 		t.Fatalf("snapshot json: %v raw=%s", err, raw)
 	}
 	return wrap
+}
+
+func createLobbyRequest(userID int32, username string, maxPlayers int32) *pb.LobbyActionRequest {
+	return &pb.LobbyActionRequest{
+		UserId: userID,
+		Payload: &pb.LobbyActionRequest_CreateLobby{
+			CreateLobby: &pb.CreateLobby{Username: username, MaxPlayers: maxPlayers},
+		},
+	}
+}
+
+func joinLobbyRequest(userID int32, username, lobbyID string) *pb.LobbyActionRequest {
+	return &pb.LobbyActionRequest{
+		UserId: userID,
+		Payload: &pb.LobbyActionRequest_JoinLobby{
+			JoinLobby: &pb.JoinLobby{Username: username, LobbyId: lobbyID},
+		},
+	}
+}
+
+func beginReadyCheckRequest(userID int32, lobbyID string) *pb.LobbyActionRequest {
+	return &pb.LobbyActionRequest{
+		UserId: userID,
+		Payload: &pb.LobbyActionRequest_BeginReadyCheck{
+			BeginReadyCheck: &pb.BeginReadyCheck{LobbyId: lobbyID},
+		},
+	}
+}
+
+func acceptReadyCheckRequest(userID int32, lobbyID string) *pb.LobbyActionRequest {
+	return &pb.LobbyActionRequest{
+		UserId: userID,
+		Payload: &pb.LobbyActionRequest_AcceptReadyCheck{
+			AcceptReadyCheck: &pb.AcceptReadyCheck{LobbyId: lobbyID},
+		},
+	}
+}
+
+func makeMoveRequest(userID int32, color, pieceID string, x, y int32) *pb.GameActionRequest {
+	return &pb.GameActionRequest{
+		UserId: userID,
+		Payload: &pb.GameActionRequest_MakeMove{
+			MakeMove: &pb.MakeMove{
+				Color:   color,
+				PieceId: pieceID,
+				OriginX: x,
+				OriginY: y,
+			},
+		},
+	}
+}
+
+func passTurnRequest(userID int32, color string) *pb.GameActionRequest {
+	return &pb.GameActionRequest{
+		UserId: userID,
+		Payload: &pb.GameActionRequest_PassTurn{
+			PassTurn: &pb.PassTurn{Color: color},
+		},
+	}
+}
+
+func disconnectRequest(userID int32) *pb.GameActionRequest {
+	return &pb.GameActionRequest{
+		UserId: userID,
+		Payload: &pb.GameActionRequest_Disconnect{
+			Disconnect: &pb.Disconnect{},
+		},
+	}
 }
 
 func TestPassTurnHelper(t *testing.T) {

@@ -144,18 +144,42 @@ To request the current state:
 
 ---
 
-## Errors
+## Spectator Actions
 
-Generic error payload
+### WATCH_GAME
+
+Subscribes the current websocket user to live updates for an active game.
 
 ```json
 {
-  "category": "ERROR",
+  "category": "SPECTATE",
+  "action": "WATCH_GAME",
   "payload": {
-    "code": "INVALID_PAYLOAD",
-    "message": "Invalid message payload structure",
-    "details": {},
-    "state": {}
+    "gameId": "lobby-or-game-id"
+  }
+}
+```
+
+Successful responses and later live updates use:
+
+```json
+{
+  "event": "SPECTATOR_GAME_STATE",
+  "payload": {
+    "success": true,
+    "state": "{\"game\":{...}}"
+  }
+}
+```
+
+### LEAVE_GAME
+
+```json
+{
+  "category": "SPECTATE",
+  "action": "LEAVE_GAME",
+  "payload": {
+    "gameId": "lobby-or-game-id"
   }
 }
 ```

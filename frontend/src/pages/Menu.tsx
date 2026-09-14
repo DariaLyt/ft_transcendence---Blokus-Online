@@ -38,6 +38,19 @@ export default function Menu() {
 						//onClick={() => navigate("/spectate")}// TODO: add a spectator page
     					className="w-full flex-1 p-8 rounded-xl bg-slate-50 border border-slate-200 text-left hover:bg-slate-100 flex flex-col">
     				<h2 className="text-3xl font-bold text-blue-800 mb-6">
+        				Tournament
+    				</h2>
+
+    				<p className="text-slate-500 text-lg">
+        				Compete against other players in a tournament.
+    				</p>
+					</button>
+
+					<button
+    					type="button"
+    					onClick={() => navigate("/spectate")}
+    					className="w-full flex-1 p-8 rounded-xl bg-slate-100 border border-slate-200 text-left hover:bg-slate-200 flex flex-col">
+    				<h2 className="text-3xl font-bold text-slate-800 mb-6">
         				Spectate
     				</h2>
 

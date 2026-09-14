@@ -209,6 +209,9 @@ func (e *GameEngine) GetGameStateSnapshot(_ context.Context, req *pb.GameStateRe
 	if req == nil {
 		return failAction("INVALID_USER", "nil request"), nil
 	}
+	if gameID := strings.TrimSpace(req.GetGameId()); gameID != "" {
+		return e.getGameStateByID(gameID), nil
+	}
 	uid := strconv.Itoa(int(req.GetUserId()))
 	lobby, _ := e.lobbies.LobbyForUser(uid)
 	e.mu.Lock()
@@ -219,6 +222,19 @@ func (e *GameEngine) GetGameStateSnapshot(_ context.Context, req *pb.GameStateRe
 	snap := encodeSnapshot(lobby, state)
 	e.mu.Unlock()
 	return okAction(snap), nil
+}
+
+func (e *GameEngine) getGameStateByID(gameID string) *pb.ActionResponse {
+	lobby, _ := e.lobbies.GetLobby(gameID)
+	e.mu.Lock()
+	state := e.byGame[gameID]
+	snap := encodeSnapshot(lobby, state)
+	e.mu.Unlock()
+
+	if state == nil {
+		return failActionState(string(ErrGameNotActive), "game is not active", snap)
+	}
+	return okAction(snap)
 }
 
 func (e *GameEngine) ExpireTurn(gameID string) {

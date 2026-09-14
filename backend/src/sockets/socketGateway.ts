@@ -2,7 +2,12 @@ import type { AuthenticatedSocket } from './socketServer.js';
 import { IncomingFrameSchema, type GameModules } from '../types/gatewayTypes.js';
 import { sendToUser, sendToUsers } from './broadcaster.js'; // [NEW]
 import { z } from 'zod';
-import { sendLobbyAction, sendGameAction, getGameState } from '../grpc/gameClient.js';
+import { sendLobbyAction, sendGameAction, getGameState, getGameStateById } from '../grpc/gameClient.js';
+import {
+	broadcastToGameWatchers,
+	subscribeToGame,
+	unsubscribeFromGame,
+} from './gameSubscriptions.js';
 
 //temp
 // const gameModules: GameModules = {
@@ -138,6 +143,30 @@ function buildGamePayload(frame: any) {
     }
 }
 
+function gameIdFromResponse(goResponse: any): string | null {
+	if (!goResponse?.state) return null;
+
+	try {
+		const snapshot = JSON.parse(goResponse.state);
+		return snapshot?.game?.id ?? snapshot?.lobby?.id ?? null;
+	} catch {
+		return null;
+	}
+}
+
+function sendGoError(userId: number, goResponse: any) {
+	sendToUser(userId, 'ERROR', {
+		errorCode: goResponse.errorCode,
+		message: goResponse.message,
+		state: goResponse.state,
+	});
+}
+
+function broadcastSpectatorState(goResponse: any) {
+	const gameId = gameIdFromResponse(goResponse);
+	if (!gameId) return;
+
+	broadcastToGameWatchers(gameId, 'SPECTATOR_GAME_STATE', goResponse);
 // [NEW] parse Go ActionResponse.state JSON before broadcasting
 function parseSnapshot(resp: any): any {
 	const raw = resp?.state;
@@ -247,6 +276,12 @@ export function handleIncomingSocketMessage(
 				sendLobbyAction(userId, action) // [NEW]
 				.then((goResponse) => {
 					console.log('[gRPC Success from Go]:', goResponse);
+					if (!goResponse.success) {
+						sendGoError(userId, goResponse);
+						return;
+					}
+					sendToUser(userId, action.responseType, goResponse);
+					broadcastSpectatorState(goResponse);
 					// [OLD] sendToUser(userId, action.responseType, goResponse);
 					broadcastEngineResult(userId, goResponse); // [NEW]
 				})
@@ -261,8 +296,7 @@ export function handleIncomingSocketMessage(
 			}
 
 			case 'GAME': {
-				// [OLD] const action = buildGamePayload(frame.payload);
-				const action = buildGamePayload(frame); // [NEW] action lives on the frame, not payload
+				const action = buildGamePayload(frame);
 
 				if (!action) {
 					sendToUser(userId, 'ERROR', { message: 'Unknown game action type' });
@@ -273,6 +307,12 @@ export function handleIncomingSocketMessage(
 				sendGameAction(userId, action) // [NEW]
 				.then((goResponse) => {
 					console.log('[gRPC Success from Go]:', goResponse);
+					if (!goResponse.success) {
+						sendGoError(userId, goResponse);
+						return;
+					}
+					sendToUser(userId, action.responseType, goResponse);
+					broadcastSpectatorState(goResponse);
 					// if (!goResponse.success) {
 					// 	sendToUser(userId, 'GAME_ERROR', {
 					// 		code: goResponse.errorCode,
@@ -316,10 +356,44 @@ export function handleIncomingSocketMessage(
 				break;
 			}
 
+			case 'SPECTATE': {
+				const gameId = frame.payload.gameId.trim();
+
+				if (frame.action === 'LEAVE_GAME') {
+					unsubscribeFromGame(userId, gameId);
+					sendToUser(userId, 'SPECTATOR_LEFT', { gameId });
+					break;
+				}
+
+				getGameStateById(gameId)
+				.then((goResponse) => {
+					console.log('[gRPC Success from Go]:', goResponse);
+					if (!goResponse.success) {
+						sendGoError(userId, goResponse);
+						return;
+					}
+					subscribeToGame(userId, gameId);
+					sendToUser(userId, 'SPECTATOR_GAME_STATE', goResponse);
+				})
+				.catch((err) => {
+					console.error('[gRPC Error from Go]:', err.message);
+					sendToUser(userId, 'ERROR', {
+						message: 'Game engine communication failed',
+					});
+				});
+
+				break;
+			}
+
 			case 'RESYNC': {
 				getGameState(userId)
 				.then((goResponse) => {
 					console.log('[gRPC Success from Go]:', goResponse);
+					if (!goResponse.success) {
+						sendGoError(userId, goResponse);
+						return;
+					}
+					sendToUser(userId, 'GAME_STATE_SNAPSHOT', goResponse);
 					// [OLD] sendToUser(userId, 'GAME_STATE_SNAPSHOT', goResponse);
 					broadcastEngineResult(userId, goResponse); // [NEW]
 				})
