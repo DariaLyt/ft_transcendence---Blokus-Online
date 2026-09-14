@@ -44,7 +44,7 @@ export default function Navbar({ disablePlay = false}: NavbarProps) {
           > Play</button>
           <button
             type="button"
-           // onClick={() => navigate("/leaderboard")} TODO: add a leaderboard page
+            onClick={() => navigate("/leaderboard")}
             className="font-medium text-slate-600 hover:text-slate-900 cursor-pointer"
           > Leaderboard</button>
 

@@ -8,6 +8,7 @@ import Menu from './pages/Menu';
 import ReadyCheck from './pages/ReadyCheck';
 import Lobby from './pages/Lobby';
 import LobbyWaiting from './pages/LobbyWaiting';
+import LeaderboardPage from './pages/LeaderboardPage';
 
 export default function App() {
     return (
@@ -22,6 +23,7 @@ export default function App() {
                 <Route path="/ready-check" element={<ReadyCheck />} />
                 <Route path="/game" element={<GamePage />} />
                 <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/leaderboard" element={<LeaderboardPage />} />
             </Routes>
         </BrowserRouter>
     );
