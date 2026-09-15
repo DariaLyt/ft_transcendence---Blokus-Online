@@ -189,3 +189,53 @@ Successful responses and later live updates use:
 ## Notes
 
 * For backend/GameEngine request/response structures, refer to `game.proto`.
+
+---
+
+## Friend Status
+
+### FRIEND_STATUS_CHANGE
+
+The server sends this event to a user's connected friends when their online status changes.
+
+The event is sent when a user connects to or disconnects from the WebSocket.
+
+**Online:**
+
+```json
+{
+  "category": "FRIEND_STATUS_CHANGE",
+  "payload": {
+    "userId": 4,
+    "isOnline": true
+  }
+}
+```
+
+**Offline:**
+
+```json
+{
+  "category": "FRIEND_STATUS_CHANGE",
+  "payload": {
+    "userId": 4,
+    "isOnline": false
+  }
+}
+```
+
+### Payload
+
+| Field      | Type    | Description                                                       |
+| ---------- | ------- | ----------------------------------------------------------------- |
+| `userId`   | number  | ID of the friend whose status changed                             |
+| `isOnline` | boolean | `true` when the friend comes online, `false` when they go offline |
+
+**Notes:**
+
+* The event is only sent to users who are friends with the user whose status changed.
+* Only accepted friendships are notified.
+* The event is sent automatically by the server; clients do not need to request it.
+* `isOnline: true` is sent when the user connects via WebSocket.
+* `isOnline: false` is sent when the user's final WebSocket connection closes.
+

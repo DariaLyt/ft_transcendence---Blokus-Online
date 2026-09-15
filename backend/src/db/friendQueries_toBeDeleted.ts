@@ -1,4 +1,5 @@
 import { pool } from './conn.js';
+import type { FriendProfile, PendingFriendRequest } from '../types/friendTypes.js';
 
 export async function checkExistingFriendship(userId: number, friendId: number) {
 	const query = `
@@ -28,12 +29,12 @@ export async function updateFriendRequest(requestId: number, status: string) {
 	await pool.query(query, [requestId, status]);
 }
 
-export async function fetchFriendsList(userId: number) {
+export async function fetchFriendsList(userId: number): Promise<FriendProfile[]> {
 	const query = `
 		SELECT 
 			u.id,
 			u.username,
-			u.avatar_url
+			u.avatar_url AS "avatarUrl"
 		FROM friendships f
 		JOIN users u
 		ON u.id = CASE
@@ -47,14 +48,14 @@ export async function fetchFriendsList(userId: number) {
 	return rows;
 }
 
-export async function fetchPendingList(userId: number) {
+export async function fetchPendingList(userId: number): Promise<PendingFriendRequest[]> {
 	const query = `
 		SELECT 
-			f.id,
-			f.user_id,
+			f.id AS "requestId",
+			f.user_id AS "requesterId",
 			u.username,
-			u.avatar_url,
-			f.created_at
+			u.avatar_url AS "avatarUrl",
+			f.created_at AS "createdAt"
 		FROM friendships f
 		JOIN users u
 		ON u.id = f.user_id

@@ -255,6 +255,225 @@ Status: 200 OK
 
 ---
 
+# Friendship API
+
+Base URL:
+
+`http://localhost:3000/api/friend`
+
+All friendship endpoints require authentication.
+
+---
+
+## 🟢 SEND FRIEND REQUEST
+
+POST `/request`
+
+Sends a friend request to another user.
+
+**Authentication required:** Yes
+
+### Request
+
+Content-Type: application/json
+
+```json
+{
+  "friendId": 2
+}
+```
+
+### Success Response
+
+Status: 201 Created
+
+```json
+{
+  "message": "Friend request sent successfully"
+}
+```
+
+### Endpoint-Specific Errors
+
+**Status: 400 Bad Request**
+
+Returned when the friend ID is invalid or the user attempts to send a request to themselves.
+
+```json
+{
+  "error": "Invalid friend ID"
+}
+```
+
+**Status: 409 Conflict**
+
+Returned when a friendship or friend request already exists between the users.
+
+```json
+{
+  "error": "A friend request or friendship already exists (Status: pending)."
+}
+```
+
+---
+
+## 🔵 RESPOND TO FRIEND REQUEST
+
+PATCH `/response/:id`
+
+Accepts or declines a pending friend request.
+
+**Authentication required:** Yes
+
+### Request
+
+Content-Type: application/json
+
+The `id` in the URL is the friend request ID.
+
+```text
+PATCH /api/friend/response/15
+```
+
+Request body:
+
+```json
+{
+  "status": "accepted"
+}
+```
+
+The `status` must be either `accepted` or `declined`.
+
+### Success Response
+
+Status: 200 OK
+
+```json
+{
+  "message": "Friend request updated successfully"
+}
+```
+
+---
+
+## 🟣 GET FRIEND LIST
+
+GET `/`
+
+Returns the authenticated user's current friends.
+
+**Authentication required:** Yes
+
+### Request
+
+No body required.
+
+### Success Response
+
+Status: 200 OK
+
+```json
+[
+  {
+    "id": 2,
+    "username": "alice",
+    "avatarUrl": "/uploads/avatars/avatar-2.png"
+  },
+  {
+    "id": 3,
+    "username": "bob",
+    "avatarUrl": "/uploads/avatars/avatar-3.png"
+  }
+]
+```
+
+If the user has no friends, an empty array is returned:
+
+```json
+[]
+```
+
+---
+
+## 🟠 GET PENDING FRIEND REQUESTS
+
+GET `/pending`
+
+Returns pending friend requests for the authenticated user.
+
+**Authentication required:** Yes
+
+### Request
+
+No body required.
+
+### Success Response
+
+Status: 200 OK
+
+```json
+[
+  {
+    "requestId": 15,
+    "requesterId": 4,
+    "username": "charlie",
+    "avatarUrl": "/uploads/avatars/avatar-4.png",
+	"createdAt": "2026-09-15T08:42:17.325Z"
+  }
+]
+```
+
+If there are no pending friend requests, an empty array is returned:
+
+```json
+[]
+```
+
+---
+
+## 🔴 REMOVE FRIEND
+
+DELETE `/:friendId`
+
+Removes an existing friendship.
+
+**Authentication required:** Yes
+
+### Request
+
+The friend's user ID is provided in the URL.
+
+```text
+DELETE /api/friend/2
+```
+
+No request body is required.
+
+### Success Response
+
+Status: 200 OK
+
+```json
+{
+  "message": "Friend removed successfully"
+}
+```
+
+---
+
+## Friendship Endpoints Summary
+
+| Method | Endpoint        | Description                        |
+| ------ | --------------- | ---------------------------------- |
+| POST   | `/request`      | Send a friend request              |
+| PATCH  | `/response/:id` | Accept or decline a friend request |
+| GET    | `/`             | Get current user's friends         |
+| GET    | `/pending`      | Get pending friend requests        |
+| DELETE | `/:friendId`    | Remove a friend                    |
+
+---
+
 # Common Errors
 
 The following errors are handled globally by the application's middleware.

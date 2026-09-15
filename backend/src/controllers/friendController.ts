@@ -19,7 +19,8 @@ export async function handleFriendRequest(req: Request, res: Response) {
 }
 
 export async function handleFriendResponse(req: Request, res: Response) {
-	const { requestId, status } = req.body;
+	const requestId = Number(req.params.id);
+	const { status } = req.body;
 	
 	await updateFriendRequest(requestId, status);
 	return res.status(200).json({ message: 'Friend request updated successfully' });
@@ -37,7 +38,7 @@ export async function getPendingList(req: Request, res: Response) {
 
 export async function removeFriend(req: Request, res: Response) {
 	const userId = req.user!.userId;
-	const { friendId } = req.body;
+	const friendId = Number(req.params.friendId);
 
 	await removeFriendship(userId, friendId);
 	return res.json({ message: 'Friend removed successfully' });
