@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { findUserById, getUserPasswordHash, updateUserPassword } from '../db/userQueries.js';
+import { findUserById, getUserPasswordHash, updateUserPassword, getAvatar, updateNewAvatar } from '../db/queries/users.js';
 import bcrypt from 'bcrypt';
 import { pool } from '../db/conn.js';
 import path from 'node:path';
@@ -43,18 +43,22 @@ export async function updateAvatar(req: Request, res: Response) {
     const avatarUrl = `/uploads/avatars/${req.file.filename}`;
 
     try {
-		≈
+		const id = req.user!.userId;
 
-		const { rows } = await pool.query(
-			'SELECT avatar_url FROM users WHERE id = $1',
-			[id]
-		);
-		const oldAvatarUrl = rows[0]?.avatar_url;
+		// const { rows } = await pool.query(
+		// 	'SELECT avatar_url FROM users WHERE id = $1',
+		// 	[id]
+		// );
+		// const oldAvatarUrl = rows[0]?.avatar_url;
 
-		await pool.query(
-			'UPDATE users SET avatar_url = $1 WHERE id = $2',
-			[avatarUrl, id]
-		);
+		const oldAvatarUrl = await getAvatar(id);
+
+		await updateNewAvatar(id, avatarUrl);
+
+		// await pool.query(
+		// 	'UPDATE users SET avatar_url = $1 WHERE id = $2',
+		// 	[avatarUrl, id]
+		// );
 
 		if (oldAvatarUrl && oldAvatarUrl.startsWith('/uploads/avatars/')) {
 			const oldPath = path.join(process.cwd(), oldAvatarUrl);

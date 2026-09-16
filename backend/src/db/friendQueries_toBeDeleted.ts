@@ -8,7 +8,7 @@ export async function checkExistingFriendship(userId: number, friendId: number) 
 		OR (user_id = $2 AND friend_id = $1);
 	`;
 	const { rows } = await pool.query(query, [userId, friendId]);
-	return rows[0].status || null;
+	return rows[0]?.status || null;
 }
 
 export async function createFriendRequest(userId: number, friendId: number) {

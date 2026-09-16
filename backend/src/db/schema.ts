@@ -34,6 +34,8 @@ export const users = pgTable("users",{
 	.notNull()
 	.unique(),
 
+	avatarUrl: varchar("avatar_url", { length: 2048 }),
+
 	createdAt: timestamp("created_at")
 	.defaultNow()
 	.notNull(),

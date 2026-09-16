@@ -7,7 +7,7 @@ import { validate } from '../middlewares/validateMiddleware.js';
 const router = Router();
 
 router.post('/request', authenticateToken, validate(friendRequestSchema), handleFriendRequest);
-router.patch('/response', authenticateToken, validate(friendResponseSchema), handleFriendResponse);
+router.patch('/respond', authenticateToken, validate(friendResponseSchema), handleFriendResponse);
 router.get('/', authenticateToken, getFriendsList);
 router.get('/pending', authenticateToken, getPendingList);
 

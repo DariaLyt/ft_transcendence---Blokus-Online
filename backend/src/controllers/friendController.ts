@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { checkExistingFriendship, createFriendRequest, updateFriendRequest, fetchFriendsList, fetchPendingList, deleteFriend } from '../db/friendQueries.js';
+import { checkExistingFriendship, createFriendRequest, updateFriendRequest, findUserFriends, findPendingFriendRequests, removeFriendship } from '../db/queries/friendships.js';
 
 export async function handleFriendRequest(req: Request, res: Response) {
 	const userId = req.user!.userId;
@@ -26,12 +26,12 @@ export async function handleFriendResponse(req: Request, res: Response) {
 }
 
 export async function getFriendsList(req: Request, res: Response) {
-	const result = await fetchFriendsList(req.user!.userId);
+	const result = await findUserFriends(req.user!.userId);
 	return res.json(result);
 }
 
 export async function getPendingList(req: Request, res: Response) {
-	const result = await fetchPendingList(req.user!.userId);
+	const result = await findPendingFriendRequests(req.user!.userId);
 	return res.json(result);
 }
 
@@ -39,6 +39,6 @@ export async function removeFriend(req: Request, res: Response) {
 	const userId = req.user!.userId;
 	const { friendId } = req.body;
 
-	await deleteFriend(userId, friendId);
+	await removeFriendship(userId, friendId);
 	return res.json({ message: 'Friend removed successfully' });
 }
