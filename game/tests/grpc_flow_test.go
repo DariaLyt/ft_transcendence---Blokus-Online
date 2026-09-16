@@ -17,9 +17,10 @@ func TestLobbyCreateStartMoveAndScores(t *testing.T) {
 	ctx := context.Background()
 
 	created, err := eng.HandleLobbyAction(ctx, &pb.LobbyActionRequest{
-		UserId:  1,
-		Action:  "CREATE_LOBBY",
-		Payload: `{"maxPlayers":4,"username":"host"}`,
+		UserId: 1,
+		Payload: &pb.LobbyActionRequest_CreateLobby{
+			CreateLobby: &pb.CreateLobby{MaxPlayers: 4, Username: "host"},
+		},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -33,9 +34,10 @@ func TestLobbyCreateStartMoveAndScores(t *testing.T) {
 	}
 
 	started, err := eng.HandleLobbyAction(ctx, &pb.LobbyActionRequest{
-		UserId:  1,
-		Action:  "BEGIN_READY_CHECK",
-		Payload: `{"lobbyId":"` + lobbyID + `"}`,
+		UserId: 1,
+		Payload: &pb.LobbyActionRequest_BeginReadyCheck{
+			BeginReadyCheck: &pb.BeginReadyCheck{LobbyId: lobbyID},
+		},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -52,9 +54,10 @@ func TestLobbyCreateStartMoveAndScores(t *testing.T) {
 	}
 
 	illegal, err := eng.HandleGameAction(ctx, &pb.GameActionRequest{
-		UserId:  1,
-		Action:  "MAKE_MOVE",
-		Payload: `{"color":"blue","pieceId":"1","originX":10,"originY":10}`,
+		UserId: 1,
+		Payload: &pb.GameActionRequest_MakeMove{
+			MakeMove: &pb.MakeMove{Color: "blue", PieceId: "1", OriginX: 10, OriginY: 10},
+		},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -67,9 +70,10 @@ func TestLobbyCreateStartMoveAndScores(t *testing.T) {
 	}
 
 	moved, err := eng.HandleGameAction(ctx, &pb.GameActionRequest{
-		UserId:  1,
-		Action:  "MAKE_MOVE",
-		Payload: `{"color":"blue","pieceId":"1","originX":0,"originY":0}`,
+		UserId: 1,
+		Payload: &pb.GameActionRequest_MakeMove{
+			MakeMove: &pb.MakeMove{Color: "blue", PieceId: "1", OriginX: 0, OriginY: 0},
+		},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -99,25 +103,32 @@ func TestHandleGameActionEdgeTouchOwn(t *testing.T) {
 	ctx := context.Background()
 
 	first, err := eng.HandleGameAction(ctx, &pb.GameActionRequest{
-		UserId:  1,
-		Action:  "MAKE_MOVE",
-		Payload: `{"color":"blue","pieceId":"2","originX":0,"originY":0}`,
+		UserId: 1,
+		Payload: &pb.GameActionRequest_MakeMove{
+			MakeMove: &pb.MakeMove{Color: "blue", PieceId: "2", OriginX: 0, OriginY: 0},
+		},
 	})
 	if err != nil || !first.GetSuccess() {
 		t.Fatalf("first: %+v %v", first, err)
 	}
 
 	for _, uid := range []int32{2, 3, 4} {
-		pass, err := eng.HandleGameAction(ctx, &pb.GameActionRequest{UserId: uid, Action: "PASS_TURN"})
+		pass, err := eng.HandleGameAction(ctx, &pb.GameActionRequest{
+			UserId: uid,
+			Payload: &pb.GameActionRequest_PassTurn{
+				PassTurn: &pb.PassTurn{},
+			},
+		})
 		if err != nil || !pass.GetSuccess() {
 			t.Fatalf("pass %d: %+v %v", uid, pass, err)
 		}
 	}
 
 	bad, err := eng.HandleGameAction(ctx, &pb.GameActionRequest{
-		UserId:  1,
-		Action:  "MAKE_MOVE",
-		Payload: `{"color":"blue","pieceId":"1","originX":2,"originY":0}`,
+		UserId: 1,
+		Payload: &pb.GameActionRequest_MakeMove{
+			MakeMove: &pb.MakeMove{Color: "blue", PieceId: "1", OriginX: 2, OriginY: 0},
+		},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -133,16 +144,19 @@ func TestTurnTimerPassesCurrentColor(t *testing.T) {
 	ctx := context.Background()
 
 	created, err := eng.HandleLobbyAction(ctx, &pb.LobbyActionRequest{
-		UserId:  1,
-		Action:  "CREATE_LOBBY",
-		Payload: `{"maxPlayers":4}`,
+		UserId: 1,
+		Payload: &pb.LobbyActionRequest_CreateLobby{
+			CreateLobby: &pb.CreateLobby{MaxPlayers: 4},
+		},
 	})
 	if err != nil || !created.GetSuccess() {
 		t.Fatalf("create: %+v %v", created, err)
 	}
 	started, err := eng.HandleLobbyAction(ctx, &pb.LobbyActionRequest{
 		UserId: 1,
-		Action: "BEGIN_READY_CHECK",
+		Payload: &pb.LobbyActionRequest_BeginReadyCheck{
+			BeginReadyCheck: &pb.BeginReadyCheck{},
+		},
 	})
 	if err != nil || !started.GetSuccess() {
 		t.Fatalf("start: %+v %v", started, err)
@@ -171,7 +185,12 @@ func TestDisconnectConvertsSeatToBot(t *testing.T) {
 	eng.RegisterGame(state)
 	ctx := context.Background()
 
-	resp, err := eng.HandleGameAction(ctx, &pb.GameActionRequest{UserId: 1, Action: "DISCONNECT"})
+	resp, err := eng.HandleGameAction(ctx, &pb.GameActionRequest{
+		UserId: 1,
+		Payload: &pb.GameActionRequest_Disconnect{
+			Disconnect: &pb.Disconnect{},
+		},
+	})
 	if err != nil || !resp.GetSuccess() {
 		t.Fatalf("disconnect: %+v %v", resp, err)
 	}
@@ -185,9 +204,10 @@ func TestDisconnectConvertsSeatToBot(t *testing.T) {
 	}
 
 	move, err := eng.HandleGameAction(ctx, &pb.GameActionRequest{
-		UserId:  1,
-		Action:  "MAKE_MOVE",
-		Payload: `{"color":"blue","pieceId":"1","originX":0,"originY":0}`,
+		UserId: 1,
+		Payload: &pb.GameActionRequest_MakeMove{
+			MakeMove: &pb.MakeMove{Color: "blue", PieceId: "1", OriginX: 0, OriginY: 0},
+		},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -203,9 +223,10 @@ func TestTwoPlayerReadyCheckStartsM2P2B(t *testing.T) {
 	ctx := context.Background()
 
 	created, err := eng.HandleLobbyAction(ctx, &pb.LobbyActionRequest{
-		UserId:  1,
-		Action:  "CREATE_LOBBY",
-		Payload: `{"maxPlayers":2}`,
+		UserId: 1,
+		Payload: &pb.LobbyActionRequest_CreateLobby{
+			CreateLobby: &pb.CreateLobby{MaxPlayers: 2},
+		},
 	})
 	if err != nil || !created.GetSuccess() {
 		t.Fatalf("create: %+v %v", created, err)
@@ -213,9 +234,10 @@ func TestTwoPlayerReadyCheckStartsM2P2B(t *testing.T) {
 	lobbyID := snapshot(t, created.GetState()).Lobby.ID
 
 	joined, err := eng.HandleLobbyAction(ctx, &pb.LobbyActionRequest{
-		UserId:  2,
-		Action:  "JOIN_LOBBY",
-		Payload: `{"lobbyId":"` + lobbyID + `","username":"guest"}`,
+		UserId: 2,
+		Payload: &pb.LobbyActionRequest_JoinLobby{
+			JoinLobby: &pb.JoinLobby{LobbyId: lobbyID, Username: "guest"},
+		},
 	})
 	if err != nil || !joined.GetSuccess() {
 		t.Fatalf("join: %+v %v", joined, err)
@@ -225,9 +247,10 @@ func TestTwoPlayerReadyCheckStartsM2P2B(t *testing.T) {
 	}
 
 	accepted, err := eng.HandleLobbyAction(ctx, &pb.LobbyActionRequest{
-		UserId:  2,
-		Action:  "ACCEPT_READY_CHECK",
-		Payload: `{"lobbyId":"` + lobbyID + `"}`,
+		UserId: 2,
+		Payload: &pb.LobbyActionRequest_AcceptReadyCheck{
+			AcceptReadyCheck: &pb.AcceptReadyCheck{LobbyId: lobbyID},
+		},
 	})
 	if err != nil || !accepted.GetSuccess() {
 		t.Fatalf("accept: %+v %v", accepted, err)
@@ -235,6 +258,35 @@ func TestTwoPlayerReadyCheckStartsM2P2B(t *testing.T) {
 	wrap := snapshot(t, accepted.GetState())
 	if wrap.Game == nil || wrap.Game.Mode != game.ModeM2P2B {
 		t.Fatalf("want M2P2B got %+v", wrap.Game)
+	}
+}
+
+func TestSnapshotByGameIDAllowsSpectators(t *testing.T) {
+	eng := game.NewGameEngine()
+	eng.TurnDuration = time.Hour
+	ctx := context.Background()
+
+	created, err := eng.HandleLobbyAction(ctx, createLobbyRequest(1, "host", 4))
+	if err != nil || !created.GetSuccess() {
+		t.Fatalf("create: %+v %v", created, err)
+	}
+	lobbyID := snapshot(t, created.GetState()).Lobby.ID
+
+	started, err := eng.HandleLobbyAction(ctx, beginReadyCheckRequest(1, lobbyID))
+	if err != nil || !started.GetSuccess() {
+		t.Fatalf("start: %+v %v", started, err)
+	}
+
+	watched, err := eng.GetGameStateSnapshot(ctx, &pb.GameStateRequest{GameId: lobbyID})
+	if err != nil || !watched.GetSuccess() {
+		t.Fatalf("watch: %+v %v", watched, err)
+	}
+	wrap := snapshot(t, watched.GetState())
+	if wrap.Game == nil || wrap.Game.ID != lobbyID {
+		t.Fatalf("watched game %+v", wrap.Game)
+	}
+	if len(wrap.Lobby.Players) != 1 {
+		t.Fatalf("spectator should not join lobby: %+v", wrap.Lobby.Players)
 	}
 }
 
@@ -250,6 +302,74 @@ func snapshot(t *testing.T, raw string) snapWrap {
 		t.Fatalf("snapshot json: %v raw=%s", err, raw)
 	}
 	return wrap
+}
+
+func createLobbyRequest(userID int32, username string, maxPlayers int32) *pb.LobbyActionRequest {
+	return &pb.LobbyActionRequest{
+		UserId: userID,
+		Payload: &pb.LobbyActionRequest_CreateLobby{
+			CreateLobby: &pb.CreateLobby{Username: username, MaxPlayers: maxPlayers},
+		},
+	}
+}
+
+func joinLobbyRequest(userID int32, username, lobbyID string) *pb.LobbyActionRequest {
+	return &pb.LobbyActionRequest{
+		UserId: userID,
+		Payload: &pb.LobbyActionRequest_JoinLobby{
+			JoinLobby: &pb.JoinLobby{Username: username, LobbyId: lobbyID},
+		},
+	}
+}
+
+func beginReadyCheckRequest(userID int32, lobbyID string) *pb.LobbyActionRequest {
+	return &pb.LobbyActionRequest{
+		UserId: userID,
+		Payload: &pb.LobbyActionRequest_BeginReadyCheck{
+			BeginReadyCheck: &pb.BeginReadyCheck{LobbyId: lobbyID},
+		},
+	}
+}
+
+func acceptReadyCheckRequest(userID int32, lobbyID string) *pb.LobbyActionRequest {
+	return &pb.LobbyActionRequest{
+		UserId: userID,
+		Payload: &pb.LobbyActionRequest_AcceptReadyCheck{
+			AcceptReadyCheck: &pb.AcceptReadyCheck{LobbyId: lobbyID},
+		},
+	}
+}
+
+func makeMoveRequest(userID int32, color, pieceID string, x, y int32) *pb.GameActionRequest {
+	return &pb.GameActionRequest{
+		UserId: userID,
+		Payload: &pb.GameActionRequest_MakeMove{
+			MakeMove: &pb.MakeMove{
+				Color:   color,
+				PieceId: pieceID,
+				OriginX: x,
+				OriginY: y,
+			},
+		},
+	}
+}
+
+func passTurnRequest(userID int32, color string) *pb.GameActionRequest {
+	return &pb.GameActionRequest{
+		UserId: userID,
+		Payload: &pb.GameActionRequest_PassTurn{
+			PassTurn: &pb.PassTurn{Color: color},
+		},
+	}
+}
+
+func disconnectRequest(userID int32) *pb.GameActionRequest {
+	return &pb.GameActionRequest{
+		UserId: userID,
+		Payload: &pb.GameActionRequest_Disconnect{
+			Disconnect: &pb.Disconnect{},
+		},
+	}
 }
 
 func TestPassTurnHelper(t *testing.T) {

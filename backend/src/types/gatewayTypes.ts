@@ -75,6 +75,24 @@ export const ResyncActionSchema = z.object({
   	category: z.literal('RESYNC'),
 });
 
+export const SpectateActionSchema = z.discriminatedUnion('action', [
+	z.object({
+		category: z.literal('SPECTATE'),
+		action: z.literal('WATCH_GAME'),
+		payload: z.object({
+			gameId: z.string().trim().min(1),
+		}),
+	}),
+
+	z.object({
+		category: z.literal('SPECTATE'),
+		action: z.literal('LEAVE_GAME'),
+		payload: z.object({
+			gameId: z.string().trim().min(1),
+		}),
+	}),
+]);
+
 export const LobbyFrameSchema = z.object({
 	category: z.literal('LOBBY'),
 	payload: z.discriminatedUnion('type', [
@@ -92,6 +110,7 @@ export const IncomingFrameSchema = z.discriminatedUnion('category', [
 	LobbyFrameSchema,
 	GameActionSchema,
 	ResyncActionSchema,
+	SpectateActionSchema,
 ]);
 
 export type IncomingFrame = z.infer<typeof IncomingFrameSchema>;
@@ -101,4 +120,3 @@ export interface GameModules {
 	handleGameAction: (userId: number, action: string, payload: any) => void;
 	getGameStateSnapshot: (userId: number) => any;
 }
-

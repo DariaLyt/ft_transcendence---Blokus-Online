@@ -6,6 +6,7 @@ import { getJwtSecret } from '../config/env.js';
 import { setupHeartbeat } from './heartbeat.js';
 import { addConnection, handlePlayerDisconnect } from './connectionManager.js';
 import { handleIncomingSocketMessage } from './socketGateway.js';
+import { unsubscribeFromAllGames } from './gameSubscriptions.js';
 import { notifyFriendsStatusChange } from '../services/presenceService.js';
 import { sendGameAction } from '../grpc/gameClient.js';
 
@@ -63,16 +64,16 @@ export function initWebSocketServer(server: HttpsServer) {
 
 		ws.on('close', () => {
 			console.log(`[WS] Connection closed for user ${userId}`);
+			unsubscribeFromAllGames(userId);
 
 			handlePlayerDisconnect(userId, async (finalUserId) => {
 				console.log(`[Presence] Processing final offline state for user ${finalUserId}`);
 				await notifyFriendsStatusChange(finalUserId, false);
-				sendGameAction(finalUserId, {
-					responseType: 'DISCONNECTED',
-					data: { disconnect: {} }
+				sendGameAction(finalUserId, { disconnect: {} }).catch((err) => {
+					console.error('[gRPC Error from Go]:', err.message);
 				});
 			});
-					});
+		});
 	});
 
 	return wss;

@@ -1,23 +1,27 @@
 import { PIECES } from '../data/pieces';
 import GamePiece from './GamePiece';
-import type { GameState } from '../data/game';
-import { useState } from 'react';
-
+import type { Color, GameState } from '../data/game';
 
 type PiecesTrayProps = {
 	gameState: GameState;
 	currentUserId?: number;
+	selectedPiece: string | null;
+	onSelect: (pieceId: string) => void;
+	canSelect: boolean;
 };
 
-export default function PiecesTray({ gameState, currentUserId }: PiecesTrayProps) {
-	const [selectedPiece, setSelectedPiece] = useState<string | null>(null);
-
+export default function PiecesTray({
+	gameState,
+	currentUserId,
+	selectedPiece,
+	onSelect,
+	canSelect,
+}: PiecesTrayProps) {
 	const currentPlayer = gameState.seats.find(
 		(seat) => seat.userId === currentUserId
 	);
-	const currentColor = currentPlayer?.color;
-
-	const remainingPieces = currentColor? gameState.remaining[currentColor] : []; // eventually this will show the pieces ID that the color still has
+	const currentColor: Color | undefined = currentPlayer?.color;
+	const remainingPieces = currentColor ? gameState.remaining[currentColor] : [];
 
 	return (
 		<div className="bg-white border border-slate-200 shadow-md p-4 rounded-2xl w-full flex-shrink-0">
@@ -30,35 +34,34 @@ export default function PiecesTray({ gameState, currentUserId }: PiecesTrayProps
 				</span>
 			</div>
 
-			{/* Pieces box */}
 			<div className="bg-slate-50 border border-slate-200 rounded-xl p-3 min-h-[300px]">
 				<div className="flex flex-wrap gap-3">
 					{PIECES.map((piece) => {
-
-						const isAvailable = remainingPieces.includes(piece.id); // we know if the player still has the piece or not
+						const isAvailable = remainingPieces.includes(piece.id);
 						const isSelected = selectedPiece === piece.id;
 
     					return (
         					<div
             					key={piece.id}
 								onClick={() => {
-									if (isAvailable) {
-										setSelectedPiece(piece.id); // remember what piece we click
+									if (isAvailable && canSelect) {
+										onSelect(piece.id);
 									}
 								}}
             					className={`group p-1.5 w-fit h-fit flex flex-col transition-transform duration-150 ${
-                                    isAvailable
+                                    isAvailable && canSelect
                                         ? 'cursor-pointer hover:scale-110' 
-                                        : 'cursor-default' // not clickable if not available
+                                        : 'cursor-default'
                                 } ${
 									isSelected
-										? 'ring-2 ring-slate-800 rounded-md' // highlighted if available and selected
+										? 'ring-2 ring-slate-800 rounded-md'
 										: ''
 								}`}
                             	>
 									<GamePiece
 										piece={piece}
 										isAvailable={isAvailable}
+										color={currentColor}
 									/>
         					</div>
     					);
