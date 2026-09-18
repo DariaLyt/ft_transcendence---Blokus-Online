@@ -17,10 +17,13 @@ export type CurrentUser = {
 	id: number;
 	username: string;
 	email?: string;
+	avatar_url: string | null;
+	created_at: string;
 };
 
 type GameSessionValue = {
 	currentUser: CurrentUser | null;
+	updateCurrentUser: (user: CurrentUser) => void;
 	authLoading: boolean;
 	connected: boolean;
 	snapshot: EngineSnapshot | null;
@@ -42,6 +45,9 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 	const location = useLocation();
 	const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
 	const [authLoading, setAuthLoading] = useState(true);
+	const updateCurrentUser = useCallback((user: CurrentUser) => {
+		setCurrentUser(user);
+	}, []);
 	const [connected, setConnected] = useState(false);
 	const [snapshot, setSnapshot] = useState<EngineSnapshot | null>(null);
 	const [lastError, setLastError] = useState<string | null>(null);
@@ -76,6 +82,8 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 					id: data.user.id,
 					username: data.user.username,
 					email: data.user.email,
+					avatar_url: data.user.avatar_url,
+					created_at: data.user.created_at,
 				});
 			} catch {
 				if (!cancelled) {
@@ -167,6 +175,7 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 		() => ({
 			currentUser,
 			authLoading,
+			updateCurrentUser,
 			connected,
 			snapshot,
 			lobby: snapshot?.lobby ?? null,
@@ -176,7 +185,7 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 			sendLobby,
 			sendGame,
 		}),
-		[currentUser, authLoading, connected, snapshot, lastError, sendLobby, sendGame]
+		[currentUser, authLoading, updateCurrentUser, connected, snapshot, lastError, sendLobby, sendGame]
 	);
 
 	return <GameSessionContext.Provider value={value}>{children}</GameSessionContext.Provider>;

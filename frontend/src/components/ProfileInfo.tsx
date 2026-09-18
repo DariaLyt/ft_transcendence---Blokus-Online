@@ -1,12 +1,7 @@
-type User = {
-    id: number;
-    username: string;
-    email: string;
-    created_at: string;
-};
+import type { CurrentUser } from "../sockets/GameSessionContext";
 
 type ProfileInfoProps = { // describes what ProfileInfo will receive from ProfilePage so we don't need to call /me again
-	user: User;
+	user: CurrentUser;
 };
 
 export default function ProfileInfo({user}: ProfileInfoProps) {
