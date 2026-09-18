@@ -21,6 +21,7 @@ export type CurrentUser = {
 
 type GameSessionValue = {
 	currentUser: CurrentUser | null;
+	authLoading: boolean;
 	connected: boolean;
 	snapshot: EngineSnapshot | null;
 	lobby: LobbyState | null;
@@ -40,6 +41,7 @@ function applyIncomingPayload(payload: any): EngineSnapshot {
 export function GameSessionProvider({ children }: { children: ReactNode }) {
 	const location = useLocation();
 	const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+	const [authLoading, setAuthLoading] = useState(true);
 	const [connected, setConnected] = useState(false);
 	const [snapshot, setSnapshot] = useState<EngineSnapshot | null>(null);
 	const [lastError, setLastError] = useState<string | null>(null);
@@ -79,6 +81,9 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 				if (!cancelled) {
 					setCurrentUser(null);
 				}
+			} finally {
+				if (!cancelled)
+					setAuthLoading(false);
 			}
 		}
 		void loadUser();
@@ -161,6 +166,7 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 	const value = useMemo<GameSessionValue>(
 		() => ({
 			currentUser,
+			authLoading,
 			connected,
 			snapshot,
 			lobby: snapshot?.lobby ?? null,
@@ -170,7 +176,7 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 			sendLobby,
 			sendGame,
 		}),
-		[currentUser, connected, snapshot, lastError, sendLobby, sendGame]
+		[currentUser, authLoading, connected, snapshot, lastError, sendLobby, sendGame]
 	);
 
 	return <GameSessionContext.Provider value={value}>{children}</GameSessionContext.Provider>;

@@ -19,7 +19,7 @@ export default function ProfilePage() {
 
     useEffect(() => {
         const getProfile = async () => {
-            const response = await fetch("https://localhost:3000/api/auth/me", {
+            const response = await fetch("https://localhost:3000/api/users/me", {
                 method:"GET",
                 credentials:"include",
             });
