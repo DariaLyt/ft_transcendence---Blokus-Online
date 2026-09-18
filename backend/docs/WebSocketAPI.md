@@ -189,6 +189,18 @@ Successful responses and later live updates use:
 ## Notes
 
 * For backend/GameEngine request/response structures, refer to `game.proto`.
+* WebSocket connections are rate-limited to 10 incoming messages per second.
+* The rate limit uses a 1-second window for each WebSocket connection.
+* If a client exceeds the limit, the message is rejected and the server sends:
+
+```json
+{
+  "event": "ERROR",
+  "payload": {
+    "message": "Rate limit exceeded. Slow down."
+  }
+}
+```
 
 ---
 

@@ -1,4 +1,16 @@
 import { z } from 'zod';
+import { WebSocket } from 'ws';
+
+export interface RateLimitState {
+  count: number;
+  resetTime: number;
+}
+
+export interface AuthenticatedSocket extends WebSocket {
+  userId?: number;
+  isAlive?: boolean;
+  rateLimit?: RateLimitState;
+}
 
 export const createLobbySchema = z.object({
 	type: z.literal('CREATE_LOBBY'),
