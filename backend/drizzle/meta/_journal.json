@@ -15,6 +15,13 @@
       "when": 1788866806932,
       "tag": "0001_odd_moira_mactaggert",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789999999999,
+      "tag": "0002_add_avatar_url",
+      "breakpoints": true
     }
   ]
 }

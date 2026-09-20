@@ -35,8 +35,8 @@ services:
     container_name: backend
     env_file:
       - .env
-    ports:
-      - "${PORT}:${PORT}"
+    expose:
+      - "${PORT}"
     environment:
       PORT: ${PORT}
       DB_HOST: db
@@ -64,12 +64,8 @@ services:
       dockerfile: Dockerfile
     container_name: frontend
     ports:
-      - "5173:5173"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    environment:
-      - VITE_API_URL=http://localhost:${PORT}
+      - "80:80"
+      - "443:443"
     depends_on:
       - backend
     restart: unless-stopped

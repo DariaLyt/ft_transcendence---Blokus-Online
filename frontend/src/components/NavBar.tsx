@@ -10,7 +10,7 @@ export default function Navbar({ disablePlay = false}: NavbarProps) {
   const navigate = useNavigate();
 
   const handleLogout = async () => {
-      const response = await fetch("https://localhost:3000/api/auth/logout", {
+      const response = await fetch("/api/auth/logout", {
         method:"POST",
         credentials:"include",
       });
