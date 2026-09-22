@@ -39,6 +39,8 @@ export const users = pgTable("users",{
 	createdAt: timestamp("created_at")
 	.defaultNow()
 	.notNull(),
+	
+	avatarUrl: varchar("avatar_url", { length: 255 }),
 });
 
 export const gamePlayers = pgTable("game_players", {

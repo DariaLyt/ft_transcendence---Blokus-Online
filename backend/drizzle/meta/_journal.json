@@ -19,15 +19,8 @@
     {
       "idx": 2,
       "version": "7",
-      "when": 1789545367438,
-      "tag": "0002_premium_firebird",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1789999999999,
-      "tag": "0003_add_avatar_url",
+      "when": 1789405567793,
+      "tag": "0002_purple_sabra",
       "breakpoints": true
     }
   ]
