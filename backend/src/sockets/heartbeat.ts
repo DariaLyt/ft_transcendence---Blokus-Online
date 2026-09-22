@@ -1,5 +1,5 @@
 import { WebSocketServer } from 'ws';
-import type { AuthenticatedSocket } from './socketServer.js';
+import type { AuthenticatedSocket } from '../types/gatewayTypes.js';
 import { removeConnection } from './connectionManager.js';
 import { unsubscribeFromAllGames } from './gameSubscriptions.js';
 

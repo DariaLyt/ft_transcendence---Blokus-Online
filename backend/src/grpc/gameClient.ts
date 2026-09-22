@@ -32,6 +32,8 @@ export function sendMoveToGoEngine(moveData: {
 	flip: boolean;
 }): Promise<any> {
 	return new Promise((resolve, reject) => {
+		const deadline = new Date(Date.now() + 5000);
+
 		const payload = {
 			userId: moveData.userId,
 			color: moveData.color,
@@ -42,8 +44,11 @@ export function sendMoveToGoEngine(moveData: {
 			flip: moveData.flip,
 		};
 
-		gameClient.ValidateAndMakeMove(payload, (err: any, response: any) => {
+		gameClient.ValidateAndMakeMove(payload, { deadline }, (err: any, response: any) => {
 			if (err) {
+				if (err.code === 4) {
+					console.error('[gRPC Timeout] Go game engine took too long to respond.');
+				}
 				return reject(err);
 			}
 			resolve(response);

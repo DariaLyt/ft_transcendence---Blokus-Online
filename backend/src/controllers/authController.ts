@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { createUser, findUserByEmail, findUserByUsername, findUserByEmailOrUsername } from '../db/userQueries.js';
+import { createUser, findUserByEmail, findUserByUsername, findUserByEmailOrUsername } from '../db/queries/users.js';
 import { getJwtSecret } from '../config/env.js';
 
 export async function register(req: Request, res: Response) {
