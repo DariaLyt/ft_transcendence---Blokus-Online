@@ -1,5 +1,6 @@
-export const API_BASE = 'https://localhost:3000';
-export const WS_URL = import.meta.env.VITE_WS_URL || 'wss://localhost:3000';
+export const API_BASE = '';
+export const WS_URL = `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://
+  ${window.location.host}/ws`;
 
 export type LobbyFrameType =
 	| 'CREATE_LOBBY'
