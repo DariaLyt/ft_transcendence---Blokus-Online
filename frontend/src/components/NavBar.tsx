@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useGameSession } from "../sockets/GameSessionContext";
 
 type NavbarProps = {
     disablePlay?: boolean;
@@ -8,9 +9,10 @@ type NavbarProps = {
 export default function Navbar({ disablePlay = false}: NavbarProps) {
   const [isDropdownOPen, setIsDropdownOPen] = useState(false);
   const navigate = useNavigate();
+  const { currentUser } = useGameSession();
 
   const handleLogout = async () => {
-      const response = await fetch("https://localhost:3000/api/auth/logout", {
+      const response = await fetch("/api/auth/logout", {
         method:"POST",
         credentials:"include",
       });
@@ -50,10 +52,19 @@ export default function Navbar({ disablePlay = false}: NavbarProps) {
 
           <div className="relative">
             <button
-              type="button" //PLACEHOLDER for what will later be avatar
+              type="button"
               onClick={() => setIsDropdownOPen(!isDropdownOPen)}
-              className="w-9 h-9 rounded-full bg-slate-200 border border-slate-300 flex items-center justify-center font-semibold text-slate-600 cursor-pointer hover:bg-slate-300"
-              > NM
+              className="w-9 h-9 rounded-full bg-slate-200 border border-slate-300 flex items-center justify-center font-semibold text-slate-600 cursor-pointer hover:bg-slate-300 overflow-hidden"
+              >
+                <img
+                  src={
+                    currentUser?.avatar_url
+                      ? `https://localhost:3000${currentUser.avatar_url}`
+                      : "/default-avatar.png"
+                }
+                alt="Profile avatar"
+                className="w-full h-full object-cover"
+            />
             </button>
 
             {isDropdownOPen && (

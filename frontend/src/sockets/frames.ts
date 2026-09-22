@@ -1,5 +1,6 @@
-export const API_BASE = 'https://localhost:3000';
-export const WS_URL = import.meta.env.VITE_WS_URL || 'wss://localhost:3000';
+export const API_BASE = '';
+export const WS_URL = `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://
+  ${window.location.host}/ws`;
 
 export type LobbyFrameType =
 	| 'CREATE_LOBBY'
@@ -13,9 +14,13 @@ export type LobbyFrameType =
 export type GameActionType = 'MAKE_MOVE' | 'PASS_TURN' | 'DISCONNECT';
 
 export function lobbyFrame(type: LobbyFrameType, extra: Record<string, unknown> = {}) {
+	const payload: Record<string, unknown> = { type, ...extra };
+	if (typeof payload.lobbyId === 'string') {
+		payload.lobbyId = payload.lobbyId.trim();
+	}
 	return {
 		category: 'LOBBY' as const,
-		payload: { type, ...extra },
+		payload,
 	};
 }
 

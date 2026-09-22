@@ -12,7 +12,7 @@ export default function LoginPage() {
 
     const handleLogin = async () => {
         const response = await fetch(
-            "https://localhost:3000/api/auth/login", // send a request and wait for the server's response
+            "/api/auth/login", // send a request and wait for the server's response
             {
                 method: "POST", // we're sending data to backend
                 headers: {

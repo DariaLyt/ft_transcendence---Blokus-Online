@@ -13,7 +13,7 @@ import { errorHandler } from './middlewares/errorMiddleware.js';
 const app = express();
 
 app.use(helmet());
-app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
+app.use(cors({ origin: 'https://localhost', credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
 

@@ -21,7 +21,7 @@ export const createLobbySchema = z.object({
 export const joinLobbySchema = z.object({
 	type: z.literal('JOIN_LOBBY'),
 	userName: z.string(),
-	lobbyId: z.uuid(),
+	lobbyId: z.string().trim().min(1),
 });
 
 export const toggleReadySchema =  z.object({

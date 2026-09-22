@@ -11,7 +11,7 @@ export default function RegisterPage() {
 
     const handleRegister = async () => {
         const response = await fetch (
-            "https://localhost:3000/api/auth/register",
+            "/api/auth/register",
             {
                 method: "POST",
                 headers: {
