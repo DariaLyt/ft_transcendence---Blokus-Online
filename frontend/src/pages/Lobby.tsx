@@ -5,7 +5,7 @@ import Navbar from "../components/NavBar";
 
 export default function Lobby() {
     const navigate = useNavigate();
-    const { currentUser, sendLobby, connected } = useGameSession();
+    const { currentUser, sendLobby, connected, clearSnapshot } = useGameSession();
     const [showJoin, setShowJoin] = useState(false);
     const [lobbyId, setLobbyId] = useState("");
     const [error, setError] = useState("");
@@ -15,6 +15,7 @@ export default function Lobby() {
             setError("You need to be logged in to create a lobby.");
             return;
         }
+        clearSnapshot();
         sendLobby("CREATE_LOBBY", {
             userName: currentUser.username,
             maxPlayers: 4,
@@ -30,10 +31,6 @@ export default function Lobby() {
         if (!lobbyId.trim()) {
             return;
         }
-        sendLobby("JOIN_LOBBY", {
-            userName: currentUser.username,
-            lobbyId: lobbyId.trim(),
-        });
         navigate(`/lobby/waiting/${lobbyId.trim()}`);
     };
 

@@ -10,7 +10,7 @@ import {
 } from 'react';
 import { useLocation } from 'react-router-dom';
 import { API_BASE, WS_URL, gameFrame, lobbyFrame, resyncFrame, type GameActionType, type LobbyFrameType } from './frames';
-import { parseEngineSnapshot, type EngineSnapshot, type LobbyState } from '../data/snapshot';
+import { parseEngineSnapshot, snapshotIncludesUser, type EngineSnapshot, type LobbyState } from '../data/snapshot';
 import type { GameState } from '../data/game';
 
 export type CurrentUser = {
@@ -29,6 +29,7 @@ type GameSessionValue = {
 	clearError: () => void;
 	sendLobby: (type: LobbyFrameType, extra?: Record<string, unknown>) => void;
 	sendGame: (action: GameActionType, payload?: Record<string, unknown>) => void;
+	clearSnapshot: () => void;
 };
 
 const GameSessionContext = createContext<GameSessionValue | null>(null);
@@ -44,6 +45,8 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 	const [snapshot, setSnapshot] = useState<EngineSnapshot | null>(null);
 	const [lastError, setLastError] = useState<string | null>(null);
 	const wsRef = useRef<WebSocket | null>(null);
+	const currentUserRef = useRef<CurrentUser | null>(null);
+	currentUserRef.current = currentUser;
 
 	const sendRaw = useCallback((frame: object) => {
 		const ws = wsRef.current;
@@ -112,9 +115,6 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 			}
 			if (msg.event === 'ERROR') {
 				setLastError(msg.payload?.message || msg.payload?.code || 'Game error');
-				if (msg.payload?.details || msg.payload?.state) {
-					setSnapshot(applyIncomingPayload(msg.payload.details ?? msg.payload));
-				}
 				return;
 			}
 			if (
@@ -123,8 +123,18 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 				msg.payload?.lobby ||
 				msg.payload?.game
 			) {
+				const next = applyIncomingPayload(msg.payload);
+				if (next.status === 'NO_ACTIVE_GAME' || (!next.lobby && !next.game)) {
+					setLastError(null);
+					setSnapshot(next);
+					return;
+				}
+				const userId = currentUserRef.current?.id;
+				if (userId != null && !snapshotIncludesUser(next, userId)) {
+					return;
+				}
 				setLastError(null);
-				setSnapshot(applyIncomingPayload(msg.payload));
+				setSnapshot(next);
 			}
 		};
 
@@ -144,6 +154,17 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 		};
 	}, [currentUser?.id]);
 
+	useEffect(() => {
+		const liveGame = snapshot?.game;
+		if (liveGame?.status !== 'active') {
+			return;
+		}
+		const id = window.setInterval(() => {
+			sendRaw(resyncFrame());
+		}, 400);
+		return () => window.clearInterval(id);
+	}, [snapshot?.game, sendRaw]);
+
 	const sendLobby = useCallback(
 		(type: LobbyFrameType, extra: Record<string, unknown> = {}) => {
 			sendRaw(lobbyFrame(type, extra));
@@ -158,6 +179,11 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 		[sendRaw]
 	);
 
+	const clearSnapshot = useCallback(() => {
+		setSnapshot({ status: 'NO_ACTIVE_GAME', lobby: null, game: null });
+		setLastError(null);
+	}, []);
+
 	const value = useMemo<GameSessionValue>(
 		() => ({
 			currentUser,
@@ -169,8 +195,9 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 			clearError: () => setLastError(null),
 			sendLobby,
 			sendGame,
+			clearSnapshot,
 		}),
-		[currentUser, connected, snapshot, lastError, sendLobby, sendGame]
+		[currentUser, connected, snapshot, lastError, sendLobby, sendGame, clearSnapshot]
 	);
 
 	return <GameSessionContext.Provider value={value}>{children}</GameSessionContext.Provider>;

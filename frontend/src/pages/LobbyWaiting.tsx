@@ -1,27 +1,56 @@
 import { useNavigate, useParams } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useGameSession } from "../sockets/GameSessionContext";
 import Navbar from "../components/NavBar";
 
 export default function LobbyWaiting() {
     const navigate = useNavigate();
     const { lobbyId: lobbyIdParam } = useParams();
-    const { currentUser, lobby, game, lastError, sendLobby } = useGameSession();
+    const { currentUser, connected, lobby, lastError, sendLobby, clearSnapshot } = useGameSession();
+    const joinSentFor = useRef<string>("");
+    const inThisLobby = Boolean(
+        currentUser &&
+        lobby?.players.some((player) => player.userId === String(currentUser.id))
+    );
 
     useEffect(() => {
+        if (!inThisLobby) {
+            return;
+        }
         if (lobby?.status === "ready_check") {
             navigate("/ready-check");
         }
-        if (lobby?.status === "in_game" || game?.status === "active") {
+        if (lobby?.status === "in_game") {
             navigate("/game");
         }
-    }, [lobby?.status, game?.status, navigate]);
+    }, [inThisLobby, lobby?.status, navigate]);
 
     const players = lobby?.players ?? [];
     const currentPlayer = players.find(
         (player) => player.userId === String(currentUser?.id)
     );
     const displayLobbyId = lobby?.id || lobbyIdParam || "";
+
+    useEffect(() => {
+        if (!currentUser || !connected || !lobbyIdParam) {
+            return;
+        }
+        const alreadyIn = lobby?.players.some(
+            (player) => player.userId === String(currentUser.id)
+        );
+        if (alreadyIn) {
+            joinSentFor.current = lobbyIdParam;
+            return;
+        }
+        if (joinSentFor.current === lobbyIdParam) {
+            return;
+        }
+        joinSentFor.current = lobbyIdParam;
+        sendLobby("JOIN_LOBBY", {
+            userName: currentUser.username,
+            lobbyId: lobbyIdParam,
+        });
+    }, [connected, currentUser, lobby?.players, lobbyIdParam, sendLobby]);
 
     const handleStartGame = () => {
         if (!lobby?.id) {
@@ -38,6 +67,7 @@ export default function LobbyWaiting() {
     };
 
     const handleLeaveLobby = () => {
+        clearSnapshot();
         sendLobby("LEAVE_LOBBY");
         navigate("/lobby");
     };

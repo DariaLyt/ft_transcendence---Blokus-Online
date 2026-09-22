@@ -28,71 +28,6 @@ message GameStateResponse {
   string state = 4;
 }
 
-message CreateLobby {
-  int32 max_players = 1;
-  string username = 2;
-}
-
-message JoinLobby {
-  string lobby_id = 1;
-  string username = 2;
-}
-
-message ToggleReady {
-  string lobby_id = 1;
-}
-
-message LeaveLobby {}
-
-message BeginReadyCheck {
-  string lobby_id = 1;
-}
-
-message AcceptReadyCheck {
-  string lobby_id = 1;
-}
-
-message DeclineReadyCheck {
-  string lobby_id = 1;
-}
-
-message LobbyActionRequest {
-  int32 user_id = 1;
-  oneof payload {
-    CreateLobby create_lobby = 2;
-    JoinLobby join_lobby = 3;
-    ToggleReady toggle_ready = 4;
-    LeaveLobby leave_lobby = 5;
-    BeginReadyCheck begin_ready_check = 6;
-    AcceptReadyCheck accept_ready_check = 7;
-    DeclineReadyCheck decline_ready_check = 8;
-  }
-}
-
-message MakeMove {
-  string color = 1;
-  string piece_id = 2;
-  int32 origin_x = 3;
-  int32 origin_y = 4;
-  int32 rotation = 5;
-  bool flip = 6;
-}
-
-message PassTurn {
-  string color = 1;
-}
-
-message Disconnect {}
-
-message GameActionRequest {
-  int32 user_id = 1;
-  oneof payload {
-    MakeMove make_move = 2;
-    PassTurn pass_turn = 3;
-    Disconnect disconnect = 4;
-  }
-}
-
 message GameStateRequest {
   int32 user_id = 1;
   string game_id = 2;
@@ -135,7 +70,6 @@ message DeclineReadyCheck {
 
 message LobbyActionRequest {
   int32 user_id = 1;
-
   oneof payload {
     CreateLobby create_lobby = 2;
     JoinLobby join_lobby = 3;
@@ -164,7 +98,6 @@ message Disconnect {}
 
 message GameActionRequest {
   int32 user_id = 1;
-
   oneof payload {
     MakeMove make_move = 2;
     PassTurn pass_turn = 3;

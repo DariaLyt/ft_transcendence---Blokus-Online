@@ -138,9 +138,10 @@ func TestHandleGameActionEdgeTouchOwn(t *testing.T) {
 	}
 }
 
-func TestTurnTimerPassesCurrentColor(t *testing.T) {
+func TestTurnTimerPlacesRandomPiece(t *testing.T) {
 	eng := game.NewGameEngine()
-	eng.TurnDuration = 25 * time.Millisecond
+	eng.TurnDuration = 40 * time.Millisecond
+	eng.BotDelay = time.Hour
 	ctx := context.Background()
 
 	created, err := eng.HandleLobbyAction(ctx, &pb.LobbyActionRequest{
@@ -161,6 +162,11 @@ func TestTurnTimerPassesCurrentColor(t *testing.T) {
 	if err != nil || !started.GetSuccess() {
 		t.Fatalf("start: %+v %v", started, err)
 	}
+	before := snapshot(t, started.GetState())
+	if before.Game == nil || before.Game.TurnDeadline == nil {
+		t.Fatal("expected turnDeadline on a new game")
+	}
+	startRemaining := len(before.Game.Remaining[game.ColorBlue])
 
 	deadline := time.Now().Add(500 * time.Millisecond)
 	for time.Now().Before(deadline) {
@@ -169,12 +175,21 @@ func TestTurnTimerPassesCurrentColor(t *testing.T) {
 			t.Fatal(err)
 		}
 		wrap := snapshot(t, snap.GetState())
-		if wrap.Game != nil && wrap.Game.Passed[game.ColorBlue] {
+		if wrap.Game == nil {
+			time.Sleep(10 * time.Millisecond)
+			continue
+		}
+		placed := len(wrap.Game.Remaining[game.ColorBlue]) < startRemaining
+		passed := wrap.Game.Passed[game.ColorBlue]
+		if placed || passed {
+			if placed && wrap.Game.CurrentColor == game.ColorBlue {
+				t.Fatal("turn should advance after a timeout placement")
+			}
 			return
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
-	t.Fatal("blue should have been auto-passed after the turn timer")
+	t.Fatal("blue should have had a piece placed after the turn timer")
 }
 
 func TestDisconnectConvertsSeatToBot(t *testing.T) {
@@ -369,6 +384,79 @@ func disconnectRequest(userID int32) *pb.GameActionRequest {
 		Payload: &pb.GameActionRequest_Disconnect{
 			Disconnect: &pb.Disconnect{},
 		},
+	}
+}
+
+func TestCreateLobbyDropsPreviousGame(t *testing.T) {
+	eng := game.NewGameEngine()
+	eng.TurnDuration = time.Hour
+	ctx := context.Background()
+
+	created, err := eng.HandleLobbyAction(ctx, createLobbyRequest(1, "host", 4))
+	if err != nil || !created.GetSuccess() {
+		t.Fatalf("create: %+v %v", created, err)
+	}
+	lobbyID := snapshot(t, created.GetState()).Lobby.ID
+
+	started, err := eng.HandleLobbyAction(ctx, beginReadyCheckRequest(1, lobbyID))
+	if err != nil || !started.GetSuccess() {
+		t.Fatalf("start: %+v %v", started, err)
+	}
+	if snapshot(t, started.GetState()).Game == nil {
+		t.Fatal("expected an active game")
+	}
+
+	again, err := eng.HandleLobbyAction(ctx, createLobbyRequest(1, "host", 4))
+	if err != nil || !again.GetSuccess() {
+		t.Fatalf("create again: %+v %v", again, err)
+	}
+	wrap := snapshot(t, again.GetState())
+	if wrap.Lobby == nil || wrap.Lobby.Status != game.LobbyWaiting {
+		t.Fatalf("new lobby %+v", wrap.Lobby)
+	}
+	if wrap.Game != nil {
+		t.Fatalf("create lobby should not keep previous game: %+v", wrap.Game)
+	}
+
+	resync, err := eng.GetGameStateSnapshot(ctx, &pb.GameStateRequest{UserId: 1})
+	if err != nil || !resync.GetSuccess() {
+		t.Fatalf("resync: %+v %v", resync, err)
+	}
+	got := snapshot(t, resync.GetState())
+	if got.Game != nil {
+		t.Fatalf("resync should not attach old game: %+v", got.Game)
+	}
+	if got.Lobby == nil || got.Lobby.ID != wrap.Lobby.ID || got.Lobby.Status != game.LobbyWaiting {
+		t.Fatalf("resync lobby %+v", got.Lobby)
+	}
+}
+
+func TestLeaveLobbyThenCreateIsWaiting(t *testing.T) {
+	eng := game.NewGameEngine()
+	ctx := context.Background()
+
+	created, err := eng.HandleLobbyAction(ctx, createLobbyRequest(1, "host", 4))
+	if err != nil || !created.GetSuccess() {
+		t.Fatalf("create: %+v %v", created, err)
+	}
+
+	left, err := eng.HandleLobbyAction(ctx, &pb.LobbyActionRequest{
+		UserId: 1,
+		Payload: &pb.LobbyActionRequest_LeaveLobby{
+			LeaveLobby: &pb.LeaveLobby{},
+		},
+	})
+	if err != nil || !left.GetSuccess() {
+		t.Fatalf("leave: %+v %v", left, err)
+	}
+
+	again, err := eng.HandleLobbyAction(ctx, createLobbyRequest(1, "host", 4))
+	if err != nil || !again.GetSuccess() {
+		t.Fatalf("create again: %+v %v", again, err)
+	}
+	wrap := snapshot(t, again.GetState())
+	if wrap.Lobby == nil || wrap.Lobby.Status != game.LobbyWaiting || wrap.Game != nil {
+		t.Fatalf("after recreate %+v", wrap)
 	}
 }
 
