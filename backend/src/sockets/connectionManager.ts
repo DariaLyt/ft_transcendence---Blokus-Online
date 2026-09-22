@@ -1,4 +1,4 @@
-import type { AuthenticatedSocket } from './socketServer.js';
+import type { AuthenticatedSocket } from '../types/gatewayTypes.js';
 
 const activeConnections = new Map<number, AuthenticatedSocket>();
 const disconnectTimers = new Map<number, NodeJS.Timeout>();

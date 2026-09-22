@@ -1,4 +1,4 @@
-import type { AuthenticatedSocket } from './socketServer.js';
+import type { AuthenticatedSocket } from '../types/gatewayTypes.js';
 import { IncomingFrameSchema, type GameModules } from '../types/gatewayTypes.js';
 import { sendToUser, sendToUsers } from './broadcaster.js'; // [NEW]
 import { z } from 'zod';
@@ -8,20 +8,6 @@ import {
 	subscribeToGame,
 	unsubscribeFromGame,
 } from './gameSubscriptions.js';
-
-//temp
-// const gameModules: GameModules = {
-// 	handleLobbyAction: (userId, action, payload) => {
-// 		console.log(`[Lobby Module Mock] User ${userId} -> Action: ${action}`, payload);
-// 	},
-// 	handleGameAction: (userId, action, payload) => {
-// 		console.log(`[Game Module Mock] User ${userId} -> Action: ${action}`, payload);
-// 	},
-// 	getGameStateSnapshot: (userId) => {
-// 		console.log(`[Game Snapshot Mock] Fetching state for User ${userId}`);
-// 		return { status: 'NO_ACTIVE_GAME' };
-// 	},
-// };
 
 function buildLobbyPayload(payload: any) {
     switch (payload.type) {
@@ -209,6 +195,21 @@ function userIdsFromSnapshot(snapshot: any, fallbackUserId: number): number[] {
 	return [...ids];
 }
 
+function userInSnapshot(snapshot: any, userId: number): boolean {
+	const id = String(userId);
+	for (const player of snapshot?.lobby?.players ?? []) {
+		if (String(player?.userId) === id) {
+			return true;
+		}
+	}
+	for (const seat of snapshot?.game?.seats ?? []) {
+		if (String(seat?.userId) === id) {
+			return true;
+		}
+	}
+	return false;
+}
+
 // [NEW]
 function isEngineFailure(resp: any): boolean {
 	if (!resp) {
@@ -226,16 +227,19 @@ function isEngineFailure(resp: any): boolean {
 // [NEW] unified GAME_STATE_SNAPSHOT to all involved users; ERROR to the actor on failure
 function broadcastEngineResult(userId: number, resp: any) {
 	const snapshot = parseSnapshot(resp);
-	const targets = userIdsFromSnapshot(snapshot, userId);
 
 	if (isEngineFailure(resp)) {
 		sendToUser(userId, 'ERROR', {
 			message: resp?.message || 'Game engine rejected the action',
 			code: resp?.error_code || resp?.errorCode,
-			details: snapshot,
 		});
+		return;
 	}
 
+	const targets = userIdsFromSnapshot(snapshot, userId);
+	if (!userInSnapshot(snapshot, userId)) {
+		sendToUser(userId, 'GAME_STATE_SNAPSHOT', { status: 'NO_ACTIVE_GAME' });
+	}
 	sendToUsers(targets, 'GAME_STATE_SNAPSHOT', snapshot);
 }
 
@@ -320,28 +324,6 @@ export function handleIncomingSocketMessage(
 						message: 'Game engine communication failed',
 					});
 				});
-
-				// if (frame.action === 'MAKE_MOVE') {
-				// 	sendMoveToGoEngine({
-				// 		userId,
-				// 		color: frame.payload.color,
-				// 		pieceId: frame.payload.pieceId,
-				// 		originX: frame.payload.originX,
-				// 		originY: frame.payload.originY,
-				// 		rotation: frame.payload.rotation || 0,
-				// 		flip: frame.payload.flip || false,
-				// 	})
-				// 	.then((goResponse) => {
-				// 		console.log('[gRPC Success from Go]:', goResponse);
-				// 		sendToUser(userId, 'MOVE_RESULT', goResponse);
-				// 	})
-				// 	.catch((err) => {
-				// 		console.error('[gRPC Error from Go]:', err.message);
-				// 		sendToUser(userId, 'ERROR', {
-				// 			message: 'Game engine communication failed',
-				// 		});
-				// 	});
-				// }
 
 				break;
 			}

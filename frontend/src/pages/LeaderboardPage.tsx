@@ -15,7 +15,7 @@ export default function LeaderboardPage() {
     const [loading, setLoading] = useState(true);
     useEffect(() => {
         const getLeaderboard = async () => {
-            const response = await fetch("https://localhost:3000/api/leaderboard", {
+            const response = await fetch("/api/leaderboard", {
                 method: "GET",
                 credentials: "include",
             });

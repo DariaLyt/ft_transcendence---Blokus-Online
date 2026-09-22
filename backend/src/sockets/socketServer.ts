@@ -1,5 +1,5 @@
 import { Server as HttpsServer } from 'https';
-import { WebSocketServer, WebSocket } from 'ws';
+import { WebSocketServer } from 'ws';
 import { parseCookie } from 'cookie';
 import jwt from 'jsonwebtoken';
 import { getJwtSecret } from '../config/env.js';
@@ -9,11 +9,9 @@ import { handleIncomingSocketMessage } from './socketGateway.js';
 import { unsubscribeFromAllGames } from './gameSubscriptions.js';
 import { notifyFriendsStatusChange } from '../services/presenceService.js';
 import { sendGameAction } from '../grpc/gameClient.js';
+import type { AuthenticatedSocket } from '../types/gatewayTypes.js';
 
-export interface AuthenticatedSocket extends WebSocket {
-	userId?: number;
-	isAlive?: boolean;
-}
+export let wss: WebSocketServer | null = null;
 
 export function initWebSocketServer(server: HttpsServer) {
 	const wss = new WebSocketServer({ noServer: true });
@@ -58,7 +56,24 @@ export function initWebSocketServer(server: HttpsServer) {
 			ws.isAlive = true;
 		});
 
+		const FRAME_LIMIT = 10; // max frames
+		const INTERVAL_MS = 1000; // per second
 		ws.on('message', (data) => {
+			const now = Date.now();
+			if (!ws.rateLimit) {
+				ws.rateLimit = { count: 1, resetTime: now + INTERVAL_MS };
+			} else if (now > ws.rateLimit.resetTime) {
+				ws.rateLimit.count = 1;
+				ws.rateLimit.resetTime = now + INTERVAL_MS;
+			} else {
+				ws.rateLimit.count += 1;
+				if (ws.rateLimit.count > FRAME_LIMIT) {
+					console.warn(`[Rate Limit] User ${ws.userId} exceeded frame rate limit.`);
+					ws.send(JSON.stringify({ event: 'ERROR', payload: { message: 'Rate limit exceeded. Slow down.' } }));
+					return;
+				}
+			}
+
 			handleIncomingSocketMessage(ws, data.toString());
 		});
 

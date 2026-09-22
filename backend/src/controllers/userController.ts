@@ -1,16 +1,12 @@
 import type { Request, Response } from 'express';
-import { findUserById, getUserPasswordHash, updateUserPassword } from '../db/userQueries.js';
+import { findUserById, getUserPasswordHash, updateUserPassword, getAvatar, updateNewAvatar } from '../db/queries/users.js';
 import bcrypt from 'bcrypt';
 import { pool } from '../db/conn.js';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 
 export async function getProfile(req: Request, res: Response) {
-	if (!req.user) {
-		return res.status(401).json({ error: 'Unauthorized'});
-	}
-
-	const user = await findUserById(req.user.userId);
+	const user = await findUserById(req.user!.userId);
 	if (!user) {
 		return res.status(404).json({ error: 'User not found' });
 	}
@@ -19,13 +15,9 @@ export async function getProfile(req: Request, res: Response) {
 }
 
 export async function changePassword(req: Request, res: Response) {
-	if (!req.user) {
-		return res.status(401).json({ error: 'Unauthorized' });
-	}
-
 	const validated = req.body;
 
-	const currentHash = await getUserPasswordHash(req.user.userId);
+	const currentHash = await getUserPasswordHash(req.user!.userId);
 	if (!currentHash) {
 		return res.status(404).json({ error: 'User not found' });
 	}
@@ -36,7 +28,7 @@ export async function changePassword(req: Request, res: Response) {
 	}
 
 	const newHash = await bcrypt.hash(validated.newPassword, 10);
-	const updated = await updateUserPassword(newHash, req.user.userId);
+	const updated = await updateUserPassword(newHash, req.user!.userId);
 	if (!updated) {
 		return res.status(404).json({ error: 'User not found' });
 	}
@@ -51,21 +43,22 @@ export async function updateAvatar(req: Request, res: Response) {
     const avatarUrl = `/uploads/avatars/${req.file.filename}`;
 
     try {
-		if (!req.user) {
-			return res.status(401).json({ error: 'Unauthorized' });
-		}
-		const id = req.user.userId;
+		const id = req.user!.userId;
 
-		const { rows } = await pool.query(
-			'SELECT avatar_url FROM users WHERE id = $1',
-			[id]
-		);
-		const oldAvatarUrl = rows[0]?.avatar_url;
+		// const { rows } = await pool.query(
+		// 	'SELECT avatar_url FROM users WHERE id = $1',
+		// 	[id]
+		// );
+		// const oldAvatarUrl = rows[0]?.avatar_url;
 
-		await pool.query(
-			'UPDATE users SET avatar_url = $1 WHERE id = $2',
-			[avatarUrl, id]
-		);
+		const oldAvatarUrl = await getAvatar(id);
+
+		await updateNewAvatar(id, avatarUrl);
+
+		// await pool.query(
+		// 	'UPDATE users SET avatar_url = $1 WHERE id = $2',
+		// 	[avatarUrl, id]
+		// );
 
 		if (oldAvatarUrl && oldAvatarUrl.startsWith('/uploads/avatars/')) {
 			const oldPath = path.join(process.cwd(), oldAvatarUrl);

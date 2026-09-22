@@ -1,4 +1,16 @@
 import { z } from 'zod';
+import { WebSocket } from 'ws';
+
+export interface RateLimitState {
+  count: number;
+  resetTime: number;
+}
+
+export interface AuthenticatedSocket extends WebSocket {
+  userId?: number;
+  isAlive?: boolean;
+  rateLimit?: RateLimitState;
+}
 
 export const createLobbySchema = z.object({
 	type: z.literal('CREATE_LOBBY'),
@@ -9,7 +21,7 @@ export const createLobbySchema = z.object({
 export const joinLobbySchema = z.object({
 	type: z.literal('JOIN_LOBBY'),
 	userName: z.string(),
-	lobbyId: z.uuid(),
+	lobbyId: z.string().trim().min(1),
 });
 
 export const toggleReadySchema =  z.object({

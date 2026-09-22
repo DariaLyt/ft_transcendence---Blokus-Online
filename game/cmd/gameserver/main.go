@@ -16,7 +16,9 @@ func main() {
 		log.Fatalf("listen: %v", err)
 	}
 	s := grpc.NewServer()
-	pb.RegisterGameEngineServer(s, game.NewGameEngine())
+	eng := game.NewGameEngine()
+	eng.BotDelay = game.DefaultBotDelay
+	pb.RegisterGameEngineServer(s, eng)
 	log.Println("GameEngine gRPC on :50051")
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("serve: %v", err)

@@ -100,6 +100,8 @@ func ApplyMove(state *GameState, move Move) error {
 		col := color
 		state.Board[c.Y][c.X] = &col
 	}
+	copied := move
+	state.LastMove = &copied
 	state.Remaining[color] = removePiece(state.Remaining[color], move.PieceID)
 
 	advanceTurn(state)
@@ -190,7 +192,7 @@ func LegalMoves(state *GameState, color Color, limit int) []Move {
 func ScoreColor(remaining []string, emptiedWithMonomino bool) int {
 	if len(remaining) == 0 {
 		if emptiedWithMonomino {
-			return 20 
+			return 20
 		}
 		return 15
 	}
@@ -214,6 +216,7 @@ func ComputeScores(state *GameState, lastMove Move) map[Color]int {
 
 func finishGame(state *GameState, lastMove Move) {
 	state.Status = StatusFinished
+	state.TurnDeadline = nil
 	state.Scores = ComputeScores(state, lastMove)
 }
 
