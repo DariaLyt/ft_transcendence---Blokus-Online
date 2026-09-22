@@ -5,7 +5,6 @@ import (
 	"math/rand"
 )
 
-
 type Bot struct {
 	RNG *rand.Rand
 }
@@ -38,6 +37,19 @@ func (b *Bot) SuggestMove(state *GameState, color Color) (Move, error) {
 	}
 
 	return best[rng.Intn(len(best))], nil
+}
+
+func PlaceRandomMove(state *GameState) error {
+	if state == nil || state.Status != StatusActive {
+		return fmt.Errorf("game not active")
+	}
+	color := state.CurrentColor
+	moves := LegalMoves(state, color, 0)
+	if len(moves) == 0 {
+		return PassTurn(state, color)
+	}
+	rng := rand.New(rand.NewSource(rand.Int63()))
+	return ApplyMove(state, moves[rng.Intn(len(moves))])
 }
 
 func (b *Bot) PlayTurn(state *GameState) (Move, error) {
@@ -156,8 +168,37 @@ func scoreMove(state *GameState, m Move, rng *rand.Rand) int {
 		}
 	}
 	score += anchors * 6
+	score += proximityToLastMove(state, cells)
 	score += rng.Intn(15)
 	return score
+}
+
+func proximityToLastMove(state *GameState, cells []Cell) int {
+	if state == nil || state.LastMove == nil {
+		return 0
+	}
+	lastCells, err := AbsoluteCells(*state.LastMove)
+	if err != nil || len(lastCells) == 0 {
+		return 0
+	}
+	minDist := BoardSize * 2
+	for _, c := range cells {
+		for _, prev := range lastCells {
+			dx := c.X - prev.X
+			if dx < 0 {
+				dx = -dx
+			}
+			dy := c.Y - prev.Y
+			if dy < 0 {
+				dy = -dy
+			}
+			d := dx + dy
+			if d < minDist {
+				minDist = d
+			}
+		}
+	}
+	return (40 - minDist) * 12
 }
 
 func wouldEdgeTouchOwn(state *GameState, color Color, pieceCells map[Cell]bool, x, y int) bool {

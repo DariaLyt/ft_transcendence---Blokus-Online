@@ -209,6 +209,21 @@ function userIdsFromSnapshot(snapshot: any, fallbackUserId: number): number[] {
 	return [...ids];
 }
 
+function userInSnapshot(snapshot: any, userId: number): boolean {
+	const id = String(userId);
+	for (const player of snapshot?.lobby?.players ?? []) {
+		if (String(player?.userId) === id) {
+			return true;
+		}
+	}
+	for (const seat of snapshot?.game?.seats ?? []) {
+		if (String(seat?.userId) === id) {
+			return true;
+		}
+	}
+	return false;
+}
+
 // [NEW]
 function isEngineFailure(resp: any): boolean {
 	if (!resp) {
@@ -226,16 +241,19 @@ function isEngineFailure(resp: any): boolean {
 // [NEW] unified GAME_STATE_SNAPSHOT to all involved users; ERROR to the actor on failure
 function broadcastEngineResult(userId: number, resp: any) {
 	const snapshot = parseSnapshot(resp);
-	const targets = userIdsFromSnapshot(snapshot, userId);
 
 	if (isEngineFailure(resp)) {
 		sendToUser(userId, 'ERROR', {
 			message: resp?.message || 'Game engine rejected the action',
 			code: resp?.error_code || resp?.errorCode,
-			details: snapshot,
 		});
+		return;
 	}
 
+	const targets = userIdsFromSnapshot(snapshot, userId);
+	if (!userInSnapshot(snapshot, userId)) {
+		sendToUser(userId, 'GAME_STATE_SNAPSHOT', { status: 'NO_ACTIVE_GAME' });
+	}
 	sendToUsers(targets, 'GAME_STATE_SNAPSHOT', snapshot);
 }
 

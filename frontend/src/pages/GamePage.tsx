@@ -12,7 +12,7 @@ import type { Rotation } from "../data/pieceTransform";
 
 export default function GamePage() {
 	const navigate = useNavigate();
-	const { currentUser, game, lastError, sendGame } = useGameSession();
+	const { currentUser, lobby, game, lastError, sendGame } = useGameSession();
 	const [selectedPiece, setSelectedPiece] = useState<string | null>(null);
 	const [rotation, setRotation] = useState<Rotation>(0);
 	const [flip, setFlip] = useState(false);
@@ -21,10 +21,56 @@ export default function GamePage() {
 	const remaining = currentSeat ? game?.remaining[currentSeat.color] ?? [] : [];
 
 	useEffect(() => {
+		if (game) {
+			return;
+		}
+		const inThisLobby = Boolean(
+			currentUser &&
+			lobby?.players.some((player) => player.userId === String(currentUser.id))
+		);
+		if (!inThisLobby) {
+			return;
+		}
+		if (lobby?.status === "waiting") {
+			navigate(lobby.id ? `/lobby/waiting/${lobby.id}` : "/lobby/waiting");
+			return;
+		}
+		if (lobby?.status === "ready_check") {
+			navigate("/ready-check");
+		}
+	}, [currentUser, game, lobby, navigate]);
+
+	useEffect(() => {
 		if (selectedPiece && !remaining.includes(selectedPiece)) {
 			setSelectedPiece(null);
+			setRotation(0);
+			setFlip(false);
 		}
 	}, [remaining, selectedPiece]);
+
+	useEffect(() => {
+		const onKeyDown = (event: KeyboardEvent) => {
+			if (event.metaKey || event.ctrlKey || event.altKey) {
+				return;
+			}
+			const target = event.target as HTMLElement | null;
+			const tag = target?.tagName;
+			if (tag === "INPUT" || tag === "TEXTAREA" || target?.isContentEditable) {
+				return;
+			}
+			if (event.code === "KeyR" || event.key === "r" || event.key === "R") {
+				event.preventDefault();
+				setRotation((current) => ((current + 90) % 360) as Rotation);
+				return;
+			}
+			if (event.code === "KeyF" || event.key === "f" || event.key === "F") {
+				event.preventDefault();
+				setFlip((current) => !current);
+			}
+		};
+		window.addEventListener("keydown", onKeyDown);
+		return () => window.removeEventListener("keydown", onKeyDown);
+	}, []);
 	const isYourTurn =
 		game?.status === "active" &&
 		Boolean(currentSeat) &&
@@ -102,14 +148,14 @@ export default function GamePage() {
 							onClick={() => setRotation((r) => ((r + 90) % 360) as Rotation)}
 							className="flex-1 px-3 py-2 rounded-lg bg-slate-200 text-sm"
 						>
-							Rotate
+							Rotate (R)
 						</button>
 						<button
 							type="button"
 							onClick={() => setFlip((f) => !f)}
 							className="flex-1 px-3 py-2 rounded-lg bg-slate-200 text-sm"
 						>
-							Flip {flip ? "on" : "off"}
+							Flip (F) {flip ? "on" : "off"}
 						</button>
 						<button
 							type="button"
@@ -124,7 +170,11 @@ export default function GamePage() {
 					gameState={game}
 					currentUserId={currentUser?.id}
 					selectedPiece={selectedPiece}
-					onSelect={setSelectedPiece}
+					onSelect={(pieceId) => {
+						setSelectedPiece(pieceId);
+						setRotation(0);
+						setFlip(false);
+					}}
 					canSelect={Boolean(isYourTurn)}
 				/>
 			</div>

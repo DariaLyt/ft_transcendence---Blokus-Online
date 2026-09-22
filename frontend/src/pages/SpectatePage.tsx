@@ -4,6 +4,7 @@ import Navbar from "../components/NavBar";
 import Board from "../components/Board";
 import GameStatus from "../components/GameStatus";
 import PlayersInfo from "../components/PlayersInfo";
+import { WS_URL } from "../sockets/frames";
 import type { GameState } from "../data/game";
 
 type Snapshot = {
@@ -57,7 +58,7 @@ export default function SpectatePage() {
 		setWatchedGameId(trimmedGameId);
 		setStatus("Connecting...");
 
-		const socket = new WebSocket("wss://localhost:3000");
+		const socket = new WebSocket(WS_URL);
 		socketRef.current = socket;
 
 		socket.addEventListener("open", () => {
