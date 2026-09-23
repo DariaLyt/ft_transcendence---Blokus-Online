@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom"; // redirection when user clicks a link
+import { useGameSession } from "../sockets/GameSessionContext";
 
 export default function RegisterPage() {
     const [username, setUsername] = useState("");
@@ -8,6 +9,7 @@ export default function RegisterPage() {
     const [password, setPassword] = useState("");
     const navigate = useNavigate();
     const [error, setError] = useState("");
+    const { updateCurrentUser } = useGameSession();
 
     const handleRegister = async () => {
         const response = await fetch (
@@ -27,6 +29,7 @@ export default function RegisterPage() {
         );
         const data = await response.json();
         if (response.ok) {
+            updateCurrentUser(data.user);
             navigate("/menu");
         } else {
             setError(data.error);

@@ -8,7 +8,6 @@ import {
 	useState,
 	type ReactNode,
 } from 'react';
-import { useLocation } from 'react-router-dom';
 import { API_BASE, WS_URL, gameFrame, lobbyFrame, resyncFrame, type GameActionType, type LobbyFrameType } from './frames';
 import { parseEngineSnapshot, snapshotIncludesUser, type EngineSnapshot, type LobbyState } from '../data/snapshot';
 import type { GameState } from '../data/game';
@@ -43,7 +42,6 @@ function applyIncomingPayload(payload: any): EngineSnapshot {
 }
 
 export function GameSessionProvider({ children }: { children: ReactNode }) {
-	const location = useLocation();
 	const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
 	const [authLoading, setAuthLoading] = useState(true);
 	const updateCurrentUser = useCallback((user: CurrentUser) => {
@@ -78,9 +76,14 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 					return;
 				}
 				const data = await response.json();
-				if (cancelled || !data.user) {
-					return;
-				}
+            	if (cancelled) {
+                	return;
+            	}
+
+            	if (!data.user) {
+                	setCurrentUser(null);
+                	return;
+            	}
 				setCurrentUser({
 					id: data.user.id,
 					username: data.user.username,
@@ -101,7 +104,7 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 		return () => {
 			cancelled = true;
 		};
-	}, [location.pathname]);
+	}, []);
 
 	useEffect(() => {
 		if (!currentUser) {
