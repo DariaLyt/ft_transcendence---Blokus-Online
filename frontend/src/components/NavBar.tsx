@@ -59,7 +59,7 @@ export default function Navbar({ disablePlay = false}: NavbarProps) {
                 <img
                   src={
                     currentUser?.avatar_url
-                      ? `https://localhost:3000${currentUser.avatar_url}`
+                      ? currentUser.avatar_url
                       : "/default-avatar.png"
                 }
                 alt="Profile avatar"
