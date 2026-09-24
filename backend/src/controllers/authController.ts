@@ -12,12 +12,12 @@ export async function register(req: Request, res: Response) {
 		findUserByUsername(validated.username)
 	]);
 
-	if (existingEmail) {
-		return res.status(400).json({ error: 'Email already in use' });
-	}
-
 	if (existingUsername) {
 		return res.status(400).json({ error: 'Username already in use' });
+	}
+
+	if (existingEmail) {
+		return res.status(400).json({ error: 'Email already in use' });
 	}
 
 	const passwordHash = await bcrypt.hash(validated.password, 10);

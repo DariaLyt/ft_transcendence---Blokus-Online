@@ -45,20 +45,9 @@ export async function updateAvatar(req: Request, res: Response) {
     try {
 		const id = req.user!.userId;
 
-		// const { rows } = await pool.query(
-		// 	'SELECT avatar_url FROM users WHERE id = $1',
-		// 	[id]
-		// );
-		// const oldAvatarUrl = rows[0]?.avatar_url;
-
 		const oldAvatarUrl = await getAvatar(id);
 
 		await updateNewAvatar(id, avatarUrl);
-
-		// await pool.query(
-		// 	'UPDATE users SET avatar_url = $1 WHERE id = $2',
-		// 	[avatarUrl, id]
-		// );
 
 		if (oldAvatarUrl && oldAvatarUrl.startsWith('/uploads/avatars/')) {
 			const oldPath = path.join(process.cwd(), oldAvatarUrl);
