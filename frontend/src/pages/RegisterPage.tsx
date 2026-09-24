@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom"; // redirection when user clicks a link
 import { useGameSession } from "../sockets/GameSessionContext";
+import Footer from "../components/Footer";
 
 export default function RegisterPage() {
     const [username, setUsername] = useState("");
@@ -38,7 +39,7 @@ export default function RegisterPage() {
 
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-100">
+        <div className="min-h-screen flex flex-col items-center justify-center bg-slate-100">
             <div className="bg-white p-8 rounded-xl shadow-md">
                 <h1 className="text-2xl font-bold text-slate-800 mb-2">Create an account</h1>
                 <p className="text-slate-500 mb-6">Enter your details to register</p>
@@ -89,6 +90,7 @@ export default function RegisterPage() {
                     </Link>
                 </p>
             </div>
+            <Footer />
         </div>
     );
 }

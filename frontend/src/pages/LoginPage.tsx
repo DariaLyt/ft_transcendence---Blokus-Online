@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom"; // React hook that lets my code 
 import { useLocation } from "react-router-dom"; // Gives information about the current URL/route and the navigation state  attached to it
 import { Link } from "react-router-dom";
 import { useGameSession } from "../sockets/GameSessionContext";
+import Footer from "../components/Footer";
 
 export default function LoginPage() {
     const [identifier, setIdentifier] = useState("");
@@ -37,7 +38,7 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-100">
+        <div className="min-h-screen flex flex-col items-center justify-center bg-slate-100">
             <div className="bg-white p-8 rounded-xl shadow-md">
                 <h1 className="text-2xl font-bold text-slate-800 mb-2 text-center">Log in</h1>
                 <p className="text-slate-500 mb-6">Enter your details to continue</p>
@@ -84,6 +85,7 @@ export default function LoginPage() {
                     </Link>
                 </p>
             </div>
+            <Footer />
         </div>
     );
 }
