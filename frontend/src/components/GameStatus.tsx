@@ -4,6 +4,7 @@ import type { GameState } from "../data/game";
 type GameStatusProps = {
 	gameState: GameState;
 	currentUserId?: number;
+	error?: string | null;
 };
 
 function secondsLeft(deadline?: string | null): number {
@@ -20,7 +21,7 @@ function formatClock(total: number): string {
 	return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
-export default function GameStatus({ gameState, currentUserId }: GameStatusProps) {
+export default function GameStatus({ gameState, currentUserId, error }: GameStatusProps) {
 	const [remaining, setRemaining] = useState(() => secondsLeft(gameState.turnDeadline));
 	const currentColor = gameState.currentColor;
 	const currentPlayer = gameState.seats.find(
@@ -55,7 +56,18 @@ export default function GameStatus({ gameState, currentUserId }: GameStatusProps
 	}
 	else if (gameState.status === "finished") {
 		title = "Game finished";
-		message = "The game has ended";
+		if (gameState.scores) {
+			const ranked = [...gameState.seats].sort(
+				(a, b) => (gameState.scores?.[b.color] ?? 0) - (gameState.scores?.[a.color] ?? 0)
+			);
+			const winner = ranked[0];
+			const winnerScore = gameState.scores[winner.color] ?? 0;
+			message = winner.userId === currentUserId
+				? `You won with ${winnerScore} points`
+				: `${winner.color} wins with ${winnerScore} points`;
+		} else {
+			message = "The game has ended";
+		}
 	}
 	else if (gameState.status === "aborted") {
 		title = "Game aborted";
@@ -85,6 +97,9 @@ export default function GameStatus({ gameState, currentUserId }: GameStatusProps
 							: "Time left this turn"}
 					</p>
 				</div>
+			)}
+			{error && (
+				<p className="mt-3 text-sm font-medium text-red-600">{error}</p>
 			)}
 		</div>
 	);

@@ -18,15 +18,22 @@ export const createLobbySchema = z.object({
 	maxPlayers: z.number().int().min(2).max(4).default(4),
 });
 
+const lobbyIdSchema = z
+	.string()
+	.trim()
+	.min(1)
+	.max(8)
+	.transform((id) => id.toUpperCase());
+
 export const joinLobbySchema = z.object({
 	type: z.literal('JOIN_LOBBY'),
 	userName: z.string(),
-	lobbyId: z.string().trim().min(1),
+	lobbyId: lobbyIdSchema,
 });
 
 export const toggleReadySchema =  z.object({
 	type: z.literal('TOGGLE_READY'),
-	lobbyId: z.uuid(),
+	lobbyId: lobbyIdSchema,
 });
 
 export const leaveLobbySchema = z.object({
@@ -35,17 +42,17 @@ export const leaveLobbySchema = z.object({
 
 export const beginReadyCheckSchema = z.object({
 	type: z.literal('BEGIN_READY_CHECK'),
-	lobbyId: z.uuid(),
+	lobbyId: lobbyIdSchema,
 });
 
 export const acceptReadyCheckSchema = z.object({
 	type: z.literal('ACCEPT_READY_CHECK'),
-	lobbyId: z.uuid(),
+	lobbyId: lobbyIdSchema,
 });
 
 export const declineReadyCheckSchema = z.object({
 	type: z.literal('DECLINE_READY_CHECK'),
-	lobbyId: z.uuid(),
+	lobbyId: lobbyIdSchema,
 });
 
 // export const GameActionSchema = z.object({

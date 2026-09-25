@@ -36,10 +36,12 @@ function asNumber(value: unknown): number | undefined {
 }
 
 function normalizeSeat(raw: any): Seat {
+	const username = typeof raw?.username === 'string' ? raw.username.trim() : '';
 	return {
 		color: raw?.color,
 		kind: raw?.kind === 'bot' ? 'bot' : 'human',
 		userId: asNumber(raw?.userId),
+		username: username || undefined,
 	};
 }
 

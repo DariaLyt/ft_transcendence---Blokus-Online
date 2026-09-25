@@ -1,8 +1,8 @@
 # Blokus game engine (Go)
 
-This folder is the **game-logic** part of ft_transcendence: rules, pieces, modes, AI bots, terminal rendering, and a hotseat CLI to play/test locally.
+This folder is the **game-logic** part of ft_transcendence: rules, pieces, modes, AI bots, lobby, and the gRPC game server.
 
-It is a pure Go module (`blokus/game`). React / NestJS / Docker are **not** required to develop or verify the engine.
+It is a pure Go module (`blokus/game`). The live stack runs `cmd/gameserver` (Compose service `game`).
 
 ---
 
@@ -50,16 +50,6 @@ The bot scores legal moves with a heuristic:
 - avoid spending the monomino too early
 - small randomness so play is not perfect/deterministic
 
-### Hotseat CLI
-
-`cmd/hotseat` — interactive terminal client to:
-
-- choose a mode
-- play as human(s)
-- let bots take their turns automatically
-- preview pieces / ghost placements
-- autofill a full game for smoke testing
-
 ---
 
 ## Requirements
@@ -70,74 +60,6 @@ The bot scores legal moves with a heuristic:
 ```bash
 go version
 ```
-
----
-
-## How to test (unit tests)
-
-All `*_test.go` files live in `tests/` (external test package `game_test`).
-
-From the `game/` folder:
-
-```bash
-# run all engine tests
-go test ./tests/
-
-# verbose
-go test ./tests/ -v
-
-# one test
-go test ./tests/ -run TestValidateAndApplyFirstMoves -v
-
-# with coverage of the game package
-go test ./tests/ -coverpkg=blokus/game -cover
-```
-
-Coverage includes pieces, transforms, placement rules, scoring, modes, and bot legality.
-
----
-
-## How to launch the game (hotseat CLI)
-
-From the `game/` folder:
-
-```bash
-# interactive mode menu (Enter defaults to M1P3B)
-go run ./cmd/hotseat
-
-# pick mode + reproducible bot RNG
-go run ./cmd/hotseat -mode M1P3B
-go run ./cmd/hotseat -mode M2P2B -seed 42
-go run ./cmd/hotseat -mode M4P
-```
-
-### Useful CLI commands
-
-| Command | Meaning |
-|---------|---------|
-| `help` | List commands |
-| `board` | Redraw board |
-| `hand` | Show current hand |
-| `seats` | Show human/bot seats |
-| `show L5 90 1` | Preview piece (rot + flip) |
-| `legal 20` | List legal moves |
-| `ghost I5 0 0` | Preview placement on board |
-| `place I5 0 0` | Place piece |
-| `place V3 1 1 90 0` | Place with rotation |
-| `auto` | Let heuristic bot play **this** turn once |
-| `autofill` | Auto-play until the game ends |
-| `scores` | Score estimate |
-| `quit` | Exit |
-
-### Quick smoke checklist
-
-1. Start `M1P3B` (you = blue, three bots).
-2. First blue move must cover corner `(0,0)`, e.g. `place I5 0 0`.
-3. Bots for yellow / red / green should play automatically.
-4. Use `legal` / `ghost` before placing to verify rules feedback.
-5. Run `autofill` once and confirm the game finishes with scores.
-
-Yellow first corner is `(19,0)`, red `(19,19)`, green `(0,19)`.
 
 ---
 
@@ -154,8 +76,7 @@ game/
   render.go
   lobby.go
   proto/             # gRPC contract (game.proto + generated stubs)
-  tests/             # all *_test.go (package game_test)
-  cmd/hotseat/       # playable CLI
+  cmd/gameserver/    # gRPC server used by Docker
   go.mod             # module blokus/game
 ```
 
@@ -170,7 +91,7 @@ import gamev1 "blokus/game/proto"
 
 ## Next: step-by-step plan (game-side)
 
-The engine, CLI, and tests are enough for local play. Remote play is **not** “React talks to Go”. NestJS already owns WebSockets + JWT; Go should own **lobby + rules**. Nest will call Go over **gRPC**.
+Remote play is **not** “React talks to Go”. The backend already owns WebSockets + JWT; Go owns **lobby + rules**. The backend calls Go over **gRPC**.
 
 ```
 Browser (React)
@@ -182,7 +103,7 @@ NestJS  (auth, sockets, broadcast)
 Go game-server  (this folder)  →  engine (ValidateMove / ApplyMove / Bot)
 ```
 
-Do the steps **in order**. Each step should stay playable with `go test ./tests/` (and a tiny gRPC smoke client once the server exists). Do not start Docker or Nest wiring until the Go server answers the three RPCs locally.
+Do the steps **in order**. Do not start Docker or backend wiring until the Go server answers the three RPCs locally.
 
 ### Step 1 — In-memory lobby (no network)
 
@@ -202,7 +123,7 @@ Rules to encode now (from the lobby flow doc):
 - Empty seats become **bots** using existing modes (`M1P3B`, `M2P2B`, `M3P1B`, `M4P`).
 - Keep status `WAITING` until ready-check succeeds. `GameState.StatusLobby` already exists; `NewActiveGame` still starts `active` — add a `NewLobby` / `StartGame` path instead of skipping the lobby.
 
-**Done when:** unit tests create / join / ready / leave without gRPC.
+**Done when:** create / join / ready / leave work without gRPC.
 
 ### Step 2 — Ready-check → start a real `GameState`
 
@@ -261,13 +182,13 @@ New binary, e.g. `cmd/gameserver`:
 
 Auth: Nest already authenticates the WebSocket. **Trust `user_id` from Nest** in v1 (internal Docker network). JWT verification inside Go is a later hardening step, not a blocker.
 
-**Done when:** `grpcurl` or a 20-line Go client can create a lobby and read a snapshot. Hotseat CLI stays as-is.
+**Done when:** `grpcurl` or a 20-line Go client can create a lobby and read a snapshot.
 
 ### Step 5 — Gameplay loop + finish callback
 
 **Done.** `GameEngine` owns the lobby manager, a 60s turn timer (`PassTurn` on expiry), and a 15s disconnect grace then bot takeover. Finished games include `scores` in the snapshot JSON. Nest stores stats from that snapshot; Go stays DB-free.
 
-**Done when:** `M1P3B` over gRPC plays to scores; illegal moves return engine codes (`EDGE_TOUCH_OWN`, …). Covered by `tests/grpc_flow_test.go`.
+**Done when:** `M1P3B` over gRPC plays to scores; illegal moves return engine codes (`EDGE_TOUCH_OWN`, …).
 
 ### Step 6 — Hand off to Nest / Docker (game folder only prepares)
 

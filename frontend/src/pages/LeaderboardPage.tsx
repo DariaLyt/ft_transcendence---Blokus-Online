@@ -65,6 +65,11 @@ return (
                         <p>Average</p>
                     </div>
 
+                    {leaderboard.length === 0 && (
+                        <p className="text-slate-400 text-sm py-6 text-center">
+                            No finished games yet. Play a match to the end to appear here.
+                        </p>
+                    )}
                     {leaderboard.map((player, index) => (
                         <div
                             key={player.userId}

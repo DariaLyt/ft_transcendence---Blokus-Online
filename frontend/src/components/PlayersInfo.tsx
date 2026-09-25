@@ -1,7 +1,27 @@
-import type { Color, GameState } from "../data/game";
+import type { Color, GameState, Seat } from "../data/game";
+
+type NamedPlayer = {
+	userId: string;
+	username: string;
+};
 
 type PlayersInfoProps = {
-	gameState: GameState
+	gameState: GameState;
+	players?: NamedPlayer[];
+};
+
+function seatLabel(seat: Seat, players?: NamedPlayer[]): string {
+	if (seat.kind === "bot") {
+		return "Bot";
+	}
+	if (seat.username?.trim()) {
+		return seat.username.trim();
+	}
+	const fromLobby = players?.find((player) => String(player.userId) === String(seat.userId));
+	if (fromLobby?.username?.trim()) {
+		return fromLobby.username.trim();
+	}
+	return "Player";
 }
 
 const colorClasses: Record<Color, string> = {
@@ -11,7 +31,7 @@ const colorClasses: Record<Color, string> = {
 	green:"bg-green-600",
 };
 
-export default function PlayersInfo({ gameState}: PlayersInfoProps) {
+export default function PlayersInfo({ gameState, players }: PlayersInfoProps) {
 	const finished = gameState.status === "finished";
 	return (
 		<div className="bg-white border border-slate-200 shadow-md p-4 rounded-2xl">
@@ -21,7 +41,7 @@ export default function PlayersInfo({ gameState}: PlayersInfoProps) {
 						<div className="flex items-center gap-2">
 							<div className={`w-3.5 h-3.5 ${colorClasses[seat.color]} rounded-full`} />
 							<span className="font-bold text-slate-800">
-								{seat.kind === "bot" ? "Bot" : `Player ${seat.userId}`}
+								{seatLabel(seat, players)}
 							</span>
 							{gameState.currentColor === seat.color && gameState.status === "active" && (
 								<span className="text-xs text-slate-400">to move</span>

@@ -56,9 +56,10 @@ type Cell struct {
 }
 
 type Seat struct {
-	Color  Color    `json:"color"`
-	Kind   SeatKind `json:"kind"`
-	UserID *string  `json:"userId,omitempty"` // userid for humans, nil for bots
+	Color    Color    `json:"color"`
+	Kind     SeatKind `json:"kind"`
+	UserID   *string  `json:"userId,omitempty"` // userid for humans, nil for bots
+	Username string   `json:"username,omitempty"`
 }
 
 type Move struct {

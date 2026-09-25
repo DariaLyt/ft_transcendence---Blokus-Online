@@ -2,7 +2,7 @@ package game
 
 import (
 	"crypto/rand"
-	"fmt"
+	"strings"
 	"sync"
 	"time"
 )
@@ -97,7 +97,7 @@ func (m *LobbyManager) CreateLobby(userID, username string, maxPlayers int) (*Lo
 
 	m.removeUserAndAbortCheckLocked(userID)
 
-	id := newLobbyID()
+	id := m.allocLobbyIDLocked()
 	lobby := &Lobby{
 		ID:         id,
 		MaxPlayers: maxPlayers,
@@ -119,6 +119,7 @@ func (m *LobbyManager) JoinLobby(userID, username, lobbyID string) (*Lobby, erro
 	if userID == "" {
 		return nil, &LobbyError{Code: ErrLobbyInvalidUser, Message: "user id is required"}
 	}
+	lobbyID = normalizeLobbyID(lobbyID)
 	if lobbyID == "" {
 		return nil, &LobbyError{Code: ErrLobbyNotFound, Message: "lobby not found"}
 	}
@@ -166,6 +167,7 @@ func (m *LobbyManager) ToggleReady(userID, lobbyID string) (*Lobby, error) {
 	if userID == "" {
 		return nil, &LobbyError{Code: ErrLobbyInvalidUser, Message: "user id is required"}
 	}
+	lobbyID = normalizeLobbyID(lobbyID)
 	if lobbyID == "" {
 		return nil, &LobbyError{Code: ErrLobbyNotFound, Message: "lobby not found"}
 	}
@@ -227,6 +229,7 @@ func (m *LobbyManager) BeginReadyCheck(userID, lobbyID string) (*Lobby, *GameSta
 	if userID == "" {
 		return nil, nil, &LobbyError{Code: ErrLobbyInvalidUser, Message: "user id is required"}
 	}
+	lobbyID = normalizeLobbyID(lobbyID)
 	if lobbyID == "" {
 		return nil, nil, &LobbyError{Code: ErrLobbyNotFound, Message: "lobby not found"}
 	}
@@ -262,6 +265,7 @@ func (m *LobbyManager) AcceptReadyCheck(userID, lobbyID string) (*Lobby, *GameSt
 	if userID == "" {
 		return nil, nil, &LobbyError{Code: ErrLobbyInvalidUser, Message: "user id is required"}
 	}
+	lobbyID = normalizeLobbyID(lobbyID)
 	if lobbyID == "" {
 		return nil, nil, &LobbyError{Code: ErrLobbyNotFound, Message: "lobby not found"}
 	}
@@ -304,6 +308,7 @@ func (m *LobbyManager) DeclineReadyCheck(userID, lobbyID string) (*Lobby, error)
 	if userID == "" {
 		return nil, &LobbyError{Code: ErrLobbyInvalidUser, Message: "user id is required"}
 	}
+	lobbyID = normalizeLobbyID(lobbyID)
 	if lobbyID == "" {
 		return nil, &LobbyError{Code: ErrLobbyNotFound, Message: "lobby not found"}
 	}
@@ -372,6 +377,7 @@ func (m *LobbyManager) ExpireReadyCheck(lobbyID string) (*Lobby, error) {
 }
 
 func (m *LobbyManager) GetLobby(id string) (*Lobby, error) {
+	id = normalizeLobbyID(id)
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	lobby, ok := m.lobbies[id]
@@ -540,7 +546,12 @@ func SeatsFromLobby(lobby *Lobby) (GameMode, []Seat, error) {
 	for i, c := range AllColors {
 		if i < n {
 			uid := lobby.Players[i].UserID
-			seats = append(seats, Seat{Color: c, Kind: SeatHuman, UserID: &uid})
+			seats = append(seats, Seat{
+				Color:    c,
+				Kind:     SeatHuman,
+				UserID:   &uid,
+				Username: lobby.Players[i].Username,
+			})
 			continue
 		}
 		seats = append(seats, Seat{Color: c, Kind: SeatBot})
@@ -591,12 +602,35 @@ func allAccepted(lobby *Lobby) bool {
 	return true
 }
 
-func newLobbyID() string {
-	var b [16]byte
-	if _, err := rand.Read(b[:]); err != nil {
-		return fmt.Sprintf("%d", time.Now().UnixNano())
+func normalizeLobbyID(id string) string {
+	return strings.ToUpper(strings.TrimSpace(id))
+}
+
+const lobbyIDAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+
+func (m *LobbyManager) allocLobbyIDLocked() string {
+	for i := 0; i < 64; i++ {
+		id := randomLobbyID()
+		if _, taken := m.lobbies[id]; !taken {
+			return id
+		}
 	}
-	b[6] = (b[6] & 0x0f) | 0x40
-	b[8] = (b[8] & 0x3f) | 0x80
-	return fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
+	return randomLobbyID()
+}
+
+func randomLobbyID() string {
+	var raw [6]byte
+	if _, err := rand.Read(raw[:]); err != nil {
+		n := time.Now().UnixNano()
+		id := make([]byte, 6)
+		for i := 0; i < 6; i++ {
+			id[i] = lobbyIDAlphabet[int(n>>uint(i*5))%len(lobbyIDAlphabet)]
+		}
+		return string(id)
+	}
+	id := make([]byte, 6)
+	for i, b := range raw {
+		id[i] = lobbyIDAlphabet[int(b)%len(lobbyIDAlphabet)]
+	}
+	return string(id)
 }

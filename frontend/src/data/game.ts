@@ -6,6 +6,7 @@ export type Seat = {
 	color: Color;
 	kind: "human" | "bot";
 	userId?: number; // humans have userId but bots don't
+	username?: string;
 };
 
 export type GameState = {

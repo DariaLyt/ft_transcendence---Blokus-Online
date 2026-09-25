@@ -222,7 +222,7 @@ func (e *GameEngine) GetGameStateSnapshot(_ context.Context, req *pb.GameStateRe
 	if req == nil {
 		return failAction("INVALID_USER", "nil request"), nil
 	}
-	if gameID := strings.TrimSpace(req.GetGameId()); gameID != "" {
+	if gameID := normalizeLobbyID(req.GetGameId()); gameID != "" {
 		return e.getGameStateByID(gameID), nil
 	}
 	uid := strconv.Itoa(int(req.GetUserId()))
@@ -238,6 +238,7 @@ func (e *GameEngine) GetGameStateSnapshot(_ context.Context, req *pb.GameStateRe
 }
 
 func (e *GameEngine) getGameStateByID(gameID string) *pb.ActionResponse {
+	gameID = normalizeLobbyID(gameID)
 	lobby, _ := e.lobbies.GetLobby(gameID)
 	e.mu.Lock()
 	state := e.byGame[gameID]
