@@ -4,6 +4,7 @@ import ProfileInfo from '../components/ProfileInfo';
 import ChangePassword from '../components/ChangePassword';
 import FriendsList from '../components/FriendsList';
 import { useGameSession } from '../sockets/GameSessionContext';
+import MatchHistory from '../components/MatchHistory';
 
 export default function ProfilePage() {
     const { currentUser, authLoading } = useGameSession();
@@ -46,6 +47,7 @@ export default function ProfilePage() {
                         <ProfileInfo user={currentUser} />
                         <ChangePassword />
                         <FriendsList />
+                        <MatchHistory />
                     </div>
                )}
             </div>

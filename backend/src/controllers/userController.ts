@@ -4,6 +4,7 @@ import bcrypt from 'bcrypt';
 import { pool } from '../db/conn.js';
 import path from 'node:path';
 import fs from 'node:fs/promises';
+import { findGamesByUserId } from "../db/queries/game.js";
 
 export async function getProfile(req: Request, res: Response) {
 	const user = await findUserById(req.user!.userId);
@@ -69,4 +70,13 @@ export async function updateAvatar(req: Request, res: Response) {
 	} catch (err) {
 		res.status(500).json({ error: 'Failed to update avatar record' });
     }
+}
+
+export async function getMatchHistory(req: Request, res: Response) {
+    if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const matches = await findGamesByUserId(req.user.userId);
+    return res.json(matches);
 }
