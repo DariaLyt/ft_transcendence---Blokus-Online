@@ -8,9 +8,9 @@ import {
 	useState,
 	type ReactNode,
 } from 'react';
-import { useLocation } from 'react-router-dom';
 import { API_BASE, WS_URL, gameFrame, lobbyFrame, resyncFrame, type GameActionType, type LobbyFrameType } from './frames';
 import { parseEngineSnapshot, snapshotIncludesUser, type EngineSnapshot, type LobbyState } from '../data/snapshot';
+import { formatGameError } from '../data/moveErrors';
 import type { GameState } from '../data/game';
 
 export type CurrentUser = {
@@ -38,12 +38,29 @@ type GameSessionValue = {
 
 const GameSessionContext = createContext<GameSessionValue | null>(null);
 
+function gameProgressed(prev: GameState | null | undefined, next: GameState | null | undefined): boolean {
+	if (!next) {
+		return Boolean(prev);
+	}
+	if (!prev) {
+		return true;
+	}
+	if (prev.id !== next.id || prev.status !== next.status || prev.currentColor !== next.currentColor) {
+		return true;
+	}
+	for (const color of ['blue', 'yellow', 'red', 'green'] as const) {
+		if ((prev.remaining[color] ?? []).join() !== (next.remaining[color] ?? []).join()) {
+			return true;
+		}
+	}
+	return false;
+}
+
 function applyIncomingPayload(payload: any): EngineSnapshot {
 	return parseEngineSnapshot(payload);
 }
 
 export function GameSessionProvider({ children }: { children: ReactNode }) {
-	const location = useLocation();
 	const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
 	const [authLoading, setAuthLoading] = useState(true);
 	const updateCurrentUser = useCallback((user: CurrentUser) => {
@@ -53,6 +70,8 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 	const [snapshot, setSnapshot] = useState<EngineSnapshot | null>(null);
 	const [lastError, setLastError] = useState<string | null>(null);
 	const wsRef = useRef<WebSocket | null>(null);
+	const snapshotRef = useRef<EngineSnapshot | null>(null);
+	snapshotRef.current = snapshot;
 	const currentUserRef = useRef<CurrentUser | null>(null);
 	currentUserRef.current = currentUser;
 
@@ -78,9 +97,14 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 					return;
 				}
 				const data = await response.json();
-				if (cancelled || !data.user) {
-					return;
-				}
+            	if (cancelled) {
+                	return;
+            	}
+
+            	if (!data.user) {
+                	setCurrentUser(null);
+                	return;
+            	}
 				setCurrentUser({
 					id: data.user.id,
 					username: data.user.username,
@@ -101,7 +125,7 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 		return () => {
 			cancelled = true;
 		};
-	}, [location.pathname]);
+	}, []);
 
 	useEffect(() => {
 		if (!currentUser) {
@@ -127,7 +151,7 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 				return;
 			}
 			if (msg.event === 'ERROR') {
-				setLastError(msg.payload?.message || msg.payload?.code || 'Game error');
+				setLastError(formatGameError(msg.payload));
 				return;
 			}
 			if (
@@ -146,7 +170,9 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 				if (userId != null && !snapshotIncludesUser(next, userId)) {
 					return;
 				}
-				setLastError(null);
+				if (gameProgressed(snapshotRef.current?.game, next.game)) {
+					setLastError(null);
+				}
 				setSnapshot(next);
 			}
 		};

@@ -4,14 +4,31 @@ import { gamePlayers } from "../schema.js";
 import { users } from "../schema.js";
 import { eq, ne, and, desc, inArray } from "drizzle-orm";
 
+export async function createGame(engineId?: string){
+    const [result] = await db
+        .insert(games)
+        .values(engineId ? { engineId } : {})
+        .returning();
+    return result;
+}
 
-// export async function createGame(){
-//     const [result] = await db
-//         .insert(games)
-//         .values({})
-//         .returning();
-//     return result;
-// }
+export async function findGameByEngineId(engineId: string){
+    const [result] = await db
+        .select()
+        .from(games)
+        .where(eq(games.engineId, engineId))
+        .limit(1);
+    return result || null;
+}
+
+export async function updateGameStatus(id: number, status: string){
+    const [result] = await db
+        .update(games)
+        .set({ status })
+        .where(eq(games.id, id))
+        .returning();
+    return result || null;
+}
 
 // export async function updateGameStatus(id: number, status: string){
 //     const [result] = await db

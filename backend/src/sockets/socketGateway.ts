@@ -5,9 +5,11 @@ import { z } from 'zod';
 import { sendLobbyAction, sendGameAction, getGameState, getGameStateById } from '../grpc/gameClient.js';
 import {
 	broadcastToGameWatchers,
+	hasWatchers,
 	subscribeToGame,
 	unsubscribeFromGame,
 } from './gameSubscriptions.js';
+import { recordFinishedGame } from '../services/gameResults.js';
 
 function buildLobbyPayload(payload: any) {
     switch (payload.type) {
@@ -152,7 +154,39 @@ function broadcastSpectatorState(goResponse: any) {
 	const gameId = gameIdFromResponse(goResponse);
 	if (!gameId) return;
 
+	if (goResponse.state) {
+		lastSpectatorStateByGame.set(gameId, goResponse.state);
+	}
 	broadcastToGameWatchers(gameId, 'SPECTATOR_GAME_STATE', goResponse);
+}
+
+const spectatorRefreshTimers = new Map<string, ReturnType<typeof setInterval>>();
+const lastSpectatorStateByGame = new Map<string, string>();
+
+function ensureSpectatorRefresh(gameId: string) {
+	if (spectatorRefreshTimers.has(gameId)) return;
+
+	const timer = setInterval(() => {
+		if (!hasWatchers(gameId)) {
+			clearInterval(timer);
+			spectatorRefreshTimers.delete(gameId);
+			lastSpectatorStateByGame.delete(gameId);
+			return;
+		}
+
+		getGameStateById(gameId)
+			.then((goResponse) => {
+				if (!goResponse.success || !goResponse.state) return;
+				if (lastSpectatorStateByGame.get(gameId) === goResponse.state) return;
+				lastSpectatorStateByGame.set(gameId, goResponse.state);
+				broadcastToGameWatchers(gameId, 'SPECTATOR_GAME_STATE', goResponse);
+			})
+			.catch((err) => {
+				console.error('[Spectator refresh error]:', err.message);
+			});
+	}, 1000);
+
+	spectatorRefreshTimers.set(gameId, timer);
 }
 
 // [NEW] parse Go ActionResponse.state JSON before broadcasting
@@ -241,6 +275,7 @@ function broadcastEngineResult(userId: number, resp: any) {
 		sendToUser(userId, 'GAME_STATE_SNAPSHOT', { status: 'NO_ACTIVE_GAME' });
 	}
 	sendToUsers(targets, 'GAME_STATE_SNAPSHOT', snapshot);
+	void recordFinishedGame(snapshot);
 }
 
 export function handleIncomingSocketMessage(
@@ -345,6 +380,10 @@ export function handleIncomingSocketMessage(
 						return;
 					}
 					subscribeToGame(userId, gameId);
+					if (goResponse.state) {
+						lastSpectatorStateByGame.set(gameId, goResponse.state);
+					}
+					ensureSpectatorRefresh(gameId);
 					sendToUser(userId, 'SPECTATOR_GAME_STATE', goResponse);
 				})
 				.catch((err) => {

@@ -20,7 +20,7 @@ export default function ProfileAvatar({ user }: ProfileAvatarProps) {
         const formData = new FormData();
         formData.append("avatar", file);
         const response = await fetch ( // send to backend
-            "https://localhost:3000/api/users/me/avatar",
+            "/api/users/me/avatar",
             {
                 method: "POST",
                 credentials: "include",
@@ -42,7 +42,7 @@ export default function ProfileAvatar({ user }: ProfileAvatarProps) {
             <div className="w-28 h-28 rounded-full bg-slate-200 border-2 border-slate-300 overflow-hidden flex items-center justify-center">
                 {user.avatar_url ? (
                     <img
-                        src={`https://localhost:3000${user.avatar_url}`}
+                        src={user.avatar_url}
                         alt="Profile avatar"
                         className="w-full h-full object-cover"
                     />

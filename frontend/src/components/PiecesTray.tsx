@@ -5,6 +5,7 @@ import type { Color, GameState } from '../data/game';
 type PiecesTrayProps = {
 	gameState: GameState;
 	currentUserId?: number;
+	viewColor?: Color;
 	selectedPiece: string | null;
 	onSelect: (pieceId: string) => void;
 	canSelect: boolean;
@@ -13,6 +14,7 @@ type PiecesTrayProps = {
 export default function PiecesTray({
 	gameState,
 	currentUserId,
+	viewColor,
 	selectedPiece,
 	onSelect,
 	canSelect,
@@ -20,7 +22,7 @@ export default function PiecesTray({
 	const currentPlayer = gameState.seats.find(
 		(seat) => seat.userId === currentUserId
 	);
-	const currentColor: Color | undefined = currentPlayer?.color;
+	const currentColor: Color | undefined = viewColor ?? currentPlayer?.color;
 	const remainingPieces = currentColor ? gameState.remaining[currentColor] : [];
 
 	return (

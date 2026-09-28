@@ -116,18 +116,26 @@ export default function GamePage() {
 		);
 	}
 
+	const sessionCode = lobby?.id || game.id;
+
 	return (
 		<div className="min-h-screen bg-sky-50/50 text-slate-800 flex flex-col"> 
 		<Navbar />
+		{sessionCode && (
+			<div className="fixed bottom-4 right-4 z-20 rounded-lg border border-slate-200 bg-white/90 px-3 py-1.5 shadow-sm backdrop-blur-sm">
+				<p className="text-[10px] uppercase tracking-wider text-slate-400">Lobby</p>
+				<p className="font-mono text-sm font-semibold tracking-[0.2em] text-slate-800">
+					{sessionCode}
+				</p>
+			</div>
+		)}
   
 	  	<main className="flex-1 flex flex-col items-center justify-center gap-6 p-6 max-w-7xl mx-auto w-full">
 			<GameStatus
 				gameState={game}
 				currentUserId={currentUser?.id}
+				error={lastError}
 			/>
-			{lastError && (
-				<p className="text-red-600 text-sm">{lastError}</p>
-			)}
 		
 			<div className="grid grid-cols-1 min-[1400px]:grid-cols-[auto_400px] gap-6 w-full justify-center">
 				<Board
@@ -140,7 +148,7 @@ export default function GamePage() {
 					onPlace={handlePlace}
 				/>
 			<div className="flex flex-col gap-6">
-				<PlayersInfo gameState={game} />
+				<PlayersInfo gameState={game} players={lobby?.players} />
 				{isYourTurn && (
 					<div className="flex gap-2">
 						<button

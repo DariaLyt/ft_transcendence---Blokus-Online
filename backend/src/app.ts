@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 
+
 import authRoutes from './routes/authRoutes.js';
 import healthRoutes from './routes/healthRoutes.js';
 import userRoutes from './routes/userRoutes.js';
@@ -16,6 +17,7 @@ app.use(helmet());
 app.use(cors({ origin: 'https://localhost', credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
+app.use('/uploads', express.static('/app/uploads'));
 
 app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);
