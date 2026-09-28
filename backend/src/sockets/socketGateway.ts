@@ -8,6 +8,7 @@ import {
 	subscribeToGame,
 	unsubscribeFromGame,
 } from './gameSubscriptions.js';
+import { recordFinishedGame } from '../services/gameResults.js';
 
 function buildLobbyPayload(payload: any) {
     switch (payload.type) {
@@ -241,6 +242,7 @@ function broadcastEngineResult(userId: number, resp: any) {
 		sendToUser(userId, 'GAME_STATE_SNAPSHOT', { status: 'NO_ACTIVE_GAME' });
 	}
 	sendToUsers(targets, 'GAME_STATE_SNAPSHOT', snapshot);
+	void recordFinishedGame(snapshot);
 }
 
 export function handleIncomingSocketMessage(

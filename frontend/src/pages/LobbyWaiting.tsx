@@ -92,7 +92,7 @@ export default function LobbyWaiting() {
                             <p className="text-sm text-slate-500 mb-1">
                                 Lobby ID
                             </p>
-                            <p className="text-xl font-bold text-slate-800 break-all">
+                            <p className="text-2xl font-bold text-slate-800 font-mono tracking-[0.35em]">
                                 {displayLobbyId}
                             </p>
                             <p className="text-sm text-slate-400 mt-1">

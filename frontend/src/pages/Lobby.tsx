@@ -28,10 +28,11 @@ export default function Lobby() {
             setError("You need to be logged in to join a lobby.");
             return;
         }
-        if (!lobbyId.trim()) {
+        const code = lobbyId.trim().toUpperCase();
+        if (!code) {
             return;
         }
-        navigate(`/lobby/waiting/${lobbyId.trim()}`);
+        navigate(`/lobby/waiting/${code}`);
     };
 
     return (
@@ -111,10 +112,14 @@ export default function Lobby() {
                                 type="text"
                                 value={lobbyId}
                                 onChange={(event) =>
-                                    setLobbyId(event.target.value)
+                                    setLobbyId(event.target.value.toUpperCase())
                                 }
-                                placeholder="Enter lobby ID"
-                                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="e.g. 7K3M2P"
+                                maxLength={8}
+                                autoCapitalize="characters"
+                                autoComplete="off"
+                                spellCheck={false}
+                                className="w-full px-4 py-3 border border-slate-300 rounded-lg font-mono tracking-widest uppercase focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </div>
 

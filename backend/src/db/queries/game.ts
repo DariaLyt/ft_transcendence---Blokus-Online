@@ -3,12 +3,21 @@ import { games } from "../schema";
 import { gamePlayers } from "../schema";
 import { eq, ne } from "drizzle-orm";
 
-export async function createGame(){
+export async function createGame(engineId?: string){
     const [result] = await db
         .insert(games)
-        .values({})
+        .values(engineId ? { engineId } : {})
         .returning();
     return result;
+}
+
+export async function findGameByEngineId(engineId: string){
+    const [result] = await db
+        .select()
+        .from(games)
+        .where(eq(games.engineId, engineId))
+        .limit(1);
+    return result || null;
 }
 
 export async function updateGameStatus(id: number, status: string){

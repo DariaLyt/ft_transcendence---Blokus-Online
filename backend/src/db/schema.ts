@@ -13,11 +13,13 @@ export const games = pgTable("games", {
 	.notNull()
 	.default("waiting"),
 
-  createdAt: timestamp("created_at")
+	createdAt: timestamp("created_at")
 	.defaultNow()
 	.notNull(),
 
   finishedAt: timestamp("finished_at"),
+
+  engineId: varchar("engine_id", { length: 64 }).unique(),
 });
 
 export const users = pgTable("users",{
