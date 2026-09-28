@@ -4,8 +4,13 @@ import bcrypt from 'bcrypt';
 import { pool } from '../db/conn.js';
 import path from 'node:path';
 import fs from 'node:fs/promises';
+import { findGamesByUserId } from "../db/queries/game.js";
 
 export async function getProfile(req: Request, res: Response) {
+    if (!req.user) {
+        return res.status(200).json({ user: null });
+    }
+
 	const user = await findUserById(req.user!.userId);
 	if (!user) {
 		return res.status(404).json({ error: 'User not found' });
@@ -45,20 +50,9 @@ export async function updateAvatar(req: Request, res: Response) {
     try {
 		const id = req.user!.userId;
 
-		// const { rows } = await pool.query(
-		// 	'SELECT avatar_url FROM users WHERE id = $1',
-		// 	[id]
-		// );
-		// const oldAvatarUrl = rows[0]?.avatar_url;
-
 		const oldAvatarUrl = await getAvatar(id);
 
 		await updateNewAvatar(id, avatarUrl);
-
-		// await pool.query(
-		// 	'UPDATE users SET avatar_url = $1 WHERE id = $2',
-		// 	[avatarUrl, id]
-		// );
 
 		if (oldAvatarUrl && oldAvatarUrl.startsWith('/uploads/avatars/')) {
 			const oldPath = path.join(process.cwd(), oldAvatarUrl);
@@ -69,4 +63,13 @@ export async function updateAvatar(req: Request, res: Response) {
 	} catch (err) {
 		res.status(500).json({ error: 'Failed to update avatar record' });
     }
+}
+
+export async function getMatchHistory(req: Request, res: Response) {
+    if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const matches = await findGamesByUserId(req.user.userId);
+    return res.json(matches);
 }

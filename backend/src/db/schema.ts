@@ -7,11 +7,11 @@ import {
 } from "drizzle-orm/pg-core";
 
 export const games = pgTable("games", {
-  id: serial("id").primaryKey(),
+  id: varchar("id", { length: 255 }).primaryKey(),
 
-  status: varchar("status", { length: 20 })
-	.notNull()
-	.default("waiting"),
+  //status: varchar("status", { length: 20 })
+	//.notNull()
+	//.default("waiting"),
 
 	createdAt: timestamp("created_at")
 	.defaultNow()
@@ -47,12 +47,11 @@ export const users = pgTable("users",{
 export const gamePlayers = pgTable("game_players", {
 	id: serial("id").primaryKey(),
 
-	gameId: integer("game_id")
+	gameId: varchar("game_id", { length: 255 })
 		.notNull()
 		.references(() => games.id),
 
 	userId: integer("user_id")
-		.notNull()
 		.references(() => users.id),
 
 	color: varchar("color", { length: 20 })

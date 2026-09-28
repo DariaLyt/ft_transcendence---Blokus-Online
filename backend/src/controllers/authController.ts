@@ -12,16 +12,29 @@ export async function register(req: Request, res: Response) {
 		findUserByUsername(validated.username)
 	]);
 
-	if (existingEmail) {
-		return res.status(400).json({ error: 'Email already in use' });
-	}
-
 	if (existingUsername) {
 		return res.status(400).json({ error: 'Username already in use' });
 	}
 
+	if (existingEmail) {
+		return res.status(400).json({ error: 'Email already in use' });
+	}
+
 	const passwordHash = await bcrypt.hash(validated.password, 10);
 	const newUser = await createUser(validated.username, validated.email, passwordHash);
+
+	const token = jwt.sign(
+        { userId: newUser.id },
+        getJwtSecret(),
+        { expiresIn: '24h' }
+    );
+
+    res.cookie('auth_token', token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none',
+        maxAge: 24 * 60 * 60 * 1000,
+    });
 
 	return res.status(201).json({ message: 'User registered successfully', user: newUser });
 }
@@ -50,7 +63,7 @@ export async function login(req: Request, res: Response) {
 
 	return res.status(200).json({
 		message: 'Logged in successfully',
-		user: { id: user.id, username: user.username, email: user.email },
+		user: { id: user.id, username: user.username, email: user.email, avatar_url: user.avatar_url, created_at: user.created_at,},
 	});
 }
 

@@ -2,6 +2,8 @@ import { useState } from "react"; // React hook that lets a component store and 
 import { useNavigate } from "react-router-dom"; // React hook that lets my code change the page/route programmatically, without having to click
 import { useLocation } from "react-router-dom"; // Gives information about the current URL/route and the navigation state  attached to it
 import { Link } from "react-router-dom";
+import { useGameSession } from "../sockets/GameSessionContext";
+import Footer from "../components/Footer";
 
 export default function LoginPage() {
     const [identifier, setIdentifier] = useState("");
@@ -9,6 +11,7 @@ export default function LoginPage() {
     const [error, setError] = useState("");
     const navigate = useNavigate();
     const location = useLocation();
+    const { updateCurrentUser } = useGameSession();
 
     const handleLogin = async () => {
         const response = await fetch(
@@ -27,14 +30,15 @@ export default function LoginPage() {
         );
         const data = await response.json(); // take JSON body from backend and convert to JS object
         if (response.ok) { // property that JS fetch() creates based on HTTP status
-             navigate("/menu");
+            updateCurrentUser(data.user);
+            navigate("/menu");
         } else {
             setError(data.error);
         }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-100">
+        <div className="min-h-screen flex flex-col items-center justify-center bg-slate-100">
             <div className="bg-white p-8 rounded-xl shadow-md">
                 <h1 className="text-2xl font-bold text-slate-800 mb-2 text-center">Log in</h1>
                 <p className="text-slate-500 mb-6">Enter your details to continue</p>
@@ -81,6 +85,7 @@ export default function LoginPage() {
                     </Link>
                 </p>
             </div>
+            <Footer />
         </div>
     );
 }

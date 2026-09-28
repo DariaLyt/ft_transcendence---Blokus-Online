@@ -4,6 +4,7 @@ import Navbar from "../components/NavBar";
 import Board from "../components/Board";
 import GameStatus from "../components/GameStatus";
 import PlayersInfo from "../components/PlayersInfo";
+import PiecesTray from "../components/PiecesTray";
 import { WS_URL } from "../sockets/frames";
 import type { GameState } from "../data/game";
 
@@ -40,6 +41,7 @@ export default function SpectatePage() {
 	const [gameState, setGameState] = useState<GameState | null>(null);
 	const [status, setStatus] = useState("Enter a game ID to start watching.");
 	const [isConnecting, setIsConnecting] = useState(false);
+	const [selectedPiece, setSelectedPiece] = useState<string | null>(null);
 
 	useEffect(() => {
 		return () => {
@@ -140,9 +142,19 @@ export default function SpectatePage() {
 						<GameStatus gameState={gameState} />
 
 						<div className="grid grid-cols-1 min-[1400px]:grid-cols-[auto_400px] gap-6 w-full justify-center">
-							<Board gameState={gameState} />
+							<Board
+								board={gameState.board}
+								canPlace={false}
+								/>
 							<div className="flex flex-col gap-6">
 								<PlayersInfo gameState={gameState} />
+								<PiecesTray
+									gameState={gameState}
+									viewColor={gameState.currentColor}
+									selectedPiece={selectedPiece}
+									onSelect={setSelectedPiece}
+									canSelect={false}
+									/>
 							</div>
 						</div>
 					</>

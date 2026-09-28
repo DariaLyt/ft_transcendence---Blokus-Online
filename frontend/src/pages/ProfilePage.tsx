@@ -4,30 +4,10 @@ import ProfileInfo from '../components/ProfileInfo';
 import ChangePassword from '../components/ChangePassword';
 import FriendsList from '../components/FriendsList';
 import { useGameSession } from '../sockets/GameSessionContext';
+import MatchHistory from '../components/MatchHistory';
 
 export default function ProfilePage() {
     const { currentUser, authLoading } = useGameSession();
-    // const [user, setUser] = useState<User | null>(null);
-    // const [error, setError] = useState("");
-    // const [loading, setLoading] = useState(true);
-
-    // useEffect(() => {
-    //     const getProfile = async () => {
-    //         const response = await fetch("/api/users/me", {
-    //             method:"GET",
-    //             credentials:"include",
-    //         });
-    //         if (response.ok) {
-    //             const data = await response.json();
-    //             setUser(data.user);
-    //         } else {
-    //             const data = await response.json();
-    //             setError(data.error);
-    //         }
-    //         setLoading(false);
-    //     };
-    //     getProfile();
-    // }, []); // runs once when the page loads
 
     return (
         <div className="min-h-screen bg-slate-100">
@@ -46,6 +26,7 @@ export default function ProfilePage() {
                         <ProfileInfo user={currentUser} />
                         <ChangePassword />
                         <FriendsList />
+                        <MatchHistory />
                     </div>
                )}
             </div>
