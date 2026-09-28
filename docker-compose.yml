@@ -47,10 +47,10 @@ services:
       GO_ENGINE_URL: game:50051
       AVATAR_UPLOAD_DIR: ${AVATAR_UPLOAD_DIR}
     volumes:
-      - ./backend:/app           
+      # - ./backend:/app           
       - /app/node_modules
       - ./backend/uploads/avatars:/app/uploads/avatars
-    command: npm run dev
+    # command: npm run dev
     depends_on:
       db:
         condition: service_healthy
@@ -64,8 +64,8 @@ services:
       dockerfile: Dockerfile
     container_name: frontend
     ports:
-      - "80:80"
-      - "443:443"
+      - "8080:80"
+      - "8443:443"
     depends_on:
       - backend
     restart: unless-stopped

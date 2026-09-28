@@ -1,6 +1,6 @@
 import { db } from "../conn.js";
-import { games } from "../schema";
-import { gamePlayers } from "../schema";
+import { games } from "../schema.js";
+import { gamePlayers } from "../schema.js";
 import { eq, ne } from "drizzle-orm";
 
 export async function createGame(){
@@ -42,7 +42,7 @@ export async function findGameById(id: number){
 
 export async function findFinishedGames(){
     const result = await db
-        .select(games)
+        .select()
         .from(games)
         .where(eq(games.status, "finished"))
     return result;
@@ -50,7 +50,7 @@ export async function findFinishedGames(){
 
 export async function findActiveGames(){
     const result = await db
-        .select(games)
+        .select()
         .from(games)
         .where(ne(games.status, "finished"))
     return result;

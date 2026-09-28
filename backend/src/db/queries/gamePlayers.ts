@@ -1,5 +1,5 @@
 import { db } from "../conn.js";
-import { gamePlayers } from "../schema";
+import { gamePlayers } from "../schema.js";
 import { eq, and } from "drizzle-orm";
 
 export async function addGamePlayer(gameId: number, userId: number, color: string){

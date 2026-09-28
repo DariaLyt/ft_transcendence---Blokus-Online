@@ -1,5 +1,5 @@
 import { db } from "../conn.js";
-import { users, games, gamePlayers } from "../schema";
+import { users, games, gamePlayers } from "../schema.js";
 import { eq, and, count, sum, avg, desc } from "drizzle-orm";
 
 export async function getUserStats(userId: number){
