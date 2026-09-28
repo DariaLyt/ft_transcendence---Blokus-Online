@@ -54,3 +54,7 @@ export function broadcastToGameWatchers(gameId: string, event: string, payload: 
 		sendToUser(userId, event, payload);
 	}
 }
+
+export function hasWatchers(gameId: string): boolean {
+	return Boolean(watchersByGame.get(gameId)?.size);
+}
