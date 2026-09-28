@@ -99,6 +99,28 @@ export async function updateUserPassword(newPasswordHash: string, id: number): P
 	return (result.rowCount ?? 0) > 0;
 }
 
+export async function updateUserProfileQuery(
+	id: number,
+	username: string,
+	email: string
+) {
+	const [result] = await db
+		.update(users)
+		.set({
+			username,
+			email,
+		})
+		.where(eq(users.id, id))
+		.returning({
+			id: users.id,
+			username: users.username,
+			email: users.email,
+			avatar_url: users.avatarUrl,
+			created_at: users.createdAt,
+		});
+	return result || null;
+}
+
 export async function getAvatar(id: number) {
 	const result = await db
 		.select({
