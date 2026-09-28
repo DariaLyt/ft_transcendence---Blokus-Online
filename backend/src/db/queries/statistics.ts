@@ -1,5 +1,5 @@
 import { db } from "../conn.js";
-import { users, games, gamePlayers } from "../schema";
+import { users, games, gamePlayers } from "../schema.js";
 import { eq, and, count, sum, avg, desc } from "drizzle-orm";
 
 export async function getUserStats(userId: number){
@@ -20,7 +20,7 @@ export async function getUserStats(userId: number){
             games,
             and(
                 eq(games.id, gamePlayers.gameId),
-                eq(games.status, "finished")
+                //eq(games.status, "finished")
             )
         )
         .where(eq(users.id, userId))
@@ -28,6 +28,7 @@ export async function getUserStats(userId: number){
 
     return result || null;
 }
+
 
 export async function getLeaderboard(){
     const result = await db
@@ -47,7 +48,7 @@ export async function getLeaderboard(){
             games,
             and(
                 eq(games.id, gamePlayers.gameId),
-                eq(games.status, "finished")
+               // eq(games.status, "finished")
             )
         )
         .groupBy(users.id, users.username)
