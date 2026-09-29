@@ -16,7 +16,7 @@ import type { GameState } from '../data/game';
 export type CurrentUser = {
 	id: number;
 	username: string;
-	email?: string;
+	email: string;
 	avatar_url: string | null;
 	created_at: string;
 };
@@ -24,6 +24,7 @@ export type CurrentUser = {
 type GameSessionValue = {
 	currentUser: CurrentUser | null;
 	updateCurrentUser: (user: CurrentUser) => void;
+	updateProfile: (username: string, email:string) => Promise<void>;
 	authLoading: boolean;
 	connected: boolean;
 	snapshot: EngineSnapshot | null;
@@ -66,6 +67,26 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 	const updateCurrentUser = useCallback((user: CurrentUser) => {
 		setCurrentUser(user);
 	}, []);
+	const updateProfile = useCallback(async (username: string, email: string) => {
+    	const response = await fetch(`${API_BASE}/api/users/me`, {
+        	method: 'PUT',
+        	credentials: 'include',
+        	headers: {
+            	'Content-Type': 'application/json',
+        	},
+        	body: JSON.stringify({
+            	username,
+            	email,
+        	}),
+    	});
+
+    	if (!response.ok) {
+			const errorData = await response.json();
+        	throw new Error(errorData.error || 'Failed to update profile');
+    }
+    	const data = await response.json();
+    	updateCurrentUser(data.user);
+	}, [updateCurrentUser]);
 	const [connected, setConnected] = useState(false);
 	const [snapshot, setSnapshot] = useState<EngineSnapshot | null>(null);
 	const [lastError, setLastError] = useState<string | null>(null);
@@ -228,6 +249,7 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 			currentUser,
 			authLoading,
 			updateCurrentUser,
+			updateProfile,
 			connected,
 			snapshot,
 			lobby: snapshot?.lobby ?? null,
@@ -238,7 +260,7 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 			sendGame,
 			clearSnapshot,
 		}),
-		[currentUser, authLoading, updateCurrentUser, connected, snapshot, lastError, sendLobby, sendGame]
+		[currentUser, authLoading, updateCurrentUser, updateProfile, connected, snapshot, lastError, sendLobby, sendGame]
 	);
 
 	return <GameSessionContext.Provider value={value}>{children}</GameSessionContext.Provider>;
