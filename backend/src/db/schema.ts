@@ -9,17 +9,7 @@ import {
 export const games = pgTable("games", {
   id: varchar("id", { length: 255 }).primaryKey(),
 
-  //status: varchar("status", { length: 20 })
-	//.notNull()
-	//.default("waiting"),
-
-	createdAt: timestamp("created_at")
-	.defaultNow()
-	.notNull(),
-
   finishedAt: timestamp("finished_at"),
-
-  engineId: varchar("engine_id", { length: 64 }).unique(),
 });
 
 export const users = pgTable("users",{

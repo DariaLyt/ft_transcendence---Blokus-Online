@@ -1,5 +1,39 @@
-import { addGamePlayer, updatePlayerScore } from '../db/queries/gamePlayers.js';
-import { createGame, findGameByEngineId, finishGame } from '../db/queries/game.js';
+import { finishGame, type FinishedParticipant } from '../db/queries/game.js';
+
+const COLORS = ['blue', 'yellow', 'red', 'green'] as const;
+
+type Color = (typeof COLORS)[number];
+
+function isColor(value: unknown): value is Color {
+	return COLORS.includes(value as Color);
+}
+
+function seatUserId(seat: any): number | null {
+	if (seat?.kind === 'bot') {
+		return null;
+	}
+	const n = Number(seat?.userId);
+	if (!Number.isInteger(n) || n <= 0) {
+		return null;
+	}
+	return n;
+}
+
+function participantsFromSnapshot(game: any): FinishedParticipant[] {
+	return (game.seats ?? [])
+		.map((seat: any) => {
+			if (!isColor(seat?.color)) {
+				return null;
+			}
+			const score = Number(game.scores?.[seat.color] ?? 0);
+			return {
+				userId: seatUserId(seat),
+				color: seat.color,
+				score: Number.isFinite(score) ? score : 0,
+			} satisfies FinishedParticipant;
+		})
+		.filter((row: FinishedParticipant | null): row is FinishedParticipant => row != null);
+}
 
 export async function recordFinishedGame(snapshot: any) {
 	const game = snapshot?.game;
@@ -7,28 +41,13 @@ export async function recordFinishedGame(snapshot: any) {
 		return;
 	}
 
+	const participants = participantsFromSnapshot(game);
+	if (participants.length === 0) {
+		return;
+	}
+
 	try {
-		const engineId = String(game.id);
-		if (await findGameByEngineId(engineId)) {
-			return;
-		}
-
-		const row = await createGame(engineId);
-		if (!row) {
-			return;
-		}
-
-		for (const seat of game.seats ?? []) {
-			const userId = Number(seat.userId);
-			if (!Number.isFinite(userId) || seat.kind === 'bot') {
-				continue;
-			}
-			await addGamePlayer(row.id, userId, String(seat.color ?? ''));
-			const score = Number(game.scores?.[seat.color] ?? 0);
-			await updatePlayerScore(row.id, userId, Number.isFinite(score) ? score : 0);
-		}
-
-		await finishGame(row.id);
+		await finishGame(String(game.id), participants);
 	} catch (err) {
 		console.error('[gameResults] failed to persist finished game:', err);
 	}
