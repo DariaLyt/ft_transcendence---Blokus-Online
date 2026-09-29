@@ -1,7 +1,6 @@
 import type { Request, Response } from 'express';
 import { findUserById, getUserPasswordHash, updateUserPassword, getAvatar, updateNewAvatar } from '../db/queries/users.js';
 import bcrypt from 'bcrypt';
-import { pool } from '../db/conn.js';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import { findGamesByUserId } from "../db/queries/game.js";

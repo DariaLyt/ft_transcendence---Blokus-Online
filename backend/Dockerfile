@@ -16,7 +16,7 @@ RUN npm ci
 # Copy the rest of our app into the container
 COPY . .
 
-# RUN npm run build
+RUN npm run build
 
 # Set port environment variable
 ENV PORT=3000
