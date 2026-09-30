@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { findAchievementsById, insertAchievement } from '../db/queries/achievements.js';
+import { findAchievementsById, grantAchievement } from '../db/queries/achievements.js';
 import { sendToUser } from '../sockets/broadcaster.js';
 
 export async function getAchievements(req: Request, res: Response) {
@@ -7,21 +7,16 @@ export async function getAchievements(req: Request, res: Response) {
 	return res.status(200).json({ achievements });
 }
 
-export async function unlockAchievementForUser(req: Request, res: Response) {
-	const userId = req.user!.userId;
-	const { achievementId } = req.body;
+export async function unlockAchievementForUser(userId: number, code: string, isVeteran: boolean = false) {
+	const result = await grantAchievement(userId, code, isVeteran);
 
-	const achievement = await insertAchievement(userId, achievementId);
-
-	if (!achievement) {
-		return res.status(200).json({ unlocked: false, message: 'Already unlocked' });
+	if (result.success) {
+		sendToUser(userId, 'ACHIEVEMENT_UNLOCKED', {
+			code: result.achievement!.code,
+			title: result.achievement!.title,
+			description: result.achievement!.description,
+			iconUrl: result.achievement!.iconUrl,
+			unlockedAt: result.inserted!.unlockedAt.toISOString(),
+		});
 	}
-
-	sendToUser(userId, 'ACHIEVEMENT_UNLOCKED', {
-		code: achievement.code,
-		title: achievement.title,
-		unlockedAt: new Date().toISOString(),
-	});
-
-	return res.status(201).json({ unlocked: true, achievement });
 }

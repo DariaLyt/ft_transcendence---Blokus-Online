@@ -4,7 +4,6 @@ import { achievements } from '../schema.js';
 const INITIAL_ACHIEVEMENTS = [
   { code: 'FIRST_GAME', title: 'Block Party', description: 'Complete your first Blokus match.', iconUrl: '/uploads/achievements/first-game.png' },
   { code: 'FIRST_WIN', title: 'First Blood', description: 'Win your first Blokus match.', iconUrl: '/uploads/achievements/first-win.png' },
-  { code: 'MONOMINO_MASTER', title: 'The Final Piece', description: 'Successfully play your 1-square monomino as final piece.', iconUrl: '/uploads/achievements/monomino.png' },
   { code: 'SOCIAL_BUTTERFLY', title: 'Social Butterfly', description: 'Add your first friend on the platform.', iconUrl: '/uploads/achievements/social.png' },
   { code: 'AVATAR_UPLOADED', title: 'Fashionista', description: 'Upload a custom profile avatar.', iconUrl: '/uploads/achievements/avatar.png' },
   { code: 'MATCH_VETERAN', title: 'Veteran', description: 'Complete 2 matches.', iconUrl: '/uploads/achievements/veteran.png' },
