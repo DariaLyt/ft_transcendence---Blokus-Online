@@ -5,6 +5,7 @@ import {
   timestamp, //date+time
   integer,
   text,
+  unique,
 } from "drizzle-orm/pg-core";
 
 export const games = pgTable("games", {
@@ -99,4 +100,6 @@ export const userAchievements = pgTable("user_achievements", {
   	unlockedAt: timestamp("unlocked_at")
 		.defaultNow()
 		.notNull(),
-});
+}, (table) => [
+    unique('user_achievement_unique_idx').on(table.userId, table.achievementId),
+]);
