@@ -8,6 +8,14 @@ export type PublicProfile = {
 	online: boolean;
 	gamesPlayed: number;
 	friendship: "self" | "accepted" | "pending" | "declined" | "none";
+	achievements: {
+		id: number;
+		code: string;
+		title: string;
+		description: string;
+		iconUrl: string;
+		unlockedAt: string;
+	}[];
 };
 
 type FriendProfileModalProps = {
@@ -199,6 +207,43 @@ export default function FriendProfileModal({
 							</dd>
 						</div>
 					</dl>
+					<div className="mt-6 w-full text-left">
+						<h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+							Achievements
+						</h3>
+						{(profile.achievements ?? []).length === 0 ? (
+							<p className="mt-2 text-sm text-slate-500">
+								No achievements yet.
+							</p>
+						) : (
+							<ul className="mt-3 max-h-40 space-y-2 overflow-y-auto pr-1">
+								{(profile.achievements ?? []).map((achievement) => (
+									<li
+										key={achievement.id}
+										className="flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3"
+									>
+										{achievement.iconUrl ? (
+											<img
+												src={achievement.iconUrl}
+												alt=""
+												className="h-10 w-10 shrink-0 object-contain"
+											/>
+										) : (
+											<span className="text-2xl">🏆</span>
+										)}
+										<div className="min-w-0">
+											<p className="font-medium text-slate-800">
+												{achievement.title}
+											</p>
+											<p className="text-xs text-slate-500">
+												{achievement.description}
+											</p>
+										</div>
+									</li>
+								))}
+							</ul>
+						)}
+					</div>
 					{profile.friendship !== "self" && (
 						<button
 							type="button"

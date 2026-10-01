@@ -8,6 +8,7 @@ import { unlockAchievementForUser } from '../controllers/achievementController.j
 import { getUserStats } from '../db/queries/statistics.js';
 import { checkExistingFriendship } from '../db/queries/friendships.js';
 import { isUserOnline } from '../sockets/connectionManager.js';
+import { findAchievementsById } from '../db/queries/achievements.js';
 
 export async function getProfile(req: Request, res: Response) {
     if (!req.user) {
@@ -39,6 +40,7 @@ export async function getPublicProfile(req: Request, res: Response) {
 			? 'self'
 			: (await checkExistingFriendship(viewerId, id)) ?? 'none';
 	const stats = await getUserStats(id);
+	const unlocked = await findAchievementsById(id);
 
 	return res.status(200).json({
 		id: user.id,
@@ -48,6 +50,14 @@ export async function getPublicProfile(req: Request, res: Response) {
 		online: isUserOnline(id),
 		gamesPlayed: Number(stats?.gamesPlayed ?? 0),
 		friendship,
+		achievements: (unlocked ?? []).map((item) => ({
+			id: item.id,
+			code: item.code,
+			title: item.title,
+			description: item.description,
+			iconUrl: item.iconUrl,
+			unlockedAt: item.unlockedAt,
+		})),
 	});
 }
 
