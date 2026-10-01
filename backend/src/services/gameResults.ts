@@ -52,6 +52,7 @@ export async function recordFinishedGame(snapshot: any) {
 		await finishGame(String(game.id), participants);
 
 		for (const player of participants) {
+			await unlockAchievementForUser(player.userId!, 'MATCH_VETERAN', true).catch(() => null);
             await unlockAchievementForUser(player.userId!, 'FIRST_GAME').catch(() => null);
         }
 
@@ -59,7 +60,6 @@ export async function recordFinishedGame(snapshot: any) {
 		const winners = participants.filter(p => (p.score ?? 0) === highestScore);
 		for (const winner of winners) {
 			await unlockAchievementForUser(winner.userId!, 'FIRST_WIN').catch(() => null);
-			await unlockAchievementForUser(winner.userId!, 'MATCH_VETERAN', true).catch(() => null);
 		}
 	} catch (err) {
 		console.error('[gameResults] failed to persist finished game:', err);

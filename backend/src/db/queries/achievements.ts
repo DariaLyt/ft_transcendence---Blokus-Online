@@ -31,19 +31,19 @@ export async function grantAchievement(userId: number, achievementCode: string, 
 	}
 
 	if (isVeteran) {
-		const [firstWin] = await db
+		const [firstGame] = await db
 			.select()
 			.from(userAchievements)
 			.innerJoin(achievements, eq(userAchievements.achievementId, achievements.id))
 			.where(
 				and(
-					eq(achievements.code, 'FIRST_WIN'),
+					eq(achievements.code, 'FIRST_GAME'),
 					eq(userAchievements.userId, userId)
 				)
 			)
 			.limit(1);
 
-		if (!firstWin) {
+		if (!firstGame) {
 			return ({ success: false, reason: 'NOT_MATCH_VETERAN' });
 		}
 	}

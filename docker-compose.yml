@@ -47,11 +47,11 @@ services:
       GO_ENGINE_URL: game:50051
       AVATAR_UPLOAD_DIR: ${AVATAR_UPLOAD_DIR}
     volumes:
-      - ./backend:/app           
+      # - ./backend:/app           
       - /app/node_modules
       - ./backend/certs:/app/certs:ro
       - ./backend/uploads/avatars:/app/uploads/avatars
-    command: npm run dev
+    # command: npm run dev
     depends_on:
       db:
         condition: service_healthy

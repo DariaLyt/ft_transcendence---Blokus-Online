@@ -50,6 +50,13 @@
       "when": 1790667261903,
       "tag": "0006_tough_thaddeus_ross",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790837231342,
+      "tag": "0007_goofy_maginty",
+      "breakpoints": true
     }
   ]
 }
