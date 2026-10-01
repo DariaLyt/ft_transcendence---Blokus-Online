@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import { checkExistingFriendship, createFriendRequest, updateFriendRequest, findUserFriends, findPendingFriendRequests, removeFriendship } from '../db/queries/friendships.js';
+import { unlockAchievementForUser } from '../controllers/achievementController.js';
 
 export async function handleFriendRequest(req: Request, res: Response) {
 	const userId = req.user!.userId;
@@ -22,7 +23,11 @@ export async function handleFriendResponse(req: Request, res: Response) {
 	const requestId = Number(req.params.id);
 	const { status } = req.body;
 	
-	await updateFriendRequest(requestId, status);
+	const requestRecord = await updateFriendRequest(requestId, status);
+	if (status === 'accepted' && requestRecord) {
+		await unlockAchievementForUser(requestRecord.userId, 'SOCIAL_BUTTERFLY').catch(() => null);
+		await unlockAchievementForUser(requestRecord.friendId, 'SOCIAL_BUTTERFLY').catch(() => null);
+	}
 	return res.status(200).json({ message: 'Friend request updated successfully' });
 }
 
