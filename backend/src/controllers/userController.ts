@@ -5,6 +5,9 @@ import path from 'node:path';
 import fs from 'node:fs/promises';
 import { findGamesByUserId } from "../db/queries/game.js";
 import { unlockAchievementForUser } from '../controllers/achievementController.js';
+import { getUserStats } from '../db/queries/statistics.js';
+import { checkExistingFriendship } from '../db/queries/friendships.js';
+import { isUserOnline } from '../sockets/connectionManager.js';
 
 export async function getProfile(req: Request, res: Response) {
     if (!req.user) {
@@ -17,6 +20,35 @@ export async function getProfile(req: Request, res: Response) {
 	}
 
 	return res.status(200).json({ user });
+}
+
+export async function getPublicProfile(req: Request, res: Response) {
+	const id = Number(req.params.id);
+	if (!Number.isInteger(id) || id <= 0) {
+		return res.status(400).json({ error: 'Invalid user id' });
+	}
+
+	const user = await findUserById(id);
+	if (!user) {
+		return res.status(404).json({ error: 'User not found' });
+	}
+
+	const viewerId = req.user!.userId;
+	const friendship =
+		viewerId === id
+			? 'self'
+			: (await checkExistingFriendship(viewerId, id)) ?? 'none';
+	const stats = await getUserStats(id);
+
+	return res.status(200).json({
+		id: user.id,
+		username: user.username,
+		avatarUrl: user.avatar_url ?? null,
+		createdAt: user.created_at,
+		online: isUserOnline(id),
+		gamesPlayed: Number(stats?.gamesPlayed ?? 0),
+		friendship,
+	});
 }
 
 export async function changePassword(req: Request, res: Response) {

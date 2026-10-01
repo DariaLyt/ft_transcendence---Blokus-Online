@@ -1,6 +1,6 @@
 import { db } from '../conn.js';
 import type { User } from '../../types/userTypes.js'
-import { eq, or } from 'drizzle-orm';
+import { eq, or, and, ne, sql } from 'drizzle-orm';
 import { users } from '../schema.js';
 
 export async function findUserById(id: number): Promise<Omit<User, 'password_hash'> | null> {
@@ -40,6 +40,50 @@ export async function findUserByUsername(username: string): Promise<{ id: number
 	return result[0] || null;
 }
 
+function escapeLike(value: string) {
+	return value.replace(/[%_\\]/g, '\\$&');
+}
+
+export async function findUserIdByUsernameInsensitive(username: string) {
+	const trimmed = username.trim();
+	if (!trimmed) {
+		return null;
+	}
+	const [result] = await db
+		.select({
+			id: users.id,
+		})
+		.from(users)
+		.where(sql`${users.username} ILIKE ${escapeLike(trimmed)} ESCAPE '\\'`)
+		.limit(1);
+	return result || null;
+}
+
+export async function searchUsersByUsername(
+	query: string,
+	excludeUserId: number,
+	limit = 8,
+) {
+	const trimmed = query.trim();
+	if (trimmed.length < 1) {
+		return [];
+	}
+	return db
+		.select({
+			id: users.id,
+			username: users.username,
+			avatarUrl: users.avatarUrl,
+		})
+		.from(users)
+		.where(
+			and(
+				sql`${users.username} ILIKE ${`${escapeLike(trimmed)}%`} ESCAPE '\\'`,
+				ne(users.id, excludeUserId),
+			),
+		)
+		.limit(limit);
+}
+
 export async function findUserByEmailOrUsername(identifier: string) {
 	const result = await db
 		.select({
@@ -73,6 +117,7 @@ export async function createUser(username: string, email: string, passwordHash: 
 			id: users.id,
 			username: users.username,
 			email: users.email,
+			avatar_url: users.avatarUrl,
 			created_at: users.createdAt,
 		})
 	return result[0]!;
