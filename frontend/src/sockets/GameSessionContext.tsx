@@ -21,6 +21,13 @@ export type CurrentUser = {
 	created_at: string;
 };
 
+export type AchievementNotification = {
+    code: string;
+    title: string;
+    description: string;
+    iconUrl?: string;
+};
+
 type GameSessionValue = {
 	currentUser: CurrentUser | null;
 	updateCurrentUser: (user: CurrentUser) => void;
@@ -34,6 +41,8 @@ type GameSessionValue = {
 	sendLobby: (type: LobbyFrameType, extra?: Record<string, unknown>) => void;
 	sendGame: (action: GameActionType, payload?: Record<string, unknown>) => void;
 	clearSnapshot: () => void;
+	activeAchievement: AchievementNotification | null;
+    clearAchievementPopup: () => void;
 };
 
 const GameSessionContext = createContext<GameSessionValue | null>(null);
@@ -69,6 +78,10 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 	const [connected, setConnected] = useState(false);
 	const [snapshot, setSnapshot] = useState<EngineSnapshot | null>(null);
 	const [lastError, setLastError] = useState<string | null>(null);
+	const [activeAchievement, setActiveAchievement] = useState<AchievementNotification | null>(null);
+	const clearAchievementPopup = useCallback(() => {
+		setActiveAchievement(null);
+	}, []);
 	const wsRef = useRef<WebSocket | null>(null);
 	const snapshotRef = useRef<EngineSnapshot | null>(null);
 	snapshotRef.current = snapshot;
@@ -154,6 +167,22 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 				setLastError(formatGameError(msg.payload));
 				return;
 			}
+
+			if (msg.event === 'ACHIEVEMENT_UNLOCKED') {
+				const achievementData = msg.payload || msg;
+				setActiveAchievement({
+					code: achievementData.code,
+					title: achievementData.title,
+					description: achievementData.description,
+					iconUrl: achievementData.iconUrl,
+				});
+
+				setTimeout(() => {
+					setActiveAchievement(null);
+				}, 5000);
+				return;
+			}
+
 			if (
 				msg.event === 'GAME_STATE_SNAPSHOT' ||
 				msg.payload?.state !== undefined ||
@@ -237,8 +266,10 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 			sendLobby,
 			sendGame,
 			clearSnapshot,
+			activeAchievement,  
+            clearAchievementPopup,
 		}),
-		[currentUser, authLoading, updateCurrentUser, connected, snapshot, lastError, sendLobby, sendGame]
+		[currentUser, authLoading, updateCurrentUser, connected, snapshot, lastError, sendLobby, sendGame, activeAchievement, clearAchievementPopup]
 	);
 
 	return <GameSessionContext.Provider value={value}>{children}</GameSessionContext.Provider>;

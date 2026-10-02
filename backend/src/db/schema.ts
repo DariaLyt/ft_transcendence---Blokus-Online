@@ -4,22 +4,14 @@ import {
   varchar, //text
   timestamp, //date+time
   integer,
+  text,
+  unique,
 } from "drizzle-orm/pg-core";
 
 export const games = pgTable("games", {
   id: varchar("id", { length: 255 }).primaryKey(),
 
-  //status: varchar("status", { length: 20 })
-	//.notNull()
-	//.default("waiting"),
-
-	createdAt: timestamp("created_at")
-	.defaultNow()
-	.notNull(),
-
   finishedAt: timestamp("finished_at"),
-
-  engineId: varchar("engine_id", { length: 64 }).unique(),
 });
 
 export const users = pgTable("users",{
@@ -78,3 +70,36 @@ export const friendships = pgTable("friendships", {
 	.defaultNow()
 	.notNull(),
 });
+
+export const achievements = pgTable("achievements", {
+  	id: serial("id")
+		.primaryKey(),
+  	code: varchar("code", { length: 50 })
+  		.unique()
+		.notNull(),
+  	title: varchar("title", { length: 100 })
+		.notNull(),
+  	description: text("description")
+		.notNull(),
+  	iconUrl: varchar("icon_url", { length: 255 })
+		.notNull(),
+  	createdAt: timestamp("created_at")
+		.defaultNow()
+		.notNull(),
+});
+
+export const userAchievements = pgTable("user_achievements", {
+  	id: serial("id")
+		.primaryKey(),
+  	userId: integer("user_id")
+  		.notNull()
+		.references(() => users.id),
+  	achievementId: integer("achievement_id")
+  		.notNull()
+		.references(() => achievements.id),
+  	unlockedAt: timestamp("unlocked_at")
+		.defaultNow()
+		.notNull(),
+}, (table) => [
+    unique('user_achievement_unique_idx').on(table.userId, table.achievementId),
+]);

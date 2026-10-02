@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useGameSession } from "../sockets/GameSessionContext";
+import RulesModal from "./Rules";
 
 type NavbarProps = {
     disablePlay?: boolean;
@@ -8,8 +9,9 @@ type NavbarProps = {
 
 export default function Navbar({ disablePlay = false}: NavbarProps) {
   const [isDropdownOPen, setIsDropdownOPen] = useState(false);
+  const [isRulesOpen, setIsRulesOpen] = useState(false);
   const navigate = useNavigate();
-  const { currentUser } = useGameSession();
+  const { currentUser , game} = useGameSession();
 
   const handleLogout = async () => {
       const response = await fetch("/api/auth/logout", {
@@ -44,12 +46,18 @@ export default function Navbar({ disablePlay = false}: NavbarProps) {
             onClick={() => navigate("/menu")}
             className="font-semibold text-blue-600 hover:text-blue-700 cursor-pointer"
           > Play</button>
+            <button
+            type="button"
+            onClick={() => setIsRulesOpen(true)}
+            className="font-medium text-red-600 hover:text-slate-900 cursor-pointer"
+          >
+             Rules
+          </button>
           <button
             type="button"
             onClick={() => navigate("/leaderboard")}
-            className="font-medium text-slate-600 hover:text-slate-900 cursor-pointer"
+            className="font-medium text-green-600 hover:text-slate-900 cursor-pointer"
           > Leaderboard</button>
-
           <div className="relative">
             <button
               type="button"
@@ -84,6 +92,11 @@ export default function Navbar({ disablePlay = false}: NavbarProps) {
             )}
           </div>
         </nav>
+        <RulesModal
+          isOpen={isRulesOpen}
+          onClose={() => setIsRulesOpen(false)}
+          isPlaying={game?.status === "active"}
+/>
       </header>
   );
 }
