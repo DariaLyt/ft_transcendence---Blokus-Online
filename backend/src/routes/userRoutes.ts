@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getProfile, updateUserProfile, changePassword, updateAvatar, changePassword, getMatchHistory, getPublicProfile  } from '../controllers/userController.js';
+import { getProfile, updateUserProfile, changePassword, updateAvatar, getMatchHistory, getPublicProfile  } from '../controllers/userController.js';
 import { authenticateToken, optionalAuthenticateToken } from '../middlewares/authMiddleware.js';
 import { changePasswordSchema, updateProfileSchema } from '../schemas/userSchemas.js';
 import { validate } from '../middlewares/validateMiddleware.js';
