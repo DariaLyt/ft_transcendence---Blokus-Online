@@ -9,7 +9,7 @@ export async function notifyFriendsStatusChange(userId: number, isOnline: boolea
 				ELSE user_id 
 			END AS friend_id
 			FROM friendships
-			WHERE (user_id = $1 OR friend_id = $1) AND status = 'ACCEPTED';
+			WHERE (user_id = $1 OR friend_id = $1) AND status = 'accepted';
 		`;
 		const { rows } = await pool.query(query, [userId]);
 		const friendIds: number[] = rows.map((r) => r.friend_id);

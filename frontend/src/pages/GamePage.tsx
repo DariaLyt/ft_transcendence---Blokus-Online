@@ -54,6 +54,9 @@ export default function GamePage() {
 				return;
 			}
 			const target = event.target as HTMLElement | null;
+			if (target?.closest("dialog")) {
+    			return;
+			}
 			const tag = target?.tagName;
 			if (tag === "INPUT" || tag === "TEXTAREA" || target?.isContentEditable) {
 				return;

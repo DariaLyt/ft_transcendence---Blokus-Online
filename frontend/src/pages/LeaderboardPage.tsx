@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import Navbar from '../components/NavBar';
+import FriendProfileModal from '../components/FriendProfileModal';
 
 type LeaderboardEntry = {
     userId: number;
@@ -13,6 +14,7 @@ export default function LeaderboardPage() {
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(true);
+    const [profileUserId, setProfileUserId] = useState<number | null>(null);
     useEffect(() => {
         const getLeaderboard = async () => {
             const response = await fetch("/api/leaderboard", {
@@ -76,7 +78,15 @@ return (
                             className="grid grid-cols-5 py-3 border-b"
                         >
                             <p>{index + 1}</p>
-                            <p>{player.username}</p>
+                            <p>
+                                <button
+                                    type="button"
+                                    onClick={() => setProfileUserId(player.userId)}
+                                    className="font-medium text-slate-800 hover:text-blue-700 hover:underline"
+                                >
+                                    {player.username}
+                                </button>
+                            </p>
                             <p>{player.gamesPlayed}</p>
                             <p>{player.totalScore}</p>
                             <p>{player.averageScore}</p>
@@ -85,6 +95,10 @@ return (
                 </div>
             )}
         </div>
+        <FriendProfileModal
+            userId={profileUserId}
+            onClose={() => setProfileUserId(null)}
+        />
     </div>
 );
 }
