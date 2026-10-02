@@ -7,6 +7,7 @@ import { initWebSocketServer, wss } from './sockets/socketServer.js';
 import { fileURLToPath } from 'url';
 import { runMigrations } from './db/migrate.js';
 import { pool } from './db/conn.js';
+import { seedAchievements } from './db/queries/seed.js';
 
 const PORT = process.env.PORT || 3000;
 
@@ -20,6 +21,7 @@ const sslOptions = {
 async function startServer() {
 	try {
 		await runMigrations();
+		await seedAchievements()
 
 		const server = https.createServer(sslOptions, app);
 		initWebSocketServer(server);

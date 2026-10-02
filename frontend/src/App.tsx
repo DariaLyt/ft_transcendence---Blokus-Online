@@ -10,6 +10,7 @@ import Lobby from './pages/Lobby';
 import LobbyWaiting from './pages/LobbyWaiting';
 import SpectatePage from './pages/SpectatePage';
 import { GameSessionProvider } from './sockets/GameSessionContext';
+import AchievementToast from './components/AchievementToast';
 import LeaderboardPage from './pages/LeaderboardPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
@@ -19,6 +20,7 @@ export default function App() {
     return (
         <BrowserRouter>
           <GameSessionProvider>
+			<AchievementToast />
             <Routes>
                 <Route path="/" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />

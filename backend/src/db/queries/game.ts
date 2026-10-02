@@ -2,54 +2,7 @@ import { db } from "../conn.js";
 import { games } from "../schema.js";
 import { gamePlayers } from "../schema.js";
 import { users } from "../schema.js";
-import { eq, ne, and, desc, inArray } from "drizzle-orm";
-
-export async function createGame(engineId?: string){
-    const [result] = await db
-        .insert(games)
-        .values(engineId ? { engineId } : {})
-        .returning();
-    return result;
-}
-
-export async function findGameByEngineId(engineId: string){
-    const [result] = await db
-        .select()
-        .from(games)
-        .where(eq(games.engineId, engineId))
-        .limit(1);
-    return result || null;
-}
-
-export async function updateGameStatus(id: number, status: string){
-    const [result] = await db
-        .update(games)
-        .set({ status })
-        .where(eq(games.id, id))
-        .returning();
-    return result || null;
-}
-
-// export async function updateGameStatus(id: number, status: string){
-//     const [result] = await db
-//         .update(games)
-//         .set({ status })
-//         .where(eq(games.id, id))
-//         .returning();
-//     return result || null;
-// }
-
-// export async function finishGame(id: number){
-//     const [result] = await db
-//         .update(games)
-//         .set({
-//             status: "finished",
-//             finishedAt: new Date()
-//         })
-//         .where(eq(games.id, id))
-//         .returning();
-//     return result || null;
-// }
+import { eq, desc, inArray } from "drizzle-orm";
 
 export async function findGameById(id: string){
     const [result] = await db
@@ -58,7 +11,8 @@ export async function findGameById(id: string){
         .where(eq(games.id, id));
     return result || null;
 }
-type FinishedParticipant = {
+
+export type FinishedParticipant = {
     userId: number | null;
     color: "blue" | "yellow" | "red" | "green";
     score: number;
@@ -80,29 +34,33 @@ export async function finishGame(
             })
             .returning();
 
-        if (!newGame) {
-            const [existingGame] = await tx
-                .select()
-                .from(games)
-                .where(eq(games.id, gameId));
+        const gameRow = newGame ?? (await tx
+            .select()
+            .from(games)
+            .where(eq(games.id, gameId))
+            .then((rows) => rows[0]));
 
-            if (!existingGame) {
-                throw new Error("Could not retrieve finished game");
-            }
-
-            return existingGame;
+        if (!gameRow) {
+            throw new Error("Could not retrieve finished game");
         }
 
-        await tx.insert(gamePlayers).values(
-            participants.map(player => ({
-                gameId,
-                userId: player.userId,
-                color: player.color,
-                score: player.score,
-            })),
-        );
+        const existingPlayers = await tx
+            .select({ id: gamePlayers.id })
+            .from(gamePlayers)
+            .where(eq(gamePlayers.gameId, gameId))
+            .limit(1);
 
-        return newGame;
+        if (existingPlayers.length === 0 && participants.length > 0) {
+            await tx.insert(gamePlayers).values(
+                participants.map(player => ({
+                    gameId,
+                    userId: player.userId,
+                    color: player.color,
+                    score: player.score,
+                })),
+            );
+        }
+        return gameRow;
     });
 }
 export async function findGamesByUserId(

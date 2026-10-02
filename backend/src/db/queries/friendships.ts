@@ -142,3 +142,35 @@ export async function updateFriendRequest(requestId: number, status: string) {
     return result || null;
 }
 
+export async function respondToFriendRequest(
+    requestId: number,
+    userId: number,
+    status: 'accepted' | 'declined',
+) {
+    const [request] = await db
+        .select()
+        .from(friendships)
+        .where(eq(friendships.id, requestId))
+        .limit(1);
+
+    if (!request || request.status !== 'pending') {
+        return { ok: false as const, reason: 'NOT_FOUND' as const };
+    }
+    if (request.friendId !== userId) {
+        return { ok: false as const, reason: 'FORBIDDEN' as const };
+    }
+
+    if (status === 'declined') {
+        await db.delete(friendships).where(eq(friendships.id, requestId));
+        return { ok: true as const, request };
+    }
+
+    const [updated] = await db
+        .update(friendships)
+        .set({ status: 'accepted' })
+        .where(eq(friendships.id, requestId))
+        .returning();
+
+    return { ok: true as const, request: updated ?? request };
+}
+

@@ -81,7 +81,7 @@ export default function MatchHistory() {
             )}
 
             {!loading && !error && matches.length > 0 && (
-                <ul className="divide-y divide-slate-200">
+                <ul className="max-h-80 divide-y divide-slate-200 overflow-y-auto pr-2">
                     {matches.map(match => (
                         <li key={match.gameId} className="py-4">
                             <div className="flex justify-between gap-4">

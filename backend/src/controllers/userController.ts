@@ -1,10 +1,14 @@
 import type { Request, Response } from 'express';
 import { findUserById, getUserPasswordHash, updateUserPassword, getAvatar, updateNewAvatar, updateUserProfileQuery, findUserByEmail, findUserByUsername, } from '../db/queries/users.js';
 import bcrypt from 'bcrypt';
-import { pool } from '../db/conn.js';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import { findGamesByUserId } from "../db/queries/game.js";
+import { unlockAchievementForUser } from '../controllers/achievementController.js';
+import { getUserStats } from '../db/queries/statistics.js';
+import { checkExistingFriendship } from '../db/queries/friendships.js';
+import { isUserOnline } from '../sockets/connectionManager.js';
+import { findAchievementsById } from '../db/queries/achievements.js';
 
 export async function getProfile(req: Request, res: Response) {
     if (!req.user) {
@@ -87,6 +91,8 @@ export async function updateAvatar(req: Request, res: Response) {
 			const oldPath = path.join(process.cwd(), oldAvatarUrl);
 			await fs.unlink(oldPath).catch(() => null);
 		}
+
+		await unlockAchievementForUser(id, 'AVATAR_UPLOADED').catch(() => null);
 
 		res.json({ message: 'Avatar updated successfully', avatarUrl });
 	} catch (err) {
