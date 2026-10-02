@@ -99,7 +99,6 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 	const [connected, setConnected] = useState(false);
 	const [snapshot, setSnapshot] = useState<EngineSnapshot | null>(null);
 	const [lastError, setLastError] = useState<string | null>(null);
-	// const [activeAchievement, setActiveAchievement] = useState<AchievementNotification | null>(null);
 	const [achievementQueue, setAchievementQueue] = useState<AchievementNotification[]>([]);
     const [activeAchievement, setActiveAchievement] = useState<AchievementNotification | null>(null);
 	const clearAchievementPopup = useCallback(() => {
@@ -120,21 +119,23 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 	}, []);
 
 	useEffect(() => {
-		if (activeAchievement) return;
+		if (activeAchievement || achievementQueue.length === 0) return;
 
-		if (achievementQueue.length > 0) {
-			const nextAchievement = achievementQueue[0];
-			setActiveAchievement(nextAchievement);
-			
-			setAchievementQueue((prev: AchievementNotification[]) => prev.slice(1));
+		const nextAchievement = achievementQueue[0];
 
-			const timer = window.setTimeout(() => {
-				setActiveAchievement(null);
-			}, 5000);
-
-			return () => window.clearTimeout(timer);
-		}
+		setActiveAchievement(nextAchievement);
+		setAchievementQueue((prev: AchievementNotification[]) => prev.slice(1));
 	}, [activeAchievement, achievementQueue]);
+
+	useEffect(() => {
+		if (!activeAchievement) return;
+
+		const timer = window.setTimeout(() => {
+			setActiveAchievement(null);
+		}, 5000);
+
+		return () => window.clearTimeout(timer);
+	}, [activeAchievement]);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -210,16 +211,6 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 
 			if (msg.event === 'ACHIEVEMENT_UNLOCKED') {
 				const achievementData = msg.payload || msg;
-				// setActiveAchievement({
-				// 	code: achievementData.code,
-				// 	title: achievementData.title,
-				// 	description: achievementData.description,
-				// 	iconUrl: achievementData.iconUrl,
-				// });
-
-				// setTimeout(() => {
-				// 	setActiveAchievement(null);
-				// }, 5000);
 				setAchievementQueue((prev) => [
                     ...prev,
                     {
