@@ -44,6 +44,7 @@ type GameSessionValue = {
 	clearSnapshot: () => void;
 	activeAchievement: AchievementNotification | null;
     clearAchievementPopup: () => void;
+	disconnect: () => void;
 };
 
 const GameSessionContext = createContext<GameSessionValue | null>(null);
@@ -117,6 +118,13 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 		}
 		ws.send(JSON.stringify(frame));
 	}, []);
+
+	const disconnect = () => {
+		if (wsRef.current) {
+			wsRef.current.close(1000, "User manual logout");
+			wsRef.current = null;
+		}
+	};
 
 	useEffect(() => {
 		if (activeAchievement || achievementQueue.length === 0) return;
@@ -309,8 +317,9 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 			clearSnapshot,
 			activeAchievement,  
             clearAchievementPopup,
+			disconnect,
 		}),
-		[currentUser, authLoading, updateCurrentUser,updateProfile, connected, snapshot, lastError, sendLobby, sendGame, activeAchievement, clearAchievementPopup]
+		[currentUser, authLoading, updateCurrentUser,updateProfile, connected, snapshot, lastError, sendLobby, sendGame, activeAchievement, clearAchievementPopup, disconnect]
 	);
 
 	return <GameSessionContext.Provider value={value}>{children}</GameSessionContext.Provider>;

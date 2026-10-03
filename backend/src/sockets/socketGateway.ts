@@ -316,7 +316,7 @@ export function handleIncomingSocketMessage(
 				// [OLD] sendLobbyAction(userId, action.data)
 				sendLobbyAction(userId, action) // [NEW]
 				.then((goResponse) => {
-					console.log('[gRPC Success from Go]:', goResponse);
+					// console.log('[gRPC Success from Go]:', goResponse);
 					if (!goResponse.success) {
 						sendGoError(userId, goResponse);
 						return;
@@ -345,7 +345,7 @@ export function handleIncomingSocketMessage(
 				// [OLD] sendGameAction(userId, action.data)
 				sendGameAction(userId, action) // [NEW]
 				.then((goResponse) => {
-					console.log('[gRPC Success from Go]:', goResponse);
+					// console.log('[gRPC Success from Go]:', goResponse);
 					if (!goResponse.success) {
 						sendGoError(userId, goResponse);
 						return;
@@ -374,7 +374,7 @@ export function handleIncomingSocketMessage(
 
 				getGameStateById(gameId)
 				.then((goResponse) => {
-					console.log('[gRPC Success from Go]:', goResponse);
+					// console.log('[gRPC Success from Go]:', goResponse);
 					if (!goResponse.success) {
 						sendGoError(userId, goResponse);
 						return;
@@ -399,7 +399,7 @@ export function handleIncomingSocketMessage(
 			case 'RESYNC': {
 				getGameState(userId)
 				.then((goResponse) => {
-					console.log('[gRPC Success from Go]:', goResponse);
+					// console.log('[gRPC Success from Go]:', goResponse);
 					if (!goResponse.success) {
 						sendGoError(userId, goResponse);
 						return;
