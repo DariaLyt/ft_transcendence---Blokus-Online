@@ -8,8 +8,8 @@ export default function Menu() {
     return (
 		<div>
 			<Navbar />
-        <div className="min-h-screen flex items-center justify-center bg-slate-100">
-            <div className="w-[600px] min-h-[600px] bg-white p-10 rounded-xl shadow-md flex flex-col">
+        <div className="min-h-screen flex items-center justify-center bg-slate-100 px-4 py-6">
+            <div className="w-full max-w-[600px] min-h-[600px] bg-white p-6 sm:p-10 rounded-xl shadow-md flex flex-col">
                 
                 <div className="text-center mb-10">
                     <h1 className="text-3xl font-bold text-blue-800 mb-2">

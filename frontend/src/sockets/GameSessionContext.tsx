@@ -222,16 +222,18 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 		};
 	}, [currentUser?.id]);
 
+	const shouldPoll =
+		snapshot?.game?.status === 'active' || snapshot?.lobby?.status === 'ready_check';
+
 	useEffect(() => {
-		const liveGame = snapshot?.game;
-		if (liveGame?.status !== 'active') {
+		if (!shouldPoll) {
 			return;
 		}
 		const id = window.setInterval(() => {
 			sendRaw(resyncFrame());
 		}, 400);
 		return () => window.clearInterval(id);
-	}, [snapshot?.game, sendRaw]);
+	}, [shouldPoll, sendRaw]);
 
 	const sendLobby = useCallback(
 		(type: LobbyFrameType, extra: Record<string, unknown> = {}) => {

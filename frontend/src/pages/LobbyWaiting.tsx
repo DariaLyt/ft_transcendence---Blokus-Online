@@ -1,10 +1,12 @@
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useEffect, useRef } from "react";
 import { useGameSession } from "../sockets/GameSessionContext";
 import Navbar from "../components/NavBar";
 
 export default function LobbyWaiting() {
     const navigate = useNavigate();
+    const location = useLocation();
+    const notice = (location.state as { notice?: string } | null)?.notice;
     const { lobbyId: lobbyIdParam } = useParams();
     const { currentUser, connected, lobby, lastError, sendLobby, clearSnapshot } = useGameSession();
     const joinSentFor = useRef<string>("");
@@ -76,8 +78,8 @@ export default function LobbyWaiting() {
         <div>
             <Navbar disablePlay/>
 
-        <div className="min-h-screen flex items-center justify-center bg-slate-100">
-            <div className="w-[600px] min-h-[500px] bg-white p-10 rounded-xl shadow-md flex flex-col">
+        <div className="min-h-screen flex items-center justify-center bg-slate-100 px-4 py-6">
+            <div className="w-full max-w-[600px] min-h-[500px] bg-white p-6 sm:p-10 rounded-xl shadow-md flex flex-col">
 
                 <div className="text-center mb-8">
                     <h1 className="text-3xl font-bold text-blue-800 mb-2">
@@ -92,7 +94,7 @@ export default function LobbyWaiting() {
                             <p className="text-sm text-slate-500 mb-1">
                                 Lobby ID
                             </p>
-                            <p className="text-2xl font-bold text-slate-800 font-mono tracking-[0.35em]">
+                            <p className="text-xl sm:text-2xl font-bold text-slate-800 font-mono tracking-[0.2em] sm:tracking-[0.35em] break-all">
                                 {displayLobbyId}
                             </p>
                             <p className="text-sm text-slate-400 mt-1">
@@ -105,6 +107,9 @@ export default function LobbyWaiting() {
                         You can start with any number of players.
                         Empty seats will be filled by bots.
                     </p>
+                    {notice && (
+                        <p className="text-slate-600 text-sm mt-2">{notice}</p>
+                    )}
                     {lastError && (
                         <p className="text-red-600 text-sm mt-2">{lastError}</p>
                     )}
