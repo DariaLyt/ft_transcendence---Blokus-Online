@@ -49,7 +49,11 @@ export async function recordFinishedGame(snapshot: any) {
 	}
 
 	try {
-		await finishGame(String(game.id), participants);
+		const { wasNewlyRecorded } = await finishGame(String(game.id), participants);
+
+		if (!wasNewlyRecorded) {
+            return;
+        }
 
 		for (const player of participants) {
 			if (player.userId != null) {

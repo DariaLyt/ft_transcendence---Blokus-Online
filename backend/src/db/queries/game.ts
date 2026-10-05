@@ -13,7 +13,7 @@ export type FinishedParticipant = {
 export async function finishGame(
     gameId: string,
     participants: FinishedParticipant[],
-) {
+): Promise<{ gameRow: any; wasNewlyRecorded: boolean }> {
     return db.transaction(async tx => {
         const [newGame] = await tx
             .insert(games)
@@ -25,6 +25,8 @@ export async function finishGame(
                 target: games.id,
             })
             .returning();
+
+		const wasNewlyRecorded = !!newGame;
 
         const gameRow = newGame ?? (await tx
             .select()
@@ -52,7 +54,7 @@ export async function finishGame(
                 })),
             );
         }
-        return gameRow;
+        return { gameRow, wasNewlyRecorded };
     });
 }
 export async function findGamesByUserId(
