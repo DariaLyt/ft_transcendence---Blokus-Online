@@ -8,7 +8,7 @@ export default function LobbyWaiting() {
     const location = useLocation();
     const notice = (location.state as { notice?: string } | null)?.notice;
     const { lobbyId: lobbyIdParam } = useParams();
-    const { currentUser, connected, lobby, lastError, sendLobby, clearSnapshot } = useGameSession();
+    const { currentUser, connected, lobby, lastError, sendLobby, clearSnapshot, noteLeavingActiveGame } = useGameSession();
     const joinSentFor = useRef<string>("");
     const inThisLobby = Boolean(
         currentUser &&
@@ -69,6 +69,7 @@ export default function LobbyWaiting() {
     };
 
     const handleLeaveLobby = () => {
+        noteLeavingActiveGame();
         clearSnapshot();
         sendLobby("LEAVE_LOBBY");
         navigate("/lobby");

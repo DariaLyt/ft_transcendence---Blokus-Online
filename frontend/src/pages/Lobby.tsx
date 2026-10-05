@@ -7,7 +7,7 @@ export default function Lobby() {
     const navigate = useNavigate();
     const location = useLocation();
     const notice = (location.state as { notice?: string } | null)?.notice;
-    const { currentUser, sendLobby, connected, clearSnapshot } = useGameSession();
+    const { currentUser, sendLobby, connected, clearSnapshot, noteLeavingActiveGame } = useGameSession();
     const [showJoin, setShowJoin] = useState(false);
     const [lobbyId, setLobbyId] = useState("");
     const [error, setError] = useState("");
@@ -17,6 +17,7 @@ export default function Lobby() {
             setError("You need to be logged in to create a lobby.");
             return;
         }
+        noteLeavingActiveGame();
         clearSnapshot();
         sendLobby("CREATE_LOBBY", {
             userName: currentUser.username,
@@ -34,6 +35,7 @@ export default function Lobby() {
         if (!code) {
             return;
         }
+        noteLeavingActiveGame();
         navigate(`/lobby/waiting/${code}`);
     };
 
