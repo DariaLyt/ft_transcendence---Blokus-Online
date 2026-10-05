@@ -121,10 +121,6 @@ func (b *Bot) Autofill(state *GameState) error {
 func scoreMove(state *GameState, m Move, rng *rand.Rand) int {
 	size := PieceSize(PieceID(m.PieceID))
 	score := size * 40
-	remaining := len(state.Remaining[m.Color])
-	if m.PieceID == string(Piece1) && remaining > 3 {
-		score -= 80
-	}
 
 	cells, err := AbsoluteCells(m)
 	if err != nil {

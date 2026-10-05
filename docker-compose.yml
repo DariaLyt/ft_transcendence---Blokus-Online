@@ -49,7 +49,7 @@ services:
     volumes:
       # - ./backend:/app           
       - /app/node_modules
-      - ./backend/certs:/app/certs:ro
+      - ./backend/certs:/app/certs:cdro
       - ./backend/uploads/avatars:/app/uploads/avatars
     # command: npm run dev
     depends_on:

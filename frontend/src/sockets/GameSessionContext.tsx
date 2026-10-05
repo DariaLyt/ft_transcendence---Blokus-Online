@@ -42,8 +42,11 @@ type GameSessionValue = {
 	sendLobby: (type: LobbyFrameType, extra?: Record<string, unknown>) => void;
 	sendGame: (action: GameActionType, payload?: Record<string, unknown>) => void;
 	clearSnapshot: () => void;
+	noteLeavingActiveGame: () => void;
+	leaveCurrentGame: () => void;
 	activeAchievement: AchievementNotification | null;
     clearAchievementPopup: () => void;
+	disconnect: () => void;
 };
 
 const GameSessionContext = createContext<GameSessionValue | null>(null);
@@ -99,12 +102,14 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 	const [connected, setConnected] = useState(false);
 	const [snapshot, setSnapshot] = useState<EngineSnapshot | null>(null);
 	const [lastError, setLastError] = useState<string | null>(null);
-	const [activeAchievement, setActiveAchievement] = useState<AchievementNotification | null>(null);
+	const [achievementQueue, setAchievementQueue] = useState<AchievementNotification[]>([]);
+    const [activeAchievement, setActiveAchievement] = useState<AchievementNotification | null>(null);
 	const clearAchievementPopup = useCallback(() => {
 		setActiveAchievement(null);
 	}, []);
 	const wsRef = useRef<WebSocket | null>(null);
 	const snapshotRef = useRef<EngineSnapshot | null>(null);
+	const supersededGameIdRef = useRef<string | null>(null);
 	snapshotRef.current = snapshot;
 	const currentUserRef = useRef<CurrentUser | null>(null);
 	currentUserRef.current = currentUser;
@@ -116,6 +121,32 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 		}
 		ws.send(JSON.stringify(frame));
 	}, []);
+
+	const disconnect = () => {
+		if (wsRef.current) {
+			wsRef.current.close(1000, "User manual logout");
+			wsRef.current = null;
+		}
+	};
+
+	useEffect(() => {
+		if (activeAchievement || achievementQueue.length === 0) return;
+
+		const nextAchievement = achievementQueue[0];
+
+		setActiveAchievement(nextAchievement);
+		setAchievementQueue((prev: AchievementNotification[]) => prev.slice(1));
+	}, [activeAchievement, achievementQueue]);
+
+	useEffect(() => {
+		if (!activeAchievement) return;
+
+		const timer = window.setTimeout(() => {
+			setActiveAchievement(null);
+		}, 5000);
+
+		return () => window.clearTimeout(timer);
+	}, [activeAchievement]);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -191,16 +222,15 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 
 			if (msg.event === 'ACHIEVEMENT_UNLOCKED') {
 				const achievementData = msg.payload || msg;
-				setActiveAchievement({
-					code: achievementData.code,
-					title: achievementData.title,
-					description: achievementData.description,
-					iconUrl: achievementData.iconUrl,
-				});
-
-				setTimeout(() => {
-					setActiveAchievement(null);
-				}, 5000);
+				setAchievementQueue((prev) => [
+                    ...prev,
+                    {
+                        code: achievementData.code,
+                        title: achievementData.title,
+                        description: achievementData.description,
+                        iconUrl: achievementData.iconUrl,
+                    },
+                ]);
 				return;
 			}
 
@@ -210,7 +240,27 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 				msg.payload?.lobby ||
 				msg.payload?.game
 			) {
-				const next = applyIncomingPayload(msg.payload);
+				let next = applyIncomingPayload(msg.payload);
+				const leftGameId = supersededGameIdRef.current;
+				if (
+					leftGameId &&
+					(next.game?.id === leftGameId || next.lobby?.id === leftGameId)
+				) {
+					return;
+				}
+				if (next.game && next.lobby && next.game.id !== next.lobby.id) {
+					next = { ...next, game: null };
+				}
+				const currentLobby = snapshotRef.current?.lobby;
+				if (
+					next.game &&
+					!next.lobby &&
+					currentLobby &&
+					currentLobby.id !== next.game.id &&
+					currentLobby.status !== 'in_game'
+				) {
+					return;
+				}
 				if (next.status === 'NO_ACTIVE_GAME' || (!next.lobby && !next.game)) {
 					setLastError(null);
 					setSnapshot(next);
@@ -243,16 +293,18 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 		};
 	}, [currentUser?.id]);
 
+	const shouldPoll =
+		snapshot?.game?.status === 'active' || snapshot?.lobby?.status === 'ready_check';
+
 	useEffect(() => {
-		const liveGame = snapshot?.game;
-		if (liveGame?.status !== 'active') {
+		if (!shouldPoll) {
 			return;
 		}
 		const id = window.setInterval(() => {
 			sendRaw(resyncFrame());
 		}, 400);
 		return () => window.clearInterval(id);
-	}, [snapshot?.game, sendRaw]);
+	}, [shouldPoll, sendRaw]);
 
 	const sendLobby = useCallback(
 		(type: LobbyFrameType, extra: Record<string, unknown> = {}) => {
@@ -273,6 +325,20 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 		setLastError(null);
 	}, []);
 
+	const noteLeavingActiveGame = useCallback(() => {
+		const active = snapshotRef.current?.game;
+		if (active?.status === 'active' && active.id) {
+			supersededGameIdRef.current = active.id;
+		}
+	}, []);
+
+	const leaveCurrentGame = useCallback(() => {
+		noteLeavingActiveGame();
+		sendRaw(lobbyFrame('LEAVE_LOBBY'));
+		setSnapshot({ status: 'NO_ACTIVE_GAME', lobby: null, game: null });
+		setLastError(null);
+	}, [noteLeavingActiveGame, sendRaw]);
+
 	const value = useMemo<GameSessionValue>(
 		() => ({
 			currentUser,
@@ -288,10 +354,13 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 			sendLobby,
 			sendGame,
 			clearSnapshot,
+			noteLeavingActiveGame,
+			leaveCurrentGame,
 			activeAchievement,  
             clearAchievementPopup,
+			disconnect,
 		}),
-		[currentUser, authLoading, updateCurrentUser,updateProfile, connected, snapshot, lastError, sendLobby, sendGame, activeAchievement, clearAchievementPopup]
+		[currentUser, authLoading, updateCurrentUser,updateProfile, connected, snapshot, lastError, sendLobby, sendGame, clearSnapshot, noteLeavingActiveGame, leaveCurrentGame, activeAchievement, clearAchievementPopup, disconnect]
 	);
 
 	return <GameSessionContext.Provider value={value}>{children}</GameSessionContext.Provider>;

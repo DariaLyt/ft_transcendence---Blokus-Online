@@ -11,9 +11,11 @@ export default function Navbar({ disablePlay = false}: NavbarProps) {
   const [isDropdownOPen, setIsDropdownOPen] = useState(false);
   const [isRulesOpen, setIsRulesOpen] = useState(false);
   const navigate = useNavigate();
-  const { currentUser , game, updateCurrentUser} = useGameSession();
+  const { currentUser , game, updateCurrentUser, disconnect} = useGameSession();
 
   const handleLogout = async () => {
+	  disconnect();
+
       const response = await fetch("/api/auth/logout", {
         method:"POST",
         credentials:"include",
@@ -26,21 +28,21 @@ export default function Navbar({ disablePlay = false}: NavbarProps) {
 
 
   return (
-      <header className="bg-white border-b border-sky-100 px-6 py-4 flex items-center justify-between shadow-sm">
+      <header className="bg-white border-b border-sky-100 px-4 sm:px-6 py-3 sm:py-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 shadow-sm">
         {/* Left side: logo and title */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           <img
             src="/blokus_logo.png"
             alt="Blokus logo"
-            className="w-11 h11 rounded-lg object-contain"
+            className="w-11 h11 rounded-lg object-contain shrink-0"
           />
-          <span className="font-bold text-xl tracking-tight text-slate-900">
+          <span className="font-bold text-lg sm:text-xl tracking-tight text-slate-900">
             Blokus <span className="text-blue-600">Online</span>
           </span>
         </div>
 
         {/* Right side: navigation links & user avatar with dropdown */}
-        <nav className="flex items-center gap-6">
+        <nav className="flex items-center gap-3 sm:gap-6">
           <button
             type="button"
             disabled={disablePlay}

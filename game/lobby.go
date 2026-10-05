@@ -206,12 +206,9 @@ func (m *LobbyManager) LeaveLobby(userID string) (*Lobby, error) {
 
 	id, ok := m.byUser[userID]
 	if !ok {
-		return nil, &LobbyError{Code: ErrLobbyNotFound, Message: "user is not in a lobby"}
+		return nil, nil
 	}
 	lobby := m.lobbies[id]
-	if lobby != nil && lobby.Status == LobbyInGame {
-		return nil, &LobbyError{Code: ErrLobbyInGame, Message: "game already in progress"}
-	}
 
 	wasCheck := lobby != nil && lobby.Status == LobbyReadyCheck
 	m.removeUserLocked(userID)

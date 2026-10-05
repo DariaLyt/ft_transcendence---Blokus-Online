@@ -1,11 +1,13 @@
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useGameSession } from "../sockets/GameSessionContext";
 import Navbar from "../components/NavBar";
 
 export default function Lobby() {
     const navigate = useNavigate();
-    const { currentUser, sendLobby, connected, clearSnapshot } = useGameSession();
+    const location = useLocation();
+    const notice = (location.state as { notice?: string } | null)?.notice;
+    const { currentUser, sendLobby, connected, clearSnapshot, noteLeavingActiveGame } = useGameSession();
     const [showJoin, setShowJoin] = useState(false);
     const [lobbyId, setLobbyId] = useState("");
     const [error, setError] = useState("");
@@ -15,6 +17,7 @@ export default function Lobby() {
             setError("You need to be logged in to create a lobby.");
             return;
         }
+        noteLeavingActiveGame();
         clearSnapshot();
         sendLobby("CREATE_LOBBY", {
             userName: currentUser.username,
@@ -33,6 +36,7 @@ export default function Lobby() {
             setError("Lobby ID must be between 1 and 8 characters");
             return;
         }
+        noteLeavingActiveGame();
         navigate(`/lobby/waiting/${code}`);
     };
 
@@ -40,8 +44,8 @@ export default function Lobby() {
         <div>
             <Navbar />
 
-        <div className="min-h-screen flex items-center justify-center bg-slate-100">
-            <div className="w-[600px] min-h-[450px] bg-white p-10 rounded-xl shadow-md flex flex-col">
+        <div className="min-h-screen flex items-center justify-center bg-slate-100 px-4 py-6">
+            <div className="w-full max-w-[600px] min-h-[450px] bg-white p-6 sm:p-10 rounded-xl shadow-md flex flex-col">
 
                 <div className="text-center mb-10">
                     <h1 className="text-3xl font-bold text-blue-800 mb-2">
@@ -55,6 +59,9 @@ export default function Lobby() {
                         <p className="text-amber-600 text-sm mt-2">
                             Connecting to the game server…
                         </p>
+                    )}
+                    {notice && (
+                        <p className="text-slate-600 text-sm mt-2">{notice}</p>
                     )}
                     {error && (
                         <p className="text-red-600 text-sm mt-2">{error}</p>

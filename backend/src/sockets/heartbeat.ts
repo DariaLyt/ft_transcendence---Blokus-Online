@@ -5,7 +5,7 @@ import { unsubscribeFromAllGames } from './gameSubscriptions.js';
 
 export function setupHeartbeat(wss: WebSocketServer) {
 	const interval = setInterval(() => {
-		console.log(`[Heartbeat] Running sweep across ${wss.clients.size} clients...`);
+		// console.log(`[Heartbeat] Running sweep across ${wss.clients.size} clients...`);
     	wss.clients.forEach((ws) => {
 			const socket = ws as AuthenticatedSocket;
 
