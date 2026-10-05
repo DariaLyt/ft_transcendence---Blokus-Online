@@ -16,10 +16,6 @@ export async function getUserStats(userId: number){
             gamePlayers,
             eq(users.id, gamePlayers.userId)
         )
-        .innerJoin(
-            games,
-            eq(games.id, gamePlayers.gameId),
-        )
         .where(eq(users.id, userId))
         .groupBy(users.id, users.username);
 
@@ -40,10 +36,6 @@ export async function getLeaderboard(){
         .innerJoin(
             gamePlayers,
             eq(users.id, gamePlayers.userId)
-        )
-        .innerJoin(
-            games,
-            eq(games.id, gamePlayers.gameId),
         )
         .groupBy(users.id, users.username)
         .orderBy(desc(sum(gamePlayers.score)));
