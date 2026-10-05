@@ -3,6 +3,7 @@ import { checkExistingFriendship, createFriendRequest, findUserFriends, findPend
 import { findUserIdByUsernameInsensitive, searchUsersByUsername } from '../db/queries/users.js';
 import { unlockAchievementForUser } from '../controllers/achievementController.js';
 import { isUserOnline } from '../sockets/connectionManager.js';
+import { sendToUser } from '../sockets/broadcaster.js';
 
 export async function handleFriendRequest(req: Request, res: Response) {
 	const userId = req.user!.userId;

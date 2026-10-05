@@ -46,6 +46,7 @@ type GameSessionValue = {
 	leaveCurrentGame: () => void;
 	activeAchievement: AchievementNotification | null;
     clearAchievementPopup: () => void;
+	disconnect: () => void;
 };
 
 const GameSessionContext = createContext<GameSessionValue | null>(null);
@@ -101,7 +102,8 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 	const [connected, setConnected] = useState(false);
 	const [snapshot, setSnapshot] = useState<EngineSnapshot | null>(null);
 	const [lastError, setLastError] = useState<string | null>(null);
-	const [activeAchievement, setActiveAchievement] = useState<AchievementNotification | null>(null);
+	const [achievementQueue, setAchievementQueue] = useState<AchievementNotification[]>([]);
+    const [activeAchievement, setActiveAchievement] = useState<AchievementNotification | null>(null);
 	const clearAchievementPopup = useCallback(() => {
 		setActiveAchievement(null);
 	}, []);
@@ -119,6 +121,32 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 		}
 		ws.send(JSON.stringify(frame));
 	}, []);
+
+	const disconnect = () => {
+		if (wsRef.current) {
+			wsRef.current.close(1000, "User manual logout");
+			wsRef.current = null;
+		}
+	};
+
+	useEffect(() => {
+		if (activeAchievement || achievementQueue.length === 0) return;
+
+		const nextAchievement = achievementQueue[0];
+
+		setActiveAchievement(nextAchievement);
+		setAchievementQueue((prev: AchievementNotification[]) => prev.slice(1));
+	}, [activeAchievement, achievementQueue]);
+
+	useEffect(() => {
+		if (!activeAchievement) return;
+
+		const timer = window.setTimeout(() => {
+			setActiveAchievement(null);
+		}, 5000);
+
+		return () => window.clearTimeout(timer);
+	}, [activeAchievement]);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -194,16 +222,15 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 
 			if (msg.event === 'ACHIEVEMENT_UNLOCKED') {
 				const achievementData = msg.payload || msg;
-				setActiveAchievement({
-					code: achievementData.code,
-					title: achievementData.title,
-					description: achievementData.description,
-					iconUrl: achievementData.iconUrl,
-				});
-
-				setTimeout(() => {
-					setActiveAchievement(null);
-				}, 5000);
+				setAchievementQueue((prev) => [
+                    ...prev,
+                    {
+                        code: achievementData.code,
+                        title: achievementData.title,
+                        description: achievementData.description,
+                        iconUrl: achievementData.iconUrl,
+                    },
+                ]);
 				return;
 			}
 
@@ -331,8 +358,9 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 			leaveCurrentGame,
 			activeAchievement,  
             clearAchievementPopup,
+			disconnect,
 		}),
-		[currentUser, authLoading, updateCurrentUser, connected, snapshot, lastError, sendLobby, sendGame, clearSnapshot, noteLeavingActiveGame, leaveCurrentGame, activeAchievement, clearAchievementPopup]
+		[currentUser, authLoading, updateCurrentUser,updateProfile, connected, snapshot, lastError, sendLobby, sendGame, clearSnapshot, noteLeavingActiveGame, leaveCurrentGame, activeAchievement, clearAchievementPopup, disconnect]
 	);
 
 	return <GameSessionContext.Provider value={value}>{children}</GameSessionContext.Provider>;
