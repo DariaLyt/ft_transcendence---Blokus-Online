@@ -12,7 +12,7 @@ import type { Rotation } from "../data/pieceTransform";
 
 export default function GamePage() {
 	const navigate = useNavigate();
-	const { currentUser, lobby, game, lastError, sendGame } = useGameSession();
+	const { currentUser, lobby, game, lastError, sendGame, leaveCurrentGame } = useGameSession();
 	const [selectedPiece, setSelectedPiece] = useState<string | null>(null);
 	const [rotation, setRotation] = useState<Rotation>(0);
 	const [flip, setFlip] = useState(false);
@@ -101,6 +101,11 @@ export default function GamePage() {
 		sendGame("PASS_TURN", { color: currentSeat.color });
 	};
 
+	const handleLeaveGame = () => {
+		leaveCurrentGame();
+		navigate("/menu");
+	};
+
 	if (!game) {
 		return (
 			<div className="min-h-screen bg-sky-50/50 text-slate-800 flex flex-col">
@@ -176,6 +181,15 @@ export default function GamePage() {
 							Pass
 						</button>
 					</div>
+				)}
+				{game.status === "active" && currentSeat && (
+					<button
+						type="button"
+						onClick={handleLeaveGame}
+						className="w-full px-3 py-2 rounded-lg bg-slate-200 text-slate-700 text-sm hover:bg-slate-300"
+					>
+						Leave game
+					</button>
 				)}
 				<PiecesTray 
 					gameState={game}

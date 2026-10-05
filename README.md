@@ -1,206 +1,140 @@
-# Blokus Online — Notes
+*This project has been created as part of the 42 curriculum by dlytvync, nmascaro, cwong, vahdekiv, jkorvenp.*
+
+# Blokus Online
 
 ## Description
 
-**Blokus Online** is a real-time multiplayer web application that brings the classic Blokus board game to the browser. Up to four players place polyomino pieces on a shared 20×20 board under the official corner-touch rules, with support for remote play, AI opponents, tournaments, and player progression.
+**Blokus Online** is a real-time multiplayer Blokus game in the browser. Two to four people play on one 20×20 board. Empty seats are filled by a bot. Each color has 21 pieces and must follow the corner-touch rules.
 
-- Classic Blokus rules (4 colors, 21 pieces each, corner-adjacency)
-- Real-time multiplayer (2–4 players) across separate machines
-- Lobby, matchmaking, and reconnection handling
-- AI opponent to fill empty seats or play solo
-- User accounts, profiles, avatars, friends, online status
-- Match history, statistics, and leaderboards
-- Tournament brackets
-- Spectator mode for live games
-- Privacy Policy and Terms of Service
+What the app does today:
 
-## Goal
-
-Ship a production-ready, containerized web app that meets all mandatory ft_transcendence requirements and earns **at least 14 module points** (target: **16** for evaluation buffer).
+- Accounts with email or username login, hashed passwords, and an httpOnly cookie
+- Profile page: change username and email, change password, upload an avatar (a default avatar is used otherwise)
+- Friends: search by username, send a request, accept or decline, remove a friend, see who is online
+- Click a player on the profile, in a game, or on the leaderboard to open a short public profile (no email) with their achievements
+- Lobby with a 6-character code. The host starts a ready check. Players who do not accept in 15 seconds are removed from the lobby
+- Live game for 1–4 humans. Missing colors are bots
+- Rotate (R) and flip (F) the selected piece, then click a square to place it
+- 60-second turn timer. If it runs out, a random legal piece is placed
+- If a player drops and does not return, that seat becomes a bot
+- Finished games are stored and show up in match history and on the leaderboard
+- Achievements: Block Party, First Blood, Social Butterfly, Fashionista, Veteran
+- Spectate a live game by its lobby id
+- Privacy Policy and Terms of Service, linked from the footer
 
 ## Modules
 
-Major = 2 pts · Minor = 1 pt · **Target total: 16 pts**
+Major = 2 points. Minor = 1 point. The subject requires 14.
 
-| # | Category | Module | Type | Pts | Status |
-|---|----------|--------|------|-----|--------|
-| 1 | Gaming | Complete web-based game (Blokus) | Major | 2 | Planned |
-| 2 | Gaming | Remote players | Major | 2 | Planned |
-| 3 | Gaming | Multiplayer (3+ players) | Major | 2 | Planned |
-| 4 | Web | Frontend + backend frameworks | Major | 2 | Planned |
-| 5 | User Management | Standard user management | Major | 2 | Planned |
-| 6 | Artificial Intelligence | AI Opponent | Major | 2 | Planned |
-| 7 | Web | ORM for the database | Minor | 1 | Planned |
-| 8 | User Management | Game statistics & match history | Minor | 1 | Planned |
-| 9 | Gaming | Tournament system | Minor | 1 | Planned |
-| 10 | Gaming | Spectator mode | Minor | 1 | Planned |
+| Module | Type | Points | In the code |
+|---|---|---:|---|
+| Web-based game (Blokus) | Major | 2 | Yes. Go engine, 20×20, 21 pieces, corner rules, scores |
+| Remote players | Major | 2 | Yes. WebSocket through nginx to the backend, then gRPC to Go. Reconnect loads the current game. A dropped player becomes a bot |
+| Multiplayer (3+ players) | Major | 2 | Yes. A lobby holds up to 4 humans |
+| Frontend and backend frameworks | Major | 2 | Yes. React and Express |
+| Standard user management | Major | 2 | Yes. Profile, avatar, friends, online status |
+| AI opponent | Major | 2 | Yes. Heuristic bot for empty seats and for a disconnected player |
+| ORM | Minor | 1 | Yes. Drizzle with PostgreSQL |
+| Game statistics and match history | Minor | 1 | Yes. Leaderboard, per-user history, achievements |
+| Spectator mode | Minor | 1 | Yes. `/spectate`, watch by lobby id, live updates |
 
-**Total: 16 points** (14 required to pass; +2 buffer if one module is rejected).
+Implemented modules add up to **15 points**.
 
-## Module justification
+### How the modules are implemented
 
-- **Blokus as core game** — clear win/loss rules, turn-based sync, strong fit for a web game module.
-- **Remote + Multiplayer 3+** — Blokus is designed for four players; these modules align with the product instead of being bolted on.
-- **Frameworks + ORM** — NestJS, React, and Prisma cover architecture quality with low extra risk.
-- **User management + stats** — accounts, friends, and history make matches persistent and social.
-- **AI Opponent** — enables play without four humans; must be explainable at evaluation.
-- **Tournament + Spectator** — competition and watching live boards without needing a second game.
+**Game.** `game/` is a Go service. It owns the board, the lobby, move checks, scoring, and bots. The browser never applies a move by itself. A move goes browser → WebSocket → Express → gRPC (`game:50051`) → Go. Go accepts the move or returns an error code such as `FIRST_CORNER_REQUIRED` or `NO_CORNER_TOUCH`.
 
-## Milestones
+Colors play in order: blue, yellow, red, green. Corners are top-left, top-right, bottom-right, bottom-left. The first piece of a color must cover that corner. Later pieces must touch your own color by a corner and must not share an edge with your own color. A color with no legal move is passed automatically. The game ends when every color is stuck.
 
-| Date | Milestone | Definition of done |
-|------|-----------|-------------------|
-| **17.08** | Kickoff lock | PDF studied by all; roles, stack, and module list agreed; repo + board created |
-| **01.10** | Feature freeze | All claimed modules working end-to-end; only small fixes after this |
-| **14.10** | Evaluation | Dry-run done; README complete; everyone can explain their parts |
+Scoring at the end: each square still in your hand is −1. Placing every piece is +15.
 
-## Roadmap
+**Remote play and 3+ players.** The lobby id is the game id. One human means three bots, two humans means two bots, three humans means one bot, four humans means no bots. The browser asks the server for a fresh snapshot several times a second during a live game, so other players and bots show up on the board. A human turn lasts 60 seconds. A bot waits 2 seconds, then plays.
 
-### Phase 0 — Kickoff (now → 17.08)
+**Frameworks.** The UI is React, built with Vite and styled with Tailwind. The API and WebSocket server are Express. Nginx in the frontend container serves the built site and proxies `/api/`, `/ws`, and `/uploads/` to the backend.
 
-**Goal:** Shared understanding and locked decisions.
+**Users.** Register and login go through Zod checks on the server. Passwords are hashed with bcrypt. The session is a JWT in an httpOnly cookie. Friends and presence use the WebSocket connection list.
 
-- [ ] Everyone reads `project.pdf` (mandatory + modules + README rules)
-- [ ] Confirm product: classic Blokus (20×20, 4 players, corner-touch)
-- [ ] Lock 16-point module list (see Modules)
-- [ ] Assign Game / Frontend / Backend / Docker / Database (+ PO / PM / Tech Lead)
-- [ ] Lock tech stack
-- [ ] Agree weekly meeting slot
+**AI.** The bot is not a separate program. It is the same engine playing a seat marked `bot`. It lists every legal placement, scores them, and plays one of the best:
 
+- bigger pieces score higher
+- squares nearer the center score higher
+- free diagonal spots next to the piece score higher, because those are future corners
+- playing near the previous piece scores higher
+- a small random amount breaks ties
 
-### Phase 1 — Foundation (≈ 18.08 → 31.08)
+So the bot can win, and it does not play a perfect game.
 
-**Goal:** Runnable skeleton; auth and empty board.
+**Database.** Drizzle talks to PostgreSQL 16. Finished games are written when a game reaches `finished`. Bots are stored with no user id.
 
-| Owner | Work |
-|-------|------|
-| Tech Lead | Monorepo or `frontend/` + `backend/`; Docker Compose (app + Postgres + reverse proxy); HTTPS local/dev certs |
-| Platform | Signup/login API + JWT; password hashing; basic user table via Prisma |
-| Game | Piece definitions (21 shapes × 4 colors); empty 20×20 board UI; rotate/flip controls |
-| PO/PM | Backlog grooming; Blokus rules checklist for acceptance tests |
-| All | Privacy Policy + Terms of Service pages (footer links) |
+**Statistics.** The leaderboard sums human scores. Match history lists each finished game, the result, and the opponents. Achievements unlock from games, an accepted friend request, and an avatar upload.
 
-**Deliverables**
+**Spectator.** A logged-in user opens `/spectate`, enters the lobby id, and receives read-only board updates about once a second.
 
-- `docker compose up` starts the stack
-- User can register and log in
-- Board renders with piece tray (no full validation yet)
-- Chrome-only happy path; no console errors on shell pages
+## Instructions
 
-**Weekly demo:** login + empty board in Docker.
+Prerequisites: Docker and Docker Compose.
 
-### Phase 2 — Local Blokus engine (≈ 01.09 → 14.09)
-
-**Goal:** Correct single-session game logic (server-authoritative).
-
-| Owner | Work |
-|-------|------|
-| Game | Placement validation (first move corner, later corner-touch, no edge-share with own color); scoring; win/pass when no moves |
-| Game | Unit tests for legal/illegal placements |
-| Platform | Persist game + moves; basic “create local/hotseat or vs AI stub” flow |
-| Tech Lead | Shared TypeScript types for `Piece`, `Move`, `GameState` |
-| PO | Rule acceptance: play full 4-color game manually |
-
-**Deliverables**
-
-- Complete game vs hotseat or scripted players
-- Server rejects illegal moves
-- Match ends with correct scores
-
-**Weekly demo:** full offline/hotseat Blokus match.
-
-*Module progress: Web-based game (Major) largely complete.*
-
-### Phase 3 — Real-time multiplayer (≈ 15.09 → 28.09)
-
-**Goal:** Remote 2–4 player games with robust sockets.
-
-| Owner | Work |
-|-------|------|
-| Game + Tech Lead | Socket.IO rooms; turn broadcast; board sync; latency-friendly UX |
-| Platform | Lobby create/join; invite by code or friends list (minimal) |
-| Game | Disconnect grace + reconnect resume; forfeit / timeout policy |
-| Platform | Concurrent users: multiple active games without race corruption |
-| All | Load-smoke: 2 simultaneous matches |
-
-**Deliverables**
-
-- Two browsers / two machines play live
-- Four-player match works
-- Reconnect mid-game restores state
-
-**Weekly demos:** remote 1v1, then 4-player.
-
-*Module progress: Remote players + Multiplayer 3+.*
-
-### Phase 4 — Accounts, social, stats (≈ 22.09 → 05.10, overlaps Phase 3/5)
-
-**Goal:** Standard user management + statistics.
-
-| Owner | Work |
-|-------|------|
-| Platform | Profile page; edit display name; avatar upload + default avatar |
-| Platform | Friends add/remove; online status |
-| Platform | Match history, wins/losses, ranking/level, leaderboard |
-| Tech Lead | Secure file storage for avatars; validation FE+BE |
-| PO | UX pass on profile and post-game screen |
-
-**Deliverables**
-
-- Friends list and online indicators
-- After each game, stats update and history shows opponent/result
-
-*Module progress: Standard user management + Game statistics.*
-
-### Phase 5 — AI, tournaments, spectators (≈ 29.09 → 01.10)
-
-**Goal:** Remaining claimed modules; feature freeze.
-
-| Owner | Work |
-|-------|------|
-| Game | AI opponent: heuristic / search that wins sometimes, not perfect; explainable design doc in README |
-| Platform | Tournament registration, bracket, match progression |
-| Game + Platform | Spectator mode: join room read-only; live board updates |
-| All | Wire AI into lobby (“fill with bots”); tournament uses real game rooms |
-
-**Deliverables**
-
-- Play vs AI at least at one difficulty that can win occasionally
-- Run a small tournament (4 or 8 players) end-to-end
-- Spectate an ongoing match from a third client
-
-**01.10 feature freeze:** no new modules after this date.
-
-*Module progress: AI Opponent + Tournament + Spectator → **16 pts claimed**.*
-
-### Phase 6 — Hardening & eval prep (≈ 02.10 → 14.10)
-
-**Goal:** Stability, docs, evaluation readiness.
-
-- [ ] Bug bash: illegal moves, socket edge cases, avatar limits, tournament edge cases
-- [ ] Chrome pass: no console warnings/errors on main flows
-- [ ] Responsive layout check (desktop + mobile)
-- [ ] Finalize README (logins, contributions, schema diagram, how each module works)
-- [ ] Resources section: docs used + honest AI usage notes
-- [ ] Eval rehearsal: each member demos and explains their modules
-- [ ] Practice a small live code change (eval-style)
-- [ ] Confirm `.env.example`, Docker one-liner, and HTTPS
-
-**14.10:** Peer evaluation.
-
-### Roadmap overview
-
+```bash
+cp .env.example .env
 ```
-                Aug          Sep                Oct
-                |17     |31 |14    |28|     |01|        |14
-Kickoff         ████
-Foundation           ████████
-Local engine              ████████
-Realtime multiplayer           ████████████
-Accounts / stats                  ████████████
-AI / tournament / spectator            ████████
-Feature freeze                              ◆ 01.10
-Hardening / README                             ████████
-Evaluation                                              ◆ 14.10
-Weekly meetings ◆────◆────◆────◆────◆────◆────◆────◆────◆
+
+Set `DB_PASSWORD` and `JWT_SECRET` in `.env` to values of your own. The other values in `.env.example` match this project. Docker Compose sets `DB_HOST` to `db` and `GO_ENGINE_URL` to `game:50051` for the backend container, so those two do not need to be changed for a normal run.
+
+```bash
+make
 ```
+
+`make` is `docker compose up --build`. The same command is `make up`.
+
+Open `https://localhost:8443` and accept the self-signed certificate warning. Port 8080 redirects to HTTPS.
+
+Useful Make targets:
+
+| Command | What it does |
+|---|---|
+| `make down` | Stop the containers |
+| `make logs` | Follow container logs |
+| `make status` | Show container status |
+| `make certs` | Write a localhost certificate into `backend/certs/` |
+| `make clean` | Stop containers and delete the database volume and images |
+
+The database volume is kept across `make down`. `make clean` deletes it.
+
+## Technical stack
+
+| Part | Choice |
+|---|---|
+| UI | React, Vite, Tailwind CSS |
+| HTTP and WebSocket | Express, `ws` |
+| Validation on the server | Zod |
+| Passwords | bcrypt |
+| Session | JWT in an httpOnly cookie |
+| Database | PostgreSQL 16 |
+| ORM | Drizzle |
+| Rules, lobby, bots | Go, gRPC on port 50051 |
+| Public entry | nginx, ports 8080 and 8443 |
+
+The browser talks only to nginx. Nginx talks to Express. Express talks to Postgres and to the Go game server. The Go server keeps the live board in memory. Postgres stores users, friends, achievements, and finished games.
+
+## Database schema
+
+- `users` — id, unique username, unique email, password hash, avatar URL, created time
+- `games` — id is the lobby code, plus the time the game finished
+- `game_players` — game, user (empty for a bot), color, score
+- `friendships` — requester, recipient, status `pending` or `accepted`
+- `achievements` — code, title, description, icon
+- `user_achievements` — user, achievement, unlock time. One row per user and achievement
+
+## Resources
+
+- [Blokus rules](https://www.ultraboardgames.com/blokus/game-rules.php) — board, pieces, corner contact, scoring
+- [React](https://react.dev/)
+- [Express](https://expressjs.com/)
+- [Drizzle](https://orm.drizzle.team/)
+- [gRPC](https://grpc.io/docs/what-is-grpc/introduction/)
+- `game/README.md` — the Go engine: files, rules, and the bot
+
+AI tools were used while building the project for boilerplate, refactors, and debugging. 
+
+## Contributors
+

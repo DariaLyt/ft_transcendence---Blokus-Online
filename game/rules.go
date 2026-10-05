@@ -3,7 +3,6 @@ package game
 // Scoring
 //   - each square left in hand: -1
 //   - all pieces placed: +15
-//   - all pieces placed and the last piece was the monomino ("1"): +5 extra (+20 total bonus)
 
 var orthoDirs = []Cell{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}
 var diagDirs = []Cell{{1, 1}, {1, -1}, {-1, 1}, {-1, -1}}
@@ -108,7 +107,7 @@ func ApplyMove(state *GameState, move Move) error {
 	ResolvePasses(state)
 
 	if state.Status == StatusActive && (allPassed(state) || !anyColorCanMove(state)) {
-		finishGame(state, move)
+		finishGame(state)
 	}
 	return nil
 }
@@ -130,7 +129,7 @@ func ResolvePasses(state *GameState) {
 		advanceTurn(state)
 	}
 	if allPassed(state) || !anyColorCanMove(state) {
-		finishGame(state, Move{})
+		finishGame(state)
 	}
 }
 
@@ -189,11 +188,8 @@ func LegalMoves(state *GameState, color Color, limit int) []Move {
 	return out
 }
 
-func ScoreColor(remaining []string, emptiedWithMonomino bool) int {
+func ScoreColor(remaining []string) int {
 	if len(remaining) == 0 {
-		if emptiedWithMonomino {
-			return 20
-		}
 		return 15
 	}
 	score := 0
@@ -203,21 +199,18 @@ func ScoreColor(remaining []string, emptiedWithMonomino bool) int {
 	return score
 }
 
-func ComputeScores(state *GameState, lastMove Move) map[Color]int {
+func ComputeScores(state *GameState) map[Color]int {
 	scores := make(map[Color]int, 4)
 	for _, c := range AllColors {
-		emptiedWithOne := len(state.Remaining[c]) == 0 &&
-			lastMove.Color == c &&
-			lastMove.PieceID == string(Piece1)
-		scores[c] = ScoreColor(state.Remaining[c], emptiedWithOne)
+		scores[c] = ScoreColor(state.Remaining[c])
 	}
 	return scores
 }
 
-func finishGame(state *GameState, lastMove Move) {
+func finishGame(state *GameState) {
 	state.Status = StatusFinished
 	state.TurnDeadline = nil
-	state.Scores = ComputeScores(state, lastMove)
+	state.Scores = ComputeScores(state)
 }
 
 func PassTurn(state *GameState, color Color) error {
@@ -234,7 +227,7 @@ func PassTurn(state *GameState, color Color) error {
 	advanceTurn(state)
 	ResolvePasses(state)
 	if state.Status == StatusActive && (allPassed(state) || !anyColorCanMove(state)) {
-		finishGame(state, Move{})
+		finishGame(state)
 	}
 	return nil
 }

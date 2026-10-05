@@ -13,7 +13,7 @@ function secondsLeft(deadline?: string | null): number {
 
 export default function ReadyCheck() {
     const navigate = useNavigate();
-    const { currentUser, lobby, lastError, sendLobby } = useGameSession();
+    const { currentUser, snapshot, lobby, lastError, sendLobby } = useGameSession();
     const [countdown, setCountdown] = useState(() => secondsLeft(lobby?.readyDeadline));
     const inThisLobby = Boolean(
         currentUser &&
@@ -21,16 +21,31 @@ export default function ReadyCheck() {
     );
 
     useEffect(() => {
-        if (!inThisLobby) {
+        if (lobby?.status === "ready_check" && inThisLobby) {
             return;
         }
-        if (lobby?.status === "waiting") {
-            navigate(lobby.id ? `/lobby/waiting/${lobby.id}` : "/lobby/waiting");
-        }
         if (lobby?.status === "in_game") {
-            navigate("/game");
+            navigate("/game", { replace: true });
+            return;
         }
-    }, [inThisLobby, lobby?.status, lobby?.id, navigate]);
+        if (lobby?.status === "waiting" && inThisLobby) {
+            navigate(lobby.id ? `/lobby/waiting/${lobby.id}` : "/lobby/waiting", {
+                replace: true,
+                state: {
+                    notice: "The ready check ended. Anyone who did not accept was removed.",
+                },
+            });
+            return;
+        }
+        if (snapshot && !inThisLobby) {
+            navigate("/lobby", {
+                replace: true,
+                state: {
+                    notice: "The ready check ended. You can create or join a lobby.",
+                },
+            });
+        }
+    }, [snapshot, inThisLobby, lobby?.status, lobby?.id, navigate]);
 
     useEffect(() => {
         setCountdown(secondsLeft(lobby?.readyDeadline));
@@ -63,8 +78,8 @@ export default function ReadyCheck() {
         <div>
             <Navbar disablePlay/>
 
-        <div className="min-h-screen flex items-center justify-center bg-slate-100">
-            <div className="w-[600px] min-h-[400px] bg-white p-10 rounded-xl shadow-md flex flex-col items-center justify-center">
+        <div className="min-h-screen flex items-center justify-center bg-slate-100 px-4 py-6">
+            <div className="w-full max-w-[600px] min-h-[400px] bg-white p-6 sm:p-10 rounded-xl shadow-md flex flex-col items-center justify-center">
 
                 <h1 className="text-3xl font-bold text-slate-800 mb-4">
                     Ready to play?

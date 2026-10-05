@@ -215,7 +215,7 @@ func RenderStatus(state *GameState) string {
 
 func RenderScores(state *GameState) string {
 	if state.Scores == nil {
-		state.Scores = ComputeScores(state, Move{})
+		state.Scores = ComputeScores(state)
 	}
 	var b strings.Builder
 	b.WriteString(ansiBold + "Scores:" + ansiReset + "\n")
