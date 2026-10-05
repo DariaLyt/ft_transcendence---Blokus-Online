@@ -11,7 +11,7 @@ export default function Navbar({ disablePlay = false}: NavbarProps) {
   const [isDropdownOPen, setIsDropdownOPen] = useState(false);
   const [isRulesOpen, setIsRulesOpen] = useState(false);
   const navigate = useNavigate();
-  const { currentUser , game} = useGameSession();
+  const { currentUser , game, updateCurrentUser} = useGameSession();
 
   const handleLogout = async () => {
       const response = await fetch("/api/auth/logout", {
@@ -19,6 +19,7 @@ export default function Navbar({ disablePlay = false}: NavbarProps) {
         credentials:"include",
       });
       if (response.ok) {
+        updateCurrentUser(null);
         navigate("/");
       }
   };
