@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { findUserById, getUserPasswordHash, updateUserPassword, getAvatar, updateNewAvatar } from '../db/queries/users.js';
+import { findUserById, getUserPasswordHash, updateUserPassword, getAvatar, updateNewAvatar, updateUserProfileQuery, findUserByEmail, findUserByUsername, } from '../db/queries/users.js';
 import bcrypt from 'bcrypt';
 import path from 'node:path';
 import fs from 'node:fs/promises';
@@ -23,6 +23,34 @@ export async function getProfile(req: Request, res: Response) {
 	return res.status(200).json({ user });
 }
 
+export async function updateUserProfile(req: Request, res: Response) {
+	const validated = req.body;
+	const userId = req.user!.userId;
+
+	const [existingEmail, existingUsername] = await Promise.all([
+		findUserByEmail(validated.email),
+		findUserByUsername(validated.username),
+	]);
+
+	if (existingUsername && existingUsername.id !== userId) {
+		return res.status(400).json({ error: 'Username already in use' });
+	}
+
+	if (existingEmail && existingEmail.id !== userId) {
+		return res.status(400).json({ error: 'Email already in use' });
+	}
+
+	const updated = await updateUserProfileQuery(
+		userId,
+		validated.username,
+		validated.email
+	);
+
+	if (!updated) {
+		return res.status(404).json({ error: 'User not found' });
+	}
+	return res.status(200).json({ user: updated });
+}
 export async function getPublicProfile(req: Request, res: Response) {
 	const id = Number(req.params.id);
 	if (!Number.isInteger(id) || id <= 0) {
