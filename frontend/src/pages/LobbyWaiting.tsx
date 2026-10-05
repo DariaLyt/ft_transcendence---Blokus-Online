@@ -10,8 +10,12 @@ export default function LobbyWaiting() {
     const { lobbyId: lobbyIdParam } = useParams();
     const { currentUser, connected, lobby, lastError, sendLobby, clearSnapshot, noteLeavingActiveGame } = useGameSession();
     const joinSentFor = useRef<string>("");
+    const urlLobbyId = lobbyIdParam?.toUpperCase();
+    const snapshotLobbyId = lobby?.id?.toUpperCase();
+    const lobbyMatchesRoute = !urlLobbyId || snapshotLobbyId === urlLobbyId;
     const inThisLobby = Boolean(
         currentUser &&
+        lobbyMatchesRoute &&
         lobby?.players.some((player) => player.userId === String(currentUser.id))
     );
 
@@ -27,20 +31,21 @@ export default function LobbyWaiting() {
         }
     }, [inThisLobby, lobby?.status, navigate]);
 
-    const players = lobby?.players ?? [];
+    const players = lobbyMatchesRoute ? (lobby?.players ?? []) : [];
     const currentPlayer = players.find(
         (player) => player.userId === String(currentUser?.id)
     );
-    const displayLobbyId = lobby?.id || lobbyIdParam || "";
+    const displayLobbyId = (lobbyMatchesRoute ? lobby?.id : "") || lobbyIdParam || "";
 
     useEffect(() => {
         if (!currentUser || !connected || !lobbyIdParam) {
             return;
         }
-        const alreadyIn = lobby?.players.some(
-            (player) => player.userId === String(currentUser.id)
+        const alreadyInThisLobby = Boolean(
+            lobbyMatchesRoute &&
+            lobby?.players.some((player) => player.userId === String(currentUser.id))
         );
-        if (alreadyIn) {
+        if (alreadyInThisLobby) {
             joinSentFor.current = lobbyIdParam;
             return;
         }
@@ -52,7 +57,7 @@ export default function LobbyWaiting() {
             userName: currentUser.username,
             lobbyId: lobbyIdParam,
         });
-    }, [connected, currentUser, lobby?.players, lobbyIdParam, sendLobby]);
+    }, [connected, currentUser, lobby?.players, lobbyIdParam, lobbyMatchesRoute, sendLobby]);
 
     const handleStartGame = () => {
         if (!lobby?.id) {

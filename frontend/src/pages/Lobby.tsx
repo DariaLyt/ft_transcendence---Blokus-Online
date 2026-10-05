@@ -37,6 +37,7 @@ export default function Lobby() {
             return;
         }
         noteLeavingActiveGame();
+        clearSnapshot();
         navigate(`/lobby/waiting/${code}`);
     };
 

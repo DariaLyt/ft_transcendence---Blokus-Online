@@ -326,9 +326,9 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 	}, []);
 
 	const noteLeavingActiveGame = useCallback(() => {
-		const active = snapshotRef.current?.game;
-		if (active?.status === 'active' && active.id) {
-			supersededGameIdRef.current = active.id;
+		const current = snapshotRef.current?.game;
+		if (current?.id && (current.status === 'active' || current.status === 'finished')) {
+			supersededGameIdRef.current = current.id;
 		}
 	}, []);
 
