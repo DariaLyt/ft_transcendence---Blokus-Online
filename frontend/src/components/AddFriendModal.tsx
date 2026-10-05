@@ -75,6 +75,12 @@ export default function AddFriendModal({
 			setError("");
 			return;
 		}
+		if (trimmed.length > 30) {
+			setResults([]);
+			setLoading(false);
+			setError("Username must be at most 30 characters");
+			return;
+		}
 
 		const controller = new AbortController();
 		setLoading(true);

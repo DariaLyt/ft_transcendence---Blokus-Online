@@ -30,7 +30,7 @@ export type AchievementNotification = {
 
 type GameSessionValue = {
 	currentUser: CurrentUser | null;
-	updateCurrentUser: (user: CurrentUser) => void;
+	updateCurrentUser: (user: CurrentUser | null) => void;
 	updateProfile: (username: string, email:string) => Promise<void>;
 	authLoading: boolean;
 	connected: boolean;
@@ -76,7 +76,7 @@ function applyIncomingPayload(payload: any): EngineSnapshot {
 export function GameSessionProvider({ children }: { children: ReactNode }) {
 	const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
 	const [authLoading, setAuthLoading] = useState(true);
-	const updateCurrentUser = useCallback((user: CurrentUser) => {
+	const updateCurrentUser = useCallback((user: CurrentUser | null) => {
 		setCurrentUser(user);
 	}, []);
 	const updateProfile = useCallback(async (username: string, email: string) => {

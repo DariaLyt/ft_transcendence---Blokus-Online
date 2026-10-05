@@ -1,4 +1,4 @@
-import { useState } from "react"; // React hook that lets a component store and update state, we use it to keep track of what the user types
+import { useEffect, useState } from "react"; // React hook that lets a component store and update state, we use it to keep track of what the user types
 import { useNavigate } from "react-router-dom"; // React hook that lets my code change the page/route programmatically, without having to click
 import { useLocation } from "react-router-dom"; // Gives information about the current URL/route and the navigation state  attached to it
 import { Link } from "react-router-dom";
@@ -11,9 +11,31 @@ export default function LoginPage() {
     const [error, setError] = useState("");
     const navigate = useNavigate();
     const location = useLocation();
-    const { updateCurrentUser } = useGameSession();
+    const { currentUser, authLoading, updateCurrentUser } = useGameSession();
+
+    useEffect(() => {
+        if (!authLoading && currentUser) {
+            navigate("/menu", {replace: true});
+        }
+    }, [authLoading, currentUser, navigate]);
+    if (authLoading) {
+        return null;
+    }
 
     const handleLogin = async () => {
+        setError("");
+        const trimmedIdentifier = identifier.trim();
+
+        if (!trimmedIdentifier) {
+            setError("Email or username is required");
+            return;
+        }
+        if (!password) {
+            setError("Password is required");
+            return;
+        }
+
+
         const response = await fetch(
             "/api/auth/login", // send a request and wait for the server's response
             {
@@ -23,7 +45,7 @@ export default function LoginPage() {
                 },
                 credentials: "include", // include cookies with request and accept cookies from response
                 body: JSON.stringify({ // convert the values to JSON
-                    identifier: identifier,
+                    identifier: trimmedIdentifier,
                     password: password,
                 }),
             }
@@ -51,7 +73,7 @@ export default function LoginPage() {
 
                 <div className="mb-4">
                     <label className="block text-sm font-medium text-slate-700 mb-1">Email or username</label>
-                    <input type="email"
+                    <input type="text"
                         value={identifier} //connects input to React state
                         onChange={(e) => {
                             setIdentifier(e.target.value); // event handler that runs when input changes

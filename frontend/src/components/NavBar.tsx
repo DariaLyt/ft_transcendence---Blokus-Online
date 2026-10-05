@@ -11,7 +11,7 @@ export default function Navbar({ disablePlay = false}: NavbarProps) {
   const [isDropdownOPen, setIsDropdownOPen] = useState(false);
   const [isRulesOpen, setIsRulesOpen] = useState(false);
   const navigate = useNavigate();
-  const { currentUser , game, disconnect } = useGameSession();
+  const { currentUser , game, updateCurrentUser, disconnect} = useGameSession();
 
   const handleLogout = async () => {
 	  disconnect();
@@ -21,6 +21,7 @@ export default function Navbar({ disablePlay = false}: NavbarProps) {
         credentials:"include",
       });
       if (response.ok) {
+        updateCurrentUser(null);
         navigate("/");
       }
   };
