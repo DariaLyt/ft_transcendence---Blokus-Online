@@ -1,5 +1,5 @@
 import type { CurrentUser } from "../sockets/GameSessionContext";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 import { useGameSession } from "../sockets/GameSessionContext";
 
@@ -10,6 +10,7 @@ type ProfileAvatarProps = {
 export default function ProfileAvatar({ user }: ProfileAvatarProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { updateCurrentUser} = useGameSession();
+    const [error, setError] = useState("");
 
     const handleAvatarChange = async (
         event: ChangeEvent<HTMLInputElement>
@@ -17,6 +18,18 @@ export default function ProfileAvatar({ user }: ProfileAvatarProps) {
         const file = event.target.files?.[0]; //get file user selected
         if (!file)
             return;
+        setError("");
+        const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+        const maxSize = 2 * 1024 * 1024;
+        if (!allowedTypes.includes(file.type)) {
+            setError("Invalid file type. Only JPEG, PNG, and WebP are allowed.");
+            return;
+        }
+        if (file.size > maxSize) {
+            setError("Image must be 2 MB or smaller");
+            return;
+        }
+
         const formData = new FormData();
         formData.append("avatar", file);
         const response = await fetch ( // send to backend
@@ -60,6 +73,11 @@ export default function ProfileAvatar({ user }: ProfileAvatarProps) {
                 className="mt-4 px-4 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50">
                 Change avatar
             </button>
+            {error && (
+	            <p className="mt-2 text-sm text-red-600">
+		            {error}
+	            </p>
+            )}
             <input
                 ref={fileInputRef}
                 type="file"

@@ -13,9 +13,25 @@ export default function ProfileInfo({user}: ProfileInfoProps) {
     const [error, setError] = useState<string | null>(null);
 
     const handleSave = async () => {
+        setError(null);
+        const trimmedUsername = username.trim();
+        const trimmedEmail = email.trim();
+
+        if (trimmedUsername.length < 3 || trimmedUsername.length > 30) {
+            setError("Username must be between 3 and 30 characters");
+            return;
+        }
+        if (!/^[a-zA-Z0-9_-]+$/.test(trimmedUsername)) {
+            setError("Username can only contain letters, numbers, underscores, and dashes");
+            return;
+        }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+            setError("Invalid email address");
+            return;
+        }
+
         try {
-            setError(null);
-            await updateProfile(username, email);
+            await updateProfile(trimmedUsername, trimmedEmail);
             setIsEditing(false);
         } catch (err) {
             if (err instanceof Error) {

@@ -7,6 +7,18 @@ export default function ChangePassword() {
 	const [error, setError] = useState("");
 
 	const handleChangePassword = async () => {
+        setError("");
+        setMessage("");
+
+        if (!currentPassword) {
+            setError("Current password is required");
+            return;
+        }
+        if (newPassword.length < 8 || newPassword.length > 100) {
+            setError("New password must be between 8 and 100 characters");
+            return;
+        }
+
     	const response = await fetch("/api/users/me/password",
             {
                 method: "PUT",
@@ -25,12 +37,10 @@ export default function ChangePassword() {
 
         if (response.ok) {
             setMessage(data.message);
-            setError("");
             setCurrentPassword("");
             setNewPassword("");
         } else {
             setError(data.error);
-            setMessage("");
         }
     };
 
@@ -81,7 +91,7 @@ export default function ChangePassword() {
 
 				
 				{message && (
-					<p className="text-red-600 text-sm">
+					<p className="text-green-600 text-sm">
                         {message}
                     </p>
 				)}

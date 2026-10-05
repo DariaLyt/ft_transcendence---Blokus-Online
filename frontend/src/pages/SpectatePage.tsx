@@ -42,6 +42,7 @@ export default function SpectatePage() {
 	const [status, setStatus] = useState("Enter a game ID to start watching.");
 	const [isConnecting, setIsConnecting] = useState(false);
 	const [selectedPiece, setSelectedPiece] = useState<string | null>(null);
+	const [error, setError] = useState("");
 
 	useEffect(() => {
 		return () => {
@@ -51,8 +52,12 @@ export default function SpectatePage() {
 
 	const handleWatch = (event: FormEvent) => {
 		event.preventDefault();
+		setError("");
 		const trimmedGameId = gameId.trim();
-		if (!trimmedGameId) return;
+		if (!trimmedGameId) {
+			setError("Game ID is required");
+			return;
+		}
 
 		socketRef.current?.close();
 		setIsConnecting(true);
@@ -131,6 +136,11 @@ export default function SpectatePage() {
 						Watch
 					</button>
 				</form>
+				{error && (
+					<p role="alert" className="text-sm text-red-600">
+						{error}
+					</p>
+				)}
 
 				{gameState ? (
 					<>

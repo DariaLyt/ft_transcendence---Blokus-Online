@@ -23,6 +23,19 @@ export default function LoginPage() {
     }
 
     const handleLogin = async () => {
+        setError("");
+        const trimmedIdentifier = identifier.trim();
+
+        if (!trimmedIdentifier) {
+            setError("Email or username is required");
+            return;
+        }
+        if (!password) {
+            setError("Password is required");
+            return;
+        }
+
+
         const response = await fetch(
             "/api/auth/login", // send a request and wait for the server's response
             {
@@ -32,7 +45,7 @@ export default function LoginPage() {
                 },
                 credentials: "include", // include cookies with request and accept cookies from response
                 body: JSON.stringify({ // convert the values to JSON
-                    identifier: identifier,
+                    identifier: trimmedIdentifier,
                     password: password,
                 }),
             }

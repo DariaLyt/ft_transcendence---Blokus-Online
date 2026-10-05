@@ -29,7 +29,8 @@ export default function Lobby() {
             return;
         }
         const code = lobbyId.trim().toUpperCase();
-        if (!code) {
+        if (code.length < 1 || code.length > 8) {
+            setError("Lobby ID must be between 1 and 8 characters");
             return;
         }
         navigate(`/lobby/waiting/${code}`);

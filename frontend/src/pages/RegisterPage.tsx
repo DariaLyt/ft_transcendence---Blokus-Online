@@ -13,6 +13,27 @@ export default function RegisterPage() {
     const { updateCurrentUser } = useGameSession();
 
     const handleRegister = async () => {
+        setError("");
+        const trimmedUsername = username.trim();
+        const trimmedEmail = email.trim();
+
+        if (trimmedUsername.length < 3 || trimmedUsername.length > 30) {
+            setError("Username must be between 3 and 30 characters");
+            return;
+        }
+        if (!/^[a-zA-Z0-9_-]+$/.test(trimmedUsername)) {
+            setError("Username can only contain letters, numbers, underscores, and dashes");
+            return;
+        }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+            setError("Please enter a valid email address");
+            return;
+        }
+        if (password.length < 8 || password.length > 100) {
+            setError("Password must be between 8 and 100 characters");
+            return;
+        }
+
         const response = await fetch (
             "/api/auth/register",
             {
@@ -22,8 +43,8 @@ export default function RegisterPage() {
                 },
                 credentials: "include",
                 body: JSON.stringify({
-                    username: username,
-                    email: email,
+                    username: trimmedUsername,
+                    email: trimmedEmail,
                     password: password,
                 }),
             }
