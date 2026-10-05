@@ -4,14 +4,6 @@ import { gamePlayers } from "../schema.js";
 import { users } from "../schema.js";
 import { eq, desc, inArray } from "drizzle-orm";
 
-export async function findGameById(id: string){
-    const [result] = await db
-        .select()
-        .from(games)
-        .where(eq(games.id, id));
-    return result || null;
-}
-
 export type FinishedParticipant = {
     userId: number | null;
     color: "blue" | "yellow" | "red" | "green";
@@ -64,13 +56,6 @@ export async function finishGame(
     });
 }
 export async function findGamesByUserId(
-    //returns:
-// {
-//     gameId,
-//     finishedAt,
-//     yourScore,
-//     opponents: [{ userId, username, score }]
-// }
     userId: number,
     limit = 20,
     offset = 0,
@@ -165,36 +150,3 @@ export async function findGamesByUserId(
         };
     });
 }
-// export async function findFinishedGames(){
-//     const result = await db
-//         .select(games)
-//         .from(games)
-//         .where(eq(games.status, "finished"))
-//     return result;
-// }
-
-// export async function findActiveGames(){
-//     const result = await db
-//         .select(games)
-//         .from(games)
-//         .where(ne(games.status, "finished"))
-//     return result;
-// }
-
-
-
-
-//older findGamesbyuserid:
-// export async function findGamesByUserId(userId: number)
-//{
-//     const result = await db
-//         .select({ games })
-//         .from(games)
-//         .innerJoin(
-//             gamePlayers,
-//             eq(games.id, gamePlayers.gameId)
-//         )
-//         .where(eq(gamePlayers.userId, userId));
-
-//     return result;
-// }

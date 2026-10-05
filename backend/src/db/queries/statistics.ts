@@ -1,6 +1,6 @@
 import { db } from "../conn.js";
 import { users, games, gamePlayers } from "../schema.js";
-import { eq, and, count, sum, avg, desc } from "drizzle-orm";
+import { eq, count, sum, avg, desc } from "drizzle-orm";
 
 export async function getUserStats(userId: number){
     const [result] = await db
@@ -18,10 +18,7 @@ export async function getUserStats(userId: number){
         )
         .innerJoin(
             games,
-            and(
-                eq(games.id, gamePlayers.gameId),
-                //eq(games.status, "finished")
-            )
+            eq(games.id, gamePlayers.gameId),
         )
         .where(eq(users.id, userId))
         .groupBy(users.id, users.username);
@@ -46,30 +43,10 @@ export async function getLeaderboard(){
         )
         .innerJoin(
             games,
-            and(
-                eq(games.id, gamePlayers.gameId),
-               // eq(games.status, "finished")
-            )
+            eq(games.id, gamePlayers.gameId),
         )
         .groupBy(users.id, users.username)
         .orderBy(desc(sum(gamePlayers.score)));
 
     return result;
 }
-    // returns:
-    //[
-    //     {
-    //         userId: 4,
-    //         username: "Harry",
-    //         gamesPlayed: 8,
-    //         totalScore: "210",
-    //         averageScore: "26.25"
-    //     },
-    //     {
-    //         userId: 7,
-    //         username: "Hermione",
-    //         gamesPlayed: 6,
-    //         totalScore: "185",
-    //         averageScore: "30.83"
-    //     }
-    // ]
