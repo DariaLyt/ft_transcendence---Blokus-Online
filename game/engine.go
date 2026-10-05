@@ -94,6 +94,7 @@ func (e *GameEngine) HandleLobbyAction(_ context.Context, req *pb.LobbyActionReq
 		err   error
 	)
 
+	var abandoned *GameState
 	switch p := req.GetPayload().(type) {
 	case *pb.LobbyActionRequest_CreateLobby:
 		in := p.CreateLobby
@@ -143,10 +144,13 @@ func (e *GameEngine) HandleLobbyAction(_ context.Context, req *pb.LobbyActionReq
 	switch req.GetPayload().(type) {
 	case *pb.LobbyActionRequest_CreateLobby, *pb.LobbyActionRequest_JoinLobby, *pb.LobbyActionRequest_LeaveLobby:
 		e.mu.Lock()
-		e.unregisterUserLocked(req.GetUserId())
+		abandoned = e.abandonGameLocked(req.GetUserId())
 		e.mu.Unlock()
 	}
-	if state != nil {
+	if _, leaving := req.GetPayload().(*pb.LobbyActionRequest_LeaveLobby); leaving && state == nil {
+		state = abandoned
+	}
+	if state != nil && !leavingGame(req) {
 		e.mu.Lock()
 		e.registerGameLocked(state)
 		e.armTurnTimerLocked(state)
@@ -157,6 +161,11 @@ func (e *GameEngine) HandleLobbyAction(_ context.Context, req *pb.LobbyActionReq
 		}
 	}
 	return okAction(encodeSnapshot(lobby, state)), nil
+}
+
+func leavingGame(req *pb.LobbyActionRequest) bool {
+	_, ok := req.GetPayload().(*pb.LobbyActionRequest_LeaveLobby)
+	return ok
 }
 
 func (e *GameEngine) HandleGameAction(_ context.Context, req *pb.GameActionRequest) (*pb.ActionResponse, error) {
@@ -229,7 +238,13 @@ func (e *GameEngine) GetGameStateSnapshot(_ context.Context, req *pb.GameStateRe
 	lobby, _ := e.lobbies.LobbyForUser(uid)
 	e.mu.Lock()
 	state := e.byUser[req.GetUserId()]
-	if state == nil && lobby != nil {
+	if state != nil && !userSeated(state, uid) {
+		state = nil
+	}
+	if state != nil && lobby != nil && state.ID != lobby.ID {
+		state = nil
+	}
+	if state == nil && lobby != nil && userSeated(e.byGame[lobby.ID], uid) {
 		state = e.byGame[lobby.ID]
 	}
 	snap := encodeSnapshot(lobby, state)
@@ -376,6 +391,44 @@ func (e *GameEngine) disconnectNowLocked(userID int32) {
 		e.armTurnTimerLocked(state)
 		e.armBotTimerLocked(state)
 	}
+}
+
+// abandonGameLocked gives this player's seat to a bot immediately.
+func (e *GameEngine) abandonGameLocked(userID int32) *GameState {
+	key := strconv.Itoa(int(userID))
+	state := e.byUser[userID]
+	if state == nil {
+		for _, candidate := range e.byGame {
+			if candidate != nil && candidate.Status == StatusActive && userSeated(candidate, key) {
+				state = candidate
+				break
+			}
+		}
+	}
+	if state == nil || state.Status != StatusActive {
+		delete(e.byUser, userID)
+		return nil
+	}
+	if ConvertSeatToBot(state, key) {
+		delete(e.byUser, userID)
+		e.armTurnTimerLocked(state)
+		e.armBotTimerLocked(state)
+		return state
+	}
+	delete(e.byUser, userID)
+	return nil
+}
+
+func userSeated(state *GameState, userID string) bool {
+	if state == nil || userID == "" {
+		return false
+	}
+	for _, seat := range state.Seats {
+		if seat.UserID != nil && *seat.UserID == userID {
+			return true
+		}
+	}
+	return false
 }
 
 func ValidateAndMakeMove(state *GameState, req *pb.MoveRequest) *pb.GameStateResponse {
