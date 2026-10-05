@@ -1,8 +1,8 @@
 import {
-  pgTable, //define table
-  serial, // autoIncreasing int
-  varchar, //text
-  timestamp, //date+time
+  pgTable,
+  serial,
+  varchar,
+  timestamp,
   integer,
   text,
   unique,
