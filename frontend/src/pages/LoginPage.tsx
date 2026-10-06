@@ -70,6 +70,11 @@ export default function LoginPage() {
                         {location.state.message}
                     </p>
                 )}
+                {location.state?.signedInElsewhere && (
+                    <p className="text-slate-600 text-sm mb-4">
+                        You signed in somewhere else. This page was signed out.
+                    </p>
+                )}
 
                 <div className="mb-4">
                     <label className="block text-sm font-medium text-slate-700 mb-1">Email or username</label>

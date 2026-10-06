@@ -4,7 +4,7 @@ import { parseCookie } from 'cookie';
 import jwt from 'jsonwebtoken';
 import { getJwtSecret } from '../config/env.js';
 import { setupHeartbeat } from './heartbeat.js';
-import { addConnection, handlePlayerDisconnect } from './connectionManager.js';
+import { addConnection, getSocketByUserId, handlePlayerDisconnect } from './connectionManager.js';
 import { handleIncomingSocketMessage } from './socketGateway.js';
 import { unsubscribeFromAllGames } from './gameSubscriptions.js';
 import { notifyFriendsStatusChange } from '../services/presenceService.js';
@@ -79,6 +79,9 @@ export function initWebSocketServer(server: HttpsServer) {
 
 		ws.on('close', () => {
 			console.log(`[WS] Connection closed for user ${userId}`);
+			if (getSocketByUserId(userId) !== ws) {
+				return;
+			}
 			unsubscribeFromAllGames(userId);
 
 			handlePlayerDisconnect(userId, async (finalUserId) => {

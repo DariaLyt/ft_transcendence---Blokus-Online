@@ -11,8 +11,18 @@ export function addConnection(userId: number, socket: AuthenticatedSocket) {
 		disconnectTimers.delete(userId);
 		console.log(`[Grace Period] User ${userId} reconnected within 30s. Timer cleared.`);
 	}
+	const previous = activeConnections.get(userId);
 	activeConnections.set(userId, socket);
 	console.log(`[Registry] Added User ${userId}. Total Active: ${activeConnections.size}`);
+	if (previous && previous !== socket) {
+		if (previous.readyState === previous.OPEN) {
+			previous.send(JSON.stringify({
+				event: 'SIGNED_IN_ELSEWHERE',
+				payload: { message: 'You signed in somewhere else.' },
+			}));
+		}
+		previous.close(4000, 'SIGNED_IN_ELSEWHERE');
+	}
 }
 
 export function removeConnection(userId: number) {

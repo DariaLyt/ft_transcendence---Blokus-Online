@@ -1,8 +1,14 @@
-all:
-	docker compose up --build
+all: ensure-env ensure-certs
+	docker compose up --build -d
 
-up:
-	docker compose up --build
+up: ensure-env ensure-certs
+	docker compose up --build -d
+
+ensure-env:
+	@test -f .env || cp .env.example .env
+
+ensure-certs:
+	@test -f backend/certs/key.pem -a -f backend/certs/cert.pem || $(MAKE) certs
 
 down:
 	docker compose down
@@ -28,4 +34,4 @@ certs:
 
 re: fclean all
 
-.PHONY: all up down clean fclean logs status certs re
+.PHONY: all up ensure-env ensure-certs down clean fclean logs status certs re
