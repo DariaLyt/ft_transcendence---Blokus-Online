@@ -7,6 +7,7 @@ import RegisterPage from './pages/RegisterPage';
 import Menu from './pages/Menu';
 import ReadyCheck from './pages/ReadyCheck';
 import Lobby from './pages/Lobby';
+import LobbyLayout from './pages/LobbyLayout';
 import LobbyWaiting from './pages/LobbyWaiting';
 import SpectatePage from './pages/SpectatePage';
 import { GameSessionProvider } from './sockets/GameSessionContext';
@@ -38,26 +39,14 @@ export default function App() {
                   path="/lobby"
                   element={
                     <ProtectedRoute>
-                      <Lobby />
+                      <LobbyLayout />
                     </ProtectedRoute>
                   }
-                />
-                <Route
-                  path="/lobby/waiting"
-                  element={
-                    <ProtectedRoute>
-                      <LobbyWaiting />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/lobby/waiting/:lobbyId"
-                  element={
-                    <ProtectedRoute>
-                      <LobbyWaiting />
-                    </ProtectedRoute>
-                  }
-                />
+                >
+                  <Route index element={<Lobby />} />
+                  <Route path="waiting" element={<LobbyWaiting />} />
+                  <Route path="waiting/:lobbyId" element={<LobbyWaiting />} />
+                </Route>
                 <Route
                   path="/ready-check"
                   element={

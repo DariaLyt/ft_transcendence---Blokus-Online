@@ -1,7 +1,8 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useGameSession } from "../sockets/GameSessionContext";
-import Navbar from "../components/NavBar";
+
+const panelClass = "lobby-in flex flex-col flex-1 w-full";
 
 export default function Lobby() {
     const navigate = useNavigate();
@@ -42,11 +43,7 @@ export default function Lobby() {
     };
 
     return (
-        <div>
-            <Navbar />
-
-        <div className="min-h-screen flex items-center justify-center bg-slate-100 px-4 py-6">
-            <div className="w-full max-w-[600px] min-h-[450px] bg-white p-6 sm:p-10 rounded-xl shadow-md flex flex-col">
+            <div className={panelClass}>
 
                 <div className="text-center mb-10">
                     <h1 className="text-3xl font-bold text-blue-800 mb-2">
@@ -158,7 +155,5 @@ export default function Lobby() {
                     </div>
                 )}
             </div>
-        </div>
-        </div>
     );
 }
