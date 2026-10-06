@@ -23,7 +23,7 @@ export async function getUserStats(userId: number){
 }
 
 
-export async function getLeaderboard(){
+export async function getLeaderboard(limit: number, offset: number){
     const result = await db
         .select({
             userId: users.id,
@@ -38,7 +38,9 @@ export async function getLeaderboard(){
             eq(users.id, gamePlayers.userId)
         )
         .groupBy(users.id, users.username)
-        .orderBy(desc(sum(gamePlayers.score)));
+        .orderBy(desc(sum(gamePlayers.score)), users.id)
+        .limit(limit)
+        .offset(offset);
 
     return result;
 }

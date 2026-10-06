@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import { runMigrations } from './db/migrate.js';
 import { pool } from './db/conn.js';
 import { seedAchievements } from './db/queries/seed.js';
+import { seedDemoData } from './db/queries/seedDemoData.js';
 
 const PORT = process.env.PORT || 3000;
 
@@ -22,6 +23,7 @@ async function startServer() {
 	try {
 		await runMigrations();
 		await seedAchievements()
+        await seedDemoData();
 
 		const server = https.createServer(sslOptions, app);
 		initWebSocketServer(server);
