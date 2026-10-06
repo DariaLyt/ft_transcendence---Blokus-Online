@@ -1,7 +1,8 @@
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useEffect, useRef } from "react";
 import { useGameSession } from "../sockets/GameSessionContext";
-import Navbar from "../components/NavBar";
+
+const panelClass = "lobby-in flex flex-col flex-1 w-full";
 
 export default function LobbyWaiting() {
     const navigate = useNavigate();
@@ -75,17 +76,75 @@ export default function LobbyWaiting() {
 
     const handleLeaveLobby = () => {
         noteLeavingActiveGame();
-        clearSnapshot();
         sendLobby("LEAVE_LOBBY");
+        navigate("/lobby");
+        clearSnapshot();
+    };
+
+    const lobbyNotFound = Boolean(
+        urlLobbyId &&
+        !inThisLobby &&
+        lastError?.toLowerCase().includes("lobby not found")
+    );
+
+    const handleGoBack = () => {
+        clearSnapshot();
         navigate("/lobby");
     };
 
-    return (
-        <div>
-            <Navbar disablePlay/>
+    if (lobbyNotFound) {
+        return (
+            <div key="missing" className={`${panelClass} text-center`}>
+                <h1 className="text-3xl font-bold text-blue-800 mb-3">
+                    Lobby not found
+                </h1>
+                <p className="text-slate-600 mb-8">
+                    No lobby exists for {urlLobbyId}.
+                </p>
+                <button
+                    type="button"
+                    onClick={handleGoBack}
+                    className="mt-auto w-full px-6 py-3 rounded-lg bg-blue-700 text-white hover:bg-blue-800"
+                >
+                    Go back
+                </button>
+            </div>
+        );
+    }
 
-        <div className="min-h-screen flex items-center justify-center bg-slate-100 px-4 py-6">
-            <div className="w-full max-w-[600px] min-h-[500px] bg-white p-6 sm:p-10 rounded-xl shadow-md flex flex-col">
+    if (!inThisLobby && lastError) {
+        return (
+            <div key="error" className={`${panelClass} text-center`}>
+                <h1 className="text-3xl font-bold text-blue-800 mb-3">
+                    GAME LOBBY
+                </h1>
+                <p className="text-red-600 mb-8">{lastError}</p>
+                <button
+                    type="button"
+                    onClick={handleGoBack}
+                    className="mt-auto w-full px-6 py-3 rounded-lg bg-blue-700 text-white hover:bg-blue-800"
+                >
+                    Go back
+                </button>
+            </div>
+        );
+    }
+
+    if (!inThisLobby) {
+        return (
+            <div key="opening" className={`${panelClass} items-center justify-center text-center`}>
+                <h1 className="text-3xl font-bold text-blue-800 mb-3">
+                    GAME LOBBY
+                </h1>
+                <p className="text-slate-500">
+                    {urlLobbyId ? `Joining ${urlLobbyId}…` : "Opening lobby…"}
+                </p>
+            </div>
+        );
+    }
+
+    return (
+            <div key="lobby" className={panelClass}>
 
                 <div className="text-center mb-8">
                     <h1 className="text-3xl font-bold text-blue-800 mb-2">
@@ -176,7 +235,5 @@ export default function LobbyWaiting() {
                 </div>
 
             </div>
-        </div>
-        </div>
     );
 }
