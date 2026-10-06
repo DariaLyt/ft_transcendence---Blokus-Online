@@ -9,9 +9,9 @@ export default function Menu() {
    const inActiveGame = game?.status === "active";
 
     return (
-		<div>
+		<div className="min-h-screen flex flex-col">
 			<Navbar />
-        <div className="min-h-screen flex items-center justify-center bg-slate-100 px-4 py-6">
+        <div className="flex-1 flex items-center justify-center bg-slate-100 px-4 py-6">
             <div className="w-full max-w-[600px] min-h-[600px] bg-white p-6 sm:p-10 rounded-xl shadow-md flex flex-col">
                 
                 <div className="text-center mb-10">
