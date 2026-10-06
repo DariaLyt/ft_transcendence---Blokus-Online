@@ -17,11 +17,11 @@ export function addConnection(userId: number, socket: AuthenticatedSocket) {
 	if (previous && previous !== socket) {
 		if (previous.readyState === previous.OPEN) {
 			previous.send(JSON.stringify({
-				event: 'SIGNED_IN_ELSEWHERE',
-				payload: { message: 'You signed in somewhere else.' },
+				event: 'SOCKET_YIELDED',
+				payload: { message: 'Another tab is using the live connection.' },
 			}));
 		}
-		previous.close(4000, 'SIGNED_IN_ELSEWHERE');
+		previous.close(4001, 'SOCKET_YIELDED');
 	}
 }
 

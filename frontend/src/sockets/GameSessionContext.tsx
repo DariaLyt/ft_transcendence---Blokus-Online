@@ -124,6 +124,10 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 	const manualCloses = useRef(new WeakSet<WebSocket>());
 	const spectateListenerRef = useRef<((message: SpectateSocketMessage) => void) | null>(null);
 	const [connectionLost, setConnectionLost] = useState(false);
+	const [socketYielded, setSocketYielded] = useState(false);
+	const [connectNonce, setConnectNonce] = useState(0);
+	const claimPending = useRef(false);
+	const claimSocketRef = useRef<() => void>(() => {});
 	const snapshotRef = useRef<EngineSnapshot | null>(null);
 	const supersededGameIdRef = useRef<string | null>(null);
 	snapshotRef.current = snapshot;
@@ -216,6 +220,39 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 		if (!currentUser) {
 			return;
 		}
+
+		const claimSocket = () => {
+			if (document.visibilityState !== 'visible') {
+				return;
+			}
+			const current = wsRef.current;
+			if (current && current.readyState <= WebSocket.OPEN) {
+				return;
+			}
+			if (claimPending.current) {
+				return;
+			}
+			claimPending.current = true;
+			setConnectNonce((nonce) => nonce + 1);
+		};
+		claimSocketRef.current = claimSocket;
+
+		window.addEventListener('focus', claimSocket);
+		document.addEventListener('visibilitychange', claimSocket);
+		return () => {
+			window.removeEventListener('focus', claimSocket);
+			document.removeEventListener('visibilitychange', claimSocket);
+		};
+	}, [currentUser]);
+
+	useEffect(() => {
+		if (!currentUser) {
+			return;
+		}
+		claimPending.current = false;
+		if (document.visibilityState === 'hidden') {
+			return;
+		}
 		if (wsRef.current && wsRef.current.readyState <= WebSocket.OPEN) {
 			return;
 		}
@@ -225,6 +262,8 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 
 		socket.onopen = () => {
 			setConnected(true);
+			setSocketYielded(false);
+			setConnectionLost(false);
 			socket.send(JSON.stringify(resyncFrame()));
 		};
 
@@ -235,15 +274,11 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 			} catch {
 				return;
 			}
-			if (msg.event === 'SIGNED_IN_ELSEWHERE') {
+			if (msg.event === 'SOCKET_YIELDED' || msg.event === 'SIGNED_IN_ELSEWHERE') {
 				manualCloses.current.add(socket);
 				setConnectionLost(false);
-				setCurrentUser(null);
-				setSnapshot({ status: 'NO_ACTIVE_GAME', lobby: null, game: null });
-				navigateRef.current('/', {
-					replace: true,
-					state: { signedInElsewhere: true },
-				});
+				setSocketYielded(true);
+				setConnected(false);
 				return;
 			}
 			if (msg.event === 'SPECTATOR_GAME_STATE' || msg.event === 'SPECTATOR_LEFT') {
@@ -321,15 +356,10 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 			if (wsRef.current === socket) {
 				wsRef.current = null;
 			}
-			if (event.code === 4000) {
+			if (event.code === 4000 || event.code === 4001) {
 				manualCloses.current.add(socket);
 				setConnectionLost(false);
-				setCurrentUser(null);
-				setSnapshot({ status: 'NO_ACTIVE_GAME', lobby: null, game: null });
-				navigateRef.current('/', {
-					replace: true,
-					state: { signedInElsewhere: true },
-				});
+				setSocketYielded(true);
 				return;
 			}
 			if (!manualCloses.current.has(socket)) {
@@ -345,7 +375,7 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 			}
 			setConnected(false);
 		};
-	}, [currentUser?.id]);
+	}, [currentUser?.id, connectNonce]);
 
 	const shouldPoll =
 		snapshot?.game?.status === 'active' || snapshot?.lobby?.status === 'ready_check';
@@ -442,6 +472,15 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 
 	return (
 		<GameSessionContext.Provider value={value}>
+			{socketYielded && !connected && currentUser && (
+				<button
+					type="button"
+					onClick={() => claimSocketRef.current()}
+					className="fixed top-0 inset-x-0 z-50 px-4 py-2 bg-blue-700 text-white text-sm text-center"
+				>
+					This tab is paused while another tab is open. Click to play here.
+				</button>
+			)}
 			{connectionLost ? <ConnectionClosed /> : children}
 		</GameSessionContext.Provider>
 	);
