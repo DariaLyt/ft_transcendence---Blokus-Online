@@ -5,7 +5,8 @@ import Board from "../components/Board";
 import GameStatus from "../components/GameStatus";
 import PlayersInfo from "../components/PlayersInfo";
 import PiecesTray from "../components/PiecesTray";
-import { WS_URL } from "../sockets/frames";
+import { useGameSession } from "../sockets/GameSessionContext";
+import type { SpectateSocketMessage } from "../sockets/GameSessionContext";
 import type { GameState } from "../data/game";
 
 type Snapshot = {
@@ -13,18 +14,8 @@ type Snapshot = {
 	status?: string;
 };
 
-type SocketMessage = {
-	event: string;
-	payload: {
-		success?: boolean;
-		errorCode?: string;
-		message?: string;
-		state?: string;
-	};
-};
-
-function parseGameState(payload: SocketMessage["payload"]): GameState | null {
-	if (!payload.state) return null;
+function parseGameState(payload: SpectateSocketMessage["payload"]): GameState | null {
+	if (!payload?.state) return null;
 
 	try {
 		const snapshot = JSON.parse(payload.state) as Snapshot;
@@ -35,54 +26,22 @@ function parseGameState(payload: SocketMessage["payload"]): GameState | null {
 }
 
 export default function SpectatePage() {
-	const socketRef = useRef<WebSocket | null>(null);
+	const { connected, sendSpectate, subscribeSpectate } = useGameSession();
+	const watchedRef = useRef("");
 	const [gameId, setGameId] = useState("");
 	const [watchedGameId, setWatchedGameId] = useState("");
 	const [gameState, setGameState] = useState<GameState | null>(null);
-	const [status, setStatus] = useState("Enter a game ID to start watching.");
+	const [status, setStatus] = useState("Enter a lobby ID to start watching.");
 	const [isConnecting, setIsConnecting] = useState(false);
 	const [selectedPiece, setSelectedPiece] = useState<string | null>(null);
 	const [error, setError] = useState("");
 
 	useEffect(() => {
-		return () => {
-			socketRef.current?.close();
-		};
-	}, []);
-
-	const handleWatch = (event: FormEvent) => {
-		event.preventDefault();
-		setError("");
-		const trimmedGameId = gameId.trim();
-		if (!trimmedGameId) {
-			setError("Game ID is required");
-			return;
-		}
-
-		socketRef.current?.close();
-		setIsConnecting(true);
-		setGameState(null);
-		setWatchedGameId(trimmedGameId);
-		setStatus("Connecting...");
-
-		const socket = new WebSocket(WS_URL);
-		socketRef.current = socket;
-
-		socket.addEventListener("open", () => {
-			socket.send(JSON.stringify({
-				category: "SPECTATE",
-				action: "WATCH_GAME",
-				payload: { gameId: trimmedGameId },
-			}));
-			setStatus("Waiting for game state...");
-		});
-
-		socket.addEventListener("message", (message) => {
-			const data = JSON.parse(message.data) as SocketMessage;
-
-			if (data.event === "SPECTATOR_GAME_STATE") {
-				const nextGameState = parseGameState(data.payload);
+		return subscribeSpectate((message) => {
+			if (message.event === "SPECTATOR_GAME_STATE") {
+				const nextGameState = parseGameState(message.payload);
 				if (!nextGameState) {
+					setIsConnecting(false);
 					setStatus("Game state could not be loaded.");
 					return;
 				}
@@ -91,21 +50,43 @@ export default function SpectatePage() {
 				setStatus("Live spectator mode");
 				return;
 			}
-
-			if (data.event === "ERROR") {
+			if (message.event === "ERROR") {
 				setIsConnecting(false);
-				setStatus(data.payload.message || data.payload.errorCode || "Could not watch this game.");
+				setGameState(null);
+				setStatus(message.payload?.message || message.payload?.errorCode || "Could not watch this game.");
 			}
 		});
+	}, [subscribeSpectate]);
 
-		socket.addEventListener("close", () => {
-			setIsConnecting(false);
-		});
+	useEffect(() => {
+		return () => {
+			if (watchedRef.current) {
+				sendSpectate("LEAVE_GAME", watchedRef.current);
+			}
+		};
+	}, [sendSpectate]);
 
-		socket.addEventListener("error", () => {
-			setIsConnecting(false);
-			setStatus("Could not connect to the game server.");
-		});
+	const handleWatch = (event: FormEvent) => {
+		event.preventDefault();
+		setError("");
+		const code = gameId.trim().toUpperCase();
+		if (code.length < 1 || code.length > 8) {
+			setError("Lobby ID must be between 1 and 8 characters");
+			return;
+		}
+		if (!connected) {
+			setError("Not connected to the game server.");
+			return;
+		}
+		if (watchedRef.current && watchedRef.current !== code) {
+			sendSpectate("LEAVE_GAME", watchedRef.current);
+		}
+		setIsConnecting(true);
+		setGameState(null);
+		setWatchedGameId(code);
+		watchedRef.current = code;
+		setStatus("Waiting for game state...");
+		sendSpectate("WATCH_GAME", code);
 	};
 
 	return (
@@ -115,15 +96,35 @@ export default function SpectatePage() {
 			<main className="flex-1 flex flex-col items-center gap-6 p-6 max-w-7xl mx-auto w-full">
 				<form
 					onSubmit={handleWatch}
-					className="w-full max-w-2xl bg-white border border-slate-200 rounded-2xl p-4 shadow-md flex flex-col sm:flex-row gap-3"
+					className="w-full max-w-2xl bg-white border border-slate-200 rounded-2xl p-4 shadow-md flex flex-col gap-3"
 				>
-					<input
-						type="text"
-						value={gameId}
-						onChange={(event) => setGameId(event.target.value)}
-						placeholder="Game ID"
-						className="flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-					/>
+					<div>
+						<label
+							htmlFor="spectateLobbyId"
+							className="block text-sm font-medium text-slate-700 mb-2"
+						>
+							Lobby ID
+						</label>
+						<input
+							id="spectateLobbyId"
+							type="text"
+							value={gameId}
+							onChange={(event) =>
+								setGameId(event.target.value.toUpperCase())
+							}
+							placeholder="e.g. 7K3M2P"
+							maxLength={8}
+							autoCapitalize="characters"
+							autoComplete="off"
+							spellCheck={false}
+							className="w-full px-4 py-3 border border-slate-300 rounded-lg font-mono tracking-widest uppercase focus:outline-none focus:ring-2 focus:ring-blue-500"
+						/>
+						{error && (
+							<p role="alert" className="text-red-600 text-sm mt-2">
+								{error}
+							</p>
+						)}
+					</div>
 					<button
 						type="submit"
 						disabled={!gameId.trim() || isConnecting}
@@ -136,11 +137,6 @@ export default function SpectatePage() {
 						Watch
 					</button>
 				</form>
-				{error && (
-					<p role="alert" className="text-sm text-red-600">
-						{error}
-					</p>
-				)}
 
 				{gameState ? (
 					<>

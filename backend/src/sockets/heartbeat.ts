@@ -1,7 +1,5 @@
 import { WebSocketServer } from 'ws';
 import type { AuthenticatedSocket } from '../types/gatewayTypes.js';
-import { removeConnection } from './connectionManager.js';
-import { unsubscribeFromAllGames } from './gameSubscriptions.js';
 
 export function setupHeartbeat(wss: WebSocketServer) {
 	const interval = setInterval(() => {
@@ -11,11 +9,7 @@ export function setupHeartbeat(wss: WebSocketServer) {
 
 			if (socket.isAlive === false) {
 				console.log(`[Heartbeat] Terminating dead socket for User ${socket.userId}`);
-				if (socket.userId) {
-					unsubscribeFromAllGames(socket.userId);
-					removeConnection(socket.userId);
-				}
-					return socket.terminate(); 
+				return socket.terminate();
 			}
 
 			socket.isAlive = false;

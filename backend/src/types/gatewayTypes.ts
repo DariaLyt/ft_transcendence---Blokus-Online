@@ -21,8 +21,8 @@ export const createLobbySchema = z.object({
 const lobbyIdSchema = z
 	.string()
 	.trim()
-	.min(1)
-	.max(8)
+	.min(1, 'Lobby ID must be between 1 and 8 characters')
+	.max(8, 'Lobby ID must be between 1 and 8 characters')
 	.transform((id) => id.toUpperCase());
 
 export const joinLobbySchema = z.object({
@@ -99,7 +99,7 @@ export const SpectateActionSchema = z.discriminatedUnion('action', [
 		category: z.literal('SPECTATE'),
 		action: z.literal('WATCH_GAME'),
 		payload: z.object({
-			gameId: z.string().trim().min(1),
+			gameId: lobbyIdSchema,
 		}),
 	}),
 
@@ -107,7 +107,7 @@ export const SpectateActionSchema = z.discriminatedUnion('action', [
 		category: z.literal('SPECTATE'),
 		action: z.literal('LEAVE_GAME'),
 		payload: z.object({
-			gameId: z.string().trim().min(1),
+			gameId: lobbyIdSchema,
 		}),
 	}),
 ]);

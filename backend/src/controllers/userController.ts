@@ -17,7 +17,12 @@ export async function getProfile(req: Request, res: Response) {
 
 	const user = await findUserById(req.user!.userId);
 	if (!user) {
-		return res.status(404).json({ error: 'User not found' });
+		res.clearCookie('auth_token', {
+			httpOnly: true,
+			secure: true,
+			sameSite: 'none',
+		});
+		return res.status(200).json({ user: null });
 	}
 
 	return res.status(200).json({ user });

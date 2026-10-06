@@ -8,6 +8,7 @@ import {
 	useState,
 	type ReactNode,
 } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { API_BASE, WS_URL, gameFrame, lobbyFrame, resyncFrame, type GameActionType, type LobbyFrameType } from './frames';
 import { parseEngineSnapshot, snapshotIncludesUser, type EngineSnapshot, type LobbyState } from '../data/snapshot';
 import { formatGameError } from '../data/moveErrors';
@@ -28,6 +29,15 @@ export type AchievementNotification = {
     iconUrl?: string;
 };
 
+export type SpectateSocketMessage = {
+	event?: string;
+	payload?: {
+		message?: string;
+		errorCode?: string;
+		state?: string;
+	};
+};
+
 type GameSessionValue = {
 	currentUser: CurrentUser | null;
 	updateCurrentUser: (user: CurrentUser | null) => void;
@@ -39,8 +49,11 @@ type GameSessionValue = {
 	game: GameState | null;
 	lastError: string | null;
 	clearError: () => void;
+	connectionLost: boolean;
 	sendLobby: (type: LobbyFrameType, extra?: Record<string, unknown>) => void;
 	sendGame: (action: GameActionType, payload?: Record<string, unknown>) => void;
+	sendSpectate: (action: 'WATCH_GAME' | 'LEAVE_GAME', gameId: string) => void;
+	subscribeSpectate: (listener: (message: SpectateSocketMessage) => void) => () => void;
 	clearSnapshot: () => void;
 	noteLeavingActiveGame: () => void;
 	leaveCurrentGame: () => void;
@@ -108,11 +121,17 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 		setActiveAchievement(null);
 	}, []);
 	const wsRef = useRef<WebSocket | null>(null);
+	const manualCloses = useRef(new WeakSet<WebSocket>());
+	const spectateListenerRef = useRef<((message: SpectateSocketMessage) => void) | null>(null);
+	const [connectionLost, setConnectionLost] = useState(false);
 	const snapshotRef = useRef<EngineSnapshot | null>(null);
 	const supersededGameIdRef = useRef<string | null>(null);
 	snapshotRef.current = snapshot;
 	const currentUserRef = useRef<CurrentUser | null>(null);
 	currentUserRef.current = currentUser;
+	const navigate = useNavigate();
+	const navigateRef = useRef(navigate);
+	navigateRef.current = navigate;
 
 	const sendRaw = useCallback((frame: object) => {
 		const ws = wsRef.current;
@@ -124,6 +143,7 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 
 	const disconnect = () => {
 		if (wsRef.current) {
+			manualCloses.current.add(wsRef.current);
 			wsRef.current.close(1000, "User manual logout");
 			wsRef.current = null;
 		}
@@ -215,7 +235,26 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 			} catch {
 				return;
 			}
+			if (msg.event === 'SIGNED_IN_ELSEWHERE') {
+				manualCloses.current.add(socket);
+				setConnectionLost(false);
+				setCurrentUser(null);
+				setSnapshot({ status: 'NO_ACTIVE_GAME', lobby: null, game: null });
+				navigateRef.current('/', {
+					replace: true,
+					state: { signedInElsewhere: true },
+				});
+				return;
+			}
+			if (msg.event === 'SPECTATOR_GAME_STATE' || msg.event === 'SPECTATOR_LEFT') {
+				spectateListenerRef.current?.(msg);
+				return;
+			}
 			if (msg.event === 'ERROR') {
+				if (spectateListenerRef.current) {
+					spectateListenerRef.current(msg);
+					return;
+				}
 				setLastError(formatGameError(msg.payload));
 				return;
 			}
@@ -277,14 +316,29 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 			}
 		};
 
-		socket.onclose = () => {
+		socket.onclose = (event) => {
 			setConnected(false);
 			if (wsRef.current === socket) {
 				wsRef.current = null;
 			}
+			if (event.code === 4000) {
+				manualCloses.current.add(socket);
+				setConnectionLost(false);
+				setCurrentUser(null);
+				setSnapshot({ status: 'NO_ACTIVE_GAME', lobby: null, game: null });
+				navigateRef.current('/', {
+					replace: true,
+					state: { signedInElsewhere: true },
+				});
+				return;
+			}
+			if (!manualCloses.current.has(socket)) {
+				setConnectionLost(true);
+			}
 		};
 
 		return () => {
+			manualCloses.current.add(socket);
 			socket.close();
 			if (wsRef.current === socket) {
 				wsRef.current = null;
@@ -320,6 +374,26 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 		[sendRaw]
 	);
 
+	const sendSpectate = useCallback(
+		(action: 'WATCH_GAME' | 'LEAVE_GAME', gameId: string) => {
+			sendRaw({
+				category: 'SPECTATE',
+				action,
+				payload: { gameId },
+			});
+		},
+		[sendRaw]
+	);
+
+	const subscribeSpectate = useCallback((listener: (message: SpectateSocketMessage) => void) => {
+		spectateListenerRef.current = listener;
+		return () => {
+			if (spectateListenerRef.current === listener) {
+				spectateListenerRef.current = null;
+			}
+		};
+	}, []);
+
 	const clearSnapshot = useCallback(() => {
 		setSnapshot({ status: 'NO_ACTIVE_GAME', lobby: null, game: null });
 		setLastError(null);
@@ -351,8 +425,11 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
 			game: snapshot?.game ?? null,
 			lastError,
 			clearError: () => setLastError(null),
+			connectionLost,
 			sendLobby,
 			sendGame,
+			sendSpectate,
+			subscribeSpectate,
 			clearSnapshot,
 			noteLeavingActiveGame,
 			leaveCurrentGame,
@@ -360,10 +437,34 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
             clearAchievementPopup,
 			disconnect,
 		}),
-		[currentUser, authLoading, updateCurrentUser,updateProfile, connected, snapshot, lastError, sendLobby, sendGame, clearSnapshot, noteLeavingActiveGame, leaveCurrentGame, activeAchievement, clearAchievementPopup, disconnect]
+		[currentUser, authLoading, updateCurrentUser, updateProfile, connected, connectionLost, snapshot, lastError, sendLobby, sendGame, sendSpectate, subscribeSpectate, clearSnapshot, noteLeavingActiveGame, leaveCurrentGame, activeAchievement, clearAchievementPopup, disconnect]
 	);
 
-	return <GameSessionContext.Provider value={value}>{children}</GameSessionContext.Provider>;
+	return (
+		<GameSessionContext.Provider value={value}>
+			{connectionLost ? <ConnectionClosed /> : children}
+		</GameSessionContext.Provider>
+	);
+}
+
+function ConnectionClosed() {
+	return (
+		<div className="min-h-screen flex items-center justify-center bg-slate-100 px-4">
+			<div className="w-full max-w-[600px] bg-white p-8 rounded-xl shadow-md text-center">
+				<h1 className="text-2xl font-bold text-blue-800 mb-3">Connection closed</h1>
+				<p className="text-slate-600 mb-6">
+					The game connection was closed. Refresh the page to continue.
+				</p>
+				<button
+					type="button"
+					onClick={() => window.location.reload()}
+					className="px-6 py-3 rounded-lg bg-blue-700 text-white hover:bg-blue-800"
+				>
+					Refresh
+				</button>
+			</div>
+		</div>
+	);
 }
 
 export function useGameSession(): GameSessionValue {
