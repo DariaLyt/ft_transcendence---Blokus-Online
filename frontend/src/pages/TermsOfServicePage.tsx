@@ -1,7 +1,19 @@
+import { useNavigate } from "react-router-dom";
+
+
 export default function TermsOfServicePage() {
+    const navigate = useNavigate();
+
     return (
         <div className="min-h-screen bg-slate-100 px-6 py-10">
             <div className="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-md">
+                <button
+                    type="button"
+                    onClick={() => navigate(-1)}
+                    className="text-blue-600 hover:text-blue-800 hover:underline mb-6"
+                >
+                    ← Back
+                </button>
                 <h1 className="text-3xl font-bold text-slate-800 mb-6">
                     Terms of Service
                 </h1>
