@@ -130,7 +130,7 @@ The authoritative definitions are in [backend/src/db/schema.ts](backend/src/db/s
 
 ## Modules
 
-The project's selected modules total **15 points: 6 major × 2 + 3 minor × 1**. The subject requires 14. These are claims to demonstrate during evaluation, not a guarantee of validation.
+The project's selected modules total **17 points: 7 major × 2 + 3 minor × 1**. The subject requires 14. These are claims to demonstrate during evaluation, not a guarantee of validation.
 
 | Selected module | Type / points | Purpose, implementation and contributors |
 |---|---|---|
@@ -138,6 +138,7 @@ The project's selected modules total **15 points: 6 major × 2 + 3 minor × 1**.
 | Standard user management and authentication | Major / 2 | Profiles, avatars, friends and presence support player identity; cwong, nmascaro, jkorvenp, dlytvync |
 | Complete web-based game | Major / 2 | Blokus engine validates moves and computes outcomes; dlytvync, nmascaro, cwong |
 | Remote players | Major / 2 | WSS gateway, gRPC engine and snapshots allow separate browsers/computers to share a game; dlytvync, cwong, vahdekiv |
+| Real-time features | Major / 2 | Authenticated WebSocket broadcasts lobby and game snapshots to every client in the match. A dropped socket waits 30 seconds, then the seat becomes a bot. A second tab keeps the login and takes the single live socket when that tab is active; dlytvync, cwong |
 | Multiplayer game, more than two players | Major / 2 | Up to four humans with independent colors/turns; dlytvync, nmascaro, cwong |
 | AI opponent | Major / 2 | Non-perfect heuristic bot evaluates legal moves and fills missing seats; dlytvync |
 | ORM | Minor / 1 | Drizzle schema, queries and migrations manage relational persistence; cwong, jkorvenp |
