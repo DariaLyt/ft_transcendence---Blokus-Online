@@ -1,0 +1,17 @@
+backend/node_modules/
+backend/dist/
+backend/certs/
+backend/docs/test/
+backen/cookies./txt
+NOTES.md
+en.subject.pdf
+cookies.txt
+
+backend/uploads/avatars/
+
+frontend/node_modules
+
+.env
+
+.DS_Store
+*.log

@@ -1,0 +1,94 @@
+{/* 1. Turns on browser URL listening 2. Checks all rules below and picks the matching one*/}
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import GamePage from './pages/GamePage';
+import LoginPage from './pages/LoginPage';
+import ProfilePage from './pages/ProfilePage';
+import RegisterPage from './pages/RegisterPage';
+import Menu from './pages/Menu';
+import ReadyCheck from './pages/ReadyCheck';
+import Lobby from './pages/Lobby';
+import LobbyLayout from './pages/LobbyLayout';
+import LobbyWaiting from './pages/LobbyWaiting';
+import SpectatePage from './pages/SpectatePage';
+import { GameSessionProvider } from './sockets/GameSessionContext';
+import AchievementToast from './components/AchievementToast';
+import LeaderboardPage from './pages/LeaderboardPage';
+import ProtectedRoute from './components/ProtectedRoute';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import TermsOfServicePage from './pages/TermsOfServicePage';
+
+export default function App() {
+    return (
+        <BrowserRouter>
+          <GameSessionProvider>
+			<AchievementToast />
+            <Routes>
+                <Route path="/" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
+                <Route path="/privacy" element={<PrivacyPolicyPage />} />
+                <Route path="/terms" element={<TermsOfServicePage />} />
+                <Route
+                  path="/menu"
+                  element={
+                    <ProtectedRoute>
+                      <Menu />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/lobby"
+                  element={
+                    <ProtectedRoute>
+                      <LobbyLayout />
+                    </ProtectedRoute>
+                  }
+                >
+                  <Route index element={<Lobby />} />
+                  <Route path="waiting" element={<LobbyWaiting />} />
+                  <Route path="waiting/:lobbyId" element={<LobbyWaiting />} />
+                </Route>
+                <Route
+                  path="/ready-check"
+                  element={
+                    <ProtectedRoute>
+                      <ReadyCheck />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/game"
+                  element={
+                    <ProtectedRoute>
+                      <GamePage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/spectate"
+                  element={
+                    <ProtectedRoute>
+                      <SpectatePage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/profile"
+                  element={
+                    <ProtectedRoute>
+                      <ProfilePage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/leaderboard"
+                  element={
+                    <ProtectedRoute>
+                      <LeaderboardPage />
+                    </ProtectedRoute>
+                  }
+                />
+            </Routes>
+          </GameSessionProvider>
+        </BrowserRouter>
+    );
+}

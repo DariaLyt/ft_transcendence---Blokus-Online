@@ -1,0 +1,1 @@
+ALTER TABLE "users" ALTER COLUMN "avatar_url" SET DATA TYPE varchar(2048);

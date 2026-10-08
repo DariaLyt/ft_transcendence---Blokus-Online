@@ -1,0 +1,154 @@
+import { db } from "../conn.js";
+import { games } from "../schema.js";
+import { gamePlayers } from "../schema.js";
+import { users } from "../schema.js";
+import { eq, desc, inArray } from "drizzle-orm";
+
+export type FinishedParticipant = {
+    userId: number | null;
+    color: "blue" | "yellow" | "red" | "green";
+    score: number;
+};
+
+export async function finishGame(
+    gameId: string,
+    participants: FinishedParticipant[],
+): Promise<{ gameRow: any; wasNewlyRecorded: boolean }> {
+    return db.transaction(async tx => {
+        const [newGame] = await tx
+            .insert(games)
+            .values({
+                id: gameId,
+                finishedAt: new Date(),
+            })
+            .onConflictDoNothing({
+                target: games.id,
+            })
+            .returning();
+
+		const wasNewlyRecorded = !!newGame;
+
+        const gameRow = newGame ?? (await tx
+            .select()
+            .from(games)
+            .where(eq(games.id, gameId))
+            .then((rows) => rows[0]));
+
+        if (!gameRow) {
+            throw new Error("Could not retrieve finished game");
+        }
+
+        const existingPlayers = await tx
+            .select({ id: gamePlayers.id })
+            .from(gamePlayers)
+            .where(eq(gamePlayers.gameId, gameId))
+            .limit(1);
+
+        if (existingPlayers.length === 0 && participants.length > 0) {
+            await tx.insert(gamePlayers).values(
+                participants.map(player => ({
+                    gameId,
+                    userId: player.userId,
+                    color: player.color,
+                    score: player.score,
+                })),
+            );
+        }
+        return { gameRow, wasNewlyRecorded };
+    });
+}
+export async function findGamesByUserId(
+    userId: number,
+    limit = 20,
+    offset = 0,
+) {
+    const matches = await db
+        .select({
+            gameId: games.id,
+            finishedAt: games.finishedAt,
+            yourScore: gamePlayers.score,
+        })
+        .from(games)
+        .innerJoin(
+            gamePlayers,
+            eq(games.id, gamePlayers.gameId),
+        )
+        .where(eq(gamePlayers.userId, userId))
+        .orderBy(desc(games.finishedAt), desc(games.id))
+        .limit(limit)
+        .offset(offset);
+
+    if (matches.length === 0) return [];
+
+    const participants = await db
+        .select({
+            gameId: gamePlayers.gameId,
+            userId: gamePlayers.userId,
+            username: users.username,
+            color: gamePlayers.color,
+            score: gamePlayers.score,
+        })
+        .from(gamePlayers)
+        .leftJoin(users, eq(gamePlayers.userId, users.id))
+        .where(
+            inArray(
+                gamePlayers.gameId,
+                matches.map(match => match.gameId),
+            ),
+        )
+        .orderBy(gamePlayers.gameId, gamePlayers.color);
+
+    return matches.map(match => {
+        const players = participants.filter(
+            player => player.gameId === match.gameId,
+        );
+
+        let result: "win" | "loss" | "draw" | "unknown" = "unknown";
+
+        const complete =
+            players.length === 4 &&
+            new Set(players.map(player => player.color)).size === 4 &&
+            players.every(player => player.score !== null);
+
+        if (complete && match.yourScore !== null) {
+            let bestScore = match.yourScore;
+
+            for (const player of players) {
+                if (player.score !== null && player.score > bestScore) {
+                    bestScore = player.score;
+                }
+            }
+
+            let winnerCount = 0;
+
+            for (const player of players) {
+                if (player.score === bestScore) {
+                    winnerCount++;
+                }
+            }
+
+            if (match.yourScore < bestScore) {
+                result = "loss";
+            } else if (winnerCount > 1) {
+                result = "draw";
+            } else {
+                result = "win";
+            }
+        }
+
+        return {
+            gameId: match.gameId,
+            finishedAt: match.finishedAt,
+            yourScore: match.yourScore,
+            result: result,
+            opponents: players
+                .filter(player => player.userId !== userId)
+                .map(player => ({
+                    userId: player.userId,
+                    username:
+                        player.username ?? `Bot (${player.color})`,
+                    score: player.score,
+                })),
+        };
+    });
+}

@@ -1,0 +1,9 @@
+node-modules
+dist
+coverage
+certs
+docs/test
+cookies.txt
+*.log
+.env
+.DS_Store
